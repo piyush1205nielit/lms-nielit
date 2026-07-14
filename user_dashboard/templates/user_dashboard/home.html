@@ -1,0 +1,46 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>Welcome, {{ profile.full_name|default:request.user.email }} 👋</h2>
+    <p>Here's your profile summary.</p>
+</div>
+
+<div class="card-glow p-4">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="text-muted small">Enrollment Number</label>
+            <p class="fw-semibold">{{ profile.enrollment_number }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Full Name</label>
+            <p class="fw-semibold">{{ profile.full_name|default:"—" }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Email</label>
+            <p class="fw-semibold">{{ request.user.email }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Contact Number</label>
+            <p class="fw-semibold">{{ request.user.contact|default:"—" }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Date of Birth</label>
+            <p class="fw-semibold">{{ profile.date_of_birth|default:"—" }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Gender</label>
+            <p class="fw-semibold">{{ profile.get_gender_display|default:"—" }}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">City / State</label>
+            <p class="fw-semibold">{{ profile.city|default:"—" }}{% if profile.state %}, {{ profile.state }}{% endif %}</p>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small">Highest Qualification</label>
+            <p class="fw-semibold">{{ profile.highest_qualification|default:"—" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

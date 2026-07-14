@@ -1,0 +1,48 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if lesson %}Edit Lesson{% else %}Add Lesson{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-play-circle me-2"></i>{% if lesson %}Edit Lesson{% else %}Add Lesson{% endif %}</h2>
+    <p>{{ module.course.course_name }} &rsaquo; {{ module.title }}</p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 600px;">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Lesson Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Display Order</label>
+            {{ form.order }}
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Thumbnail Image <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.thumbnail }}
+        </div>
+
+       <div class="mb-4">
+            <label class="form-label">Lesson Video <span class="text-muted fw-normal">(MP4, WebM, or MOV — max 1GB)</span></label>
+            {{ form.video_file }}
+            {% if form.video_file.errors %}<div class="text-danger small mt-1">{{ form.video_file.errors|join:", " }}</div>{% endif %}
+            {% if lesson.video_file %}
+                <div class="form-text">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i>
+                    Current video: {{ lesson.video_file.name|slice:"-40:" }}
+                    <span class="badge bg-success ms-1">Ready</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Lesson</button>
+        <a href="{% url 'course:modules' module.course.id %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

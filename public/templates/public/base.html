@@ -1,0 +1,616 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NIELIT - Course Registration Platform{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Tokens ──────────────────────────────────────── */
+        :root {
+            --primary:       #0f2b6d;
+            --primary-dark:  #0a1f4f;
+            --primary-light: #1e40af;
+            --accent:        #f59e0b;
+            --footer-bg:     #0a1a2f;
+        }
+
+        /* ── Base ────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: 0;
+            color: #1e293b;
+        }
+        /* ── Top Header ──────────────────────────────────── */
+        .top-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 10px 0;
+            transition: padding 0.3s ease;
+        }
+        .top-header.scrolled { padding: 6px 0; }
+        .top-header .logo-img {
+            height: 56px;
+            width: auto;
+            object-fit: contain;
+            transition: height 0.3s ease;
+        }
+        .top-header.scrolled .logo-img { height: 44px; }
+        .top-header .main-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 0;
+            line-height: 1.3;
+        }
+        .top-header .sub-title {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin: 0;
+            line-height: 1.4;
+        }
+        @media (max-width: 768px) {
+            .top-header .logo-img   { height: 40px; }
+            .top-header .main-title { font-size: 0.82rem; }
+            .top-header .sub-title  { font-size: 0.68rem; }
+        }
+        @media (max-width: 576px) {
+            .top-header .logo-img   { height: 34px; }
+            .top-header .main-title { font-size: 0.72rem; }
+            .top-header .sub-title  { font-size: 0.6rem; }
+        }
+
+        /* ── Nav wrapper + spacer (prevents layout jump when nav goes fixed) ── */
+        .nav-wrapper { position: sticky; top: 0; z-index: 1000; }
+        #navSpacer { display: none; }
+
+        /* ── Main Nav ────────────────────────────────────── */
+        .main-nav {
+            background: linear-gradient(135deg, #0a1f4f 0%, #0f2b6d 100%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0;
+        }
+
+        /* ── Floating "dynamic island" state ────────────── */
+        .main-nav.floating {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(94%, 1140px);
+            border-radius: 999px;
+            box-shadow: 0 12px 32px rgba(5,12,33,0.35);
+            background: rgba(10,31,79,0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .main-nav.floating .nav-inner { padding-top: 4px; padding-bottom: 4px; }
+        .main-nav.floating .navbar-brand span { display: none; }
+        .main-nav.floating .navbar-brand i { font-size: 1.3rem; }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            transition: padding 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: 2px; }
+
+        .main-nav .nav-link {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9) !important;
+            padding: 8px 14px;
+            border-radius: 6px;
+            position: relative;
+            transition: color 0.2s ease, background 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .main-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: white;
+            border-radius: 1px;
+            transition: width 0.25s ease;
+        }
+        .main-nav .nav-link:hover,
+        .main-nav .nav-link.active {
+            color: white !important;
+            background: rgba(255,255,255,0.08);
+        }
+        .main-nav .nav-link:hover::after,
+        .main-nav .nav-link.active::after { width: 60%; }
+
+        /* ── Auth area (desktop) ─────────────────────────── */
+        .nav-auth { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px; }
+
+        .btn-nav-login {
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: white !important;
+            padding: 7px 16px;
+            border-radius: 999px;
+            border: 1.5px solid rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: background 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+        .btn-nav-login:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+
+        .btn-nav-signup {
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: var(--primary-dark) !important;
+            background: var(--accent);
+            padding: 7px 18px;
+            border-radius: 999px;
+            text-decoration: none;
+            transition: filter 0.2s ease, transform 0.2s ease;
+            white-space: nowrap;
+        }
+        .btn-nav-signup:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+        /* ── User menu (logged in) ───────────────────────── */
+        .user-menu-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 999px;
+            padding: 4px 14px 4px 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .user-menu-toggle:hover { background: rgba(255,255,255,0.16); }
+        .user-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem; font-weight: 700; color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+        .user-menu-toggle .user-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: white;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .user-menu-toggle i.chev { font-size: 0.7rem; color: rgba(255,255,255,0.7); transition: transform 0.2s ease; }
+        .user-menu-toggle.open i.chev { transform: rotate(180deg); }
+
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            min-width: 220px;
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s ease;
+            z-index: 1100;
+        }
+        .user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .user-dropdown .dd-header {
+            padding: 10px 12px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 6px;
+        }
+        .user-dropdown .dd-header .dd-name { font-size: 0.88rem; font-weight: 600; color: var(--primary-dark); }
+        .user-dropdown .dd-header .dd-email { font-size: 0.75rem; color: #94a3b8; }
+        .user-dropdown a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px;
+            font-size: 0.86rem;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .user-dropdown a:hover { background: #f0f4ff; color: var(--primary); }
+        .user-dropdown a i { width: 16px; text-align: center; color: #94a3b8; }
+        .user-dropdown a.logout-item { color: #dc2626; }
+        .user-dropdown a.logout-item i { color: #dc2626; }
+        .user-dropdown a.logout-item:hover { background: #fef2f2; }
+        .nav-user-wrap { position: relative; }
+
+        /* ── Mobile hamburger ─────────────────────────────── */
+        #mobileMenuBtn { background: none; border: none; color: white; padding: 6px 10px; }
+        #mobileMenuBtn i { font-size: 1.4rem; color: white; }
+
+        /* ── Mobile Menu ─────────────────────────────────── */
+        .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; display: none; }
+        .mobile-overlay.active { display: block; }
+
+        .mobile-menu {
+            position: fixed; top: 0; right: -100%;
+            width: min(80%, 360px); height: 100vh;
+            background: white; z-index: 1050;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+        }
+        .mobile-menu.active { right: 0; }
+
+        .mobile-menu-header {
+            background: linear-gradient(135deg, #0a1f4f, #0f2b6d);
+            color: white; padding: 18px 20px;
+            position: sticky; top: 0; z-index: 10;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .mobile-menu-header h5 { margin: 0; font-size: 1rem; font-weight: 600; }
+
+        .mobile-user-card {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px;
+            background: #f0f4ff;
+            border-bottom: 1px solid #e5e9f5;
+        }
+        .mobile-user-card .user-avatar { width: 42px; height: 42px; font-size: 1rem; }
+        .mobile-user-card .mu-name { font-size: 0.9rem; font-weight: 600; color: var(--primary-dark); }
+        .mobile-user-card .mu-email { font-size: 0.76rem; color: #6b7280; }
+
+        .mobile-menu-body .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 13px 20px;
+            font-size: 0.95rem; font-weight: 500;
+            color: #374151 !important;
+            border-bottom: 1px solid #f3f4f6;
+            text-decoration: none;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .mobile-menu-body .nav-link:hover { background: #f0f4ff; color: var(--primary) !important; }
+        .mobile-menu-body .nav-link.logout-item { color: #dc2626 !important; }
+        .mobile-menu-body .nav-link.logout-item i { color: #dc2626; }
+
+        .mobile-auth-actions {
+            display: flex; flex-direction: column; gap: 10px;
+            padding: 16px 20px;
+        }
+        .mobile-auth-actions a {
+            text-align: center; padding: 11px; border-radius: 10px;
+            font-size: 0.9rem; font-weight: 600; text-decoration: none;
+        }
+        .mobile-auth-actions .mob-login { border: 1.5px solid var(--primary); color: var(--primary); }
+        .mobile-auth-actions .mob-signup { background: var(--primary); color: white; }
+
+        /* ── Dropdown (generic bootstrap-esque) ──────────── */
+        .dropdown-menu { border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px; padding: 6px 0; min-width: 180px; }
+        .dropdown-item { font-size: 0.9rem; padding: 9px 18px; transition: background 0.15s ease, padding-left 0.15s ease; }
+        .dropdown-item:hover { background: #f0f4ff; padding-left: 24px; color: var(--primary); }
+
+        /* ── Alerts ──────────────────────────────────────── */
+        .alert { font-size: 0.92rem; border-radius: 10px; border: none; }
+
+        /* ── Footer ──────────────────────────────────────── */
+        footer { background: linear-gradient(135deg, #0a1a2f 0%, #051220 100%); color: #9ca3af; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); }
+        footer a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.88rem; transition: color 0.2s ease; }
+        footer a:hover { color: white; }
+        footer .copyright { font-size: 0.85rem; color: rgba(255,255,255,0.45); }
+        footer .copyright strong { color: rgba(255,255,255,0.7); }
+
+        /* ── Utility ─────────────────────────────────────── */
+        .card-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeInDown 0.3s ease; }
+
+        @media (max-width: 991px) {
+            .nav-links, .nav-auth { display: none !important; }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- ── Top Header ──────────────────────────────────── -->
+    <div class="top-header" id="topHeader">
+        <div class="container">
+            <div class="d-flex flex-column flex-lg-row justify-content-center justify-content-lg-between align-items-center gap-2 gap-lg-4">
+                <div class="text-start">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3">
+                        <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT Logo"
+                             class="logo-img"
+                             onerror="this.src='https://via.placeholder.com/70?text=NIELIT'">
+                        <div>
+                            <p class="main-title">National Institute of Electronics<br>&amp; Information Technology</p>
+                            <p class="sub-title">राष्ट्रीय इलेक्ट्रॉनिकी एवं सूचना प्रौद्योगिकी संस्थान</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <img src="{% static 'assets/digital_india.png' %}" alt="Digital India"
+                         style="height:50px;width:auto;object-fit:contain;"
+                         onerror="this.src='https://via.placeholder.com/120x50?text=Digital+India'">
+                </div>
+                <div class="">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
+                        <div class="text-center text-md-end">
+                            <p class="mb-0 fw-bold" style="font-size:0.82rem;color:#1f2937;">
+                                Ministry of Electronics &amp;<br>Information Technology
+                            </p>
+                            <p class="mb-0" style="font-size:0.75rem;color:#6b7280;">Government of India</p>
+                        </div>
+                        <img src="{% static 'assets/nat_emblem.jpg' %}" alt="Government Emblem"
+                             style="height:48px;width:auto;object-fit:contain;"
+                             onerror="this.src='https://via.placeholder.com/50?text=Emblem'">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Main Navigation ─────────────────────────────── -->
+    <div class="nav-wrapper">
+        <nav class="main-nav" id="mainNav">
+            <div class="container nav-inner">
+
+                <a class="navbar-brand" href="{% url 'public:home' %}">
+                    <i class="fas fa-graduation-cap fs-4"></i>
+                    <span>NIELIT Delhi</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="{% url 'public:home' %}" class="nav-link"><i class="fas fa-home me-1"></i>Home</a>
+                    {% comment %} <a href="{% url 'public:announcements' %}" class="nav-link"><i class="fas fa-bullhorn me-1"></i>Announcements</a> {% endcomment %}
+                    <a href="{% url 'public:courses' %}" class="nav-link"><i class="fas fa-book me-1"></i>Courses</a>
+                </div>
+
+                <div class="nav-auth">
+                    {% if user.is_authenticated %}
+                        <div class="nav-user-wrap">
+                            <button type="button" class="user-menu-toggle" id="userMenuToggle">
+                                {% if user.learner_profile.profile_image %}
+                                    <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
+                                {% else %}
+                                    <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
+                                {% endif %}
+                                <span class="user-name">{{ user.learner_profile.full_name|default:user.email }}</span>
+                                <i class="fas fa-chevron-down chev"></i>
+                            </button>
+                            <div class="user-dropdown" id="userDropdown">
+                                <div class="dd-header">
+                                    <div class="dd-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
+                                    <div class="dd-email">{{ user.email }}</div>
+                                </div>
+                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-th-large"></i> My Dashboard</a>
+                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-user"></i> My Profile</a>
+                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
+                                <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'user:login' %}" class="btn-nav-login">Login</a>
+                        <a href="{% url 'user:signup' %}" class="btn-nav-signup">Sign Up</a>
+                    {% endif %}
+                </div>
+
+                <button id="mobileMenuBtn" class="d-lg-none" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+            </div>
+        </nav>
+        <div id="navSpacer"></div>
+    </div>
+
+    <!-- ── Mobile Menu ─────────────────────────────────── -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h5><i class="fas fa-bars me-2"></i>Menu</h5>
+            <button class="btn btn-sm btn-light" id="closeMobileMenu" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="mobile-user-card">
+            {% if user.learner_profile.profile_image %}
+                <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
+            {% else %}
+                <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
+            {% endif %}
+            <div>
+                <div class="mu-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
+                <div class="mu-email">{{ user.email }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mobile-menu-body">
+            <a href="{% url 'public:home' %}" class="nav-link"><i class="fas fa-home fa-fw"></i>Home</a>
+            {% comment %} <a href="{% url 'public:announcements' %}" class="nav-link"><i class="fas fa-bullhorn fa-fw"></i>Announcements</a> {% endcomment %}
+            <a href="{% url 'public:courses' %}" class="nav-link"><i class="fas fa-book fa-fw"></i>Courses</a>
+            {% comment %} <a href="{% url 'public:centres' %}" class="nav-link"><i class="fas fa-building fa-fw"></i>Centers</a>  {% endcomment %}
+            {% if user.is_authenticated %}
+                <a href="{% url 'user_dashboard:home' %}" class="nav-link"><i class="fas fa-th-large fa-fw"></i>My Dashboard</a>
+                <a href="{% url 'user:logout' %}" class="nav-link logout-item"><i class="fas fa-sign-out-alt fa-fw"></i>Logout</a>
+            {% endif %}
+        </div>
+
+        {% if not user.is_authenticated %}
+        <div class="mobile-auth-actions">
+            <a href="{% url 'user:login' %}" class="mob-login">Login</a>
+            <a href="{% url 'user:signup' %}" class="mob-signup">Sign Up</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Page Content ────────────────────────────────── -->
+    <main class="flex-grow-1">
+        {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm animate-fade-in" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Footer ──────────────────────────────────────── -->
+    <footer>
+        <div class="container py-4">
+            <div class="row justify-content-center mb-3">
+                <div class="col-md-10">
+                    <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4">
+                        <a href="{% url 'public:home' %}">Home</a>
+                        {% comment %} <a href="{% url 'public:courses' %}">Courses</a>
+                        <a href="{% url 'public:centres' %}">Centers</a>
+                        <a href="{% url 'user:login' %}">Student Portal</a> {% endcomment %}
+                        <a href="https://www.nielit.gov.in/delhi/index.php" target="_blank">NIELIT Official Website</a>
+                        <a href="https://onlineapply.nielit.in/" target="_blank">NIELIT Online Apply</a>
+                        <a href="{% url 'accounts:admin_login' %}" target="_blank">Admin Login</a>
+                    </div>
+                </div>
+            </div>
+            <hr style="border-color:rgba(255,255,255,0.1);margin:0 0 16px;">
+            <div class="text-center copyright">
+                <p class="mb-1"><i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved.</p>
+                <p class="mb-0">Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ── Scripts ─────────────────────────────────────── -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+    (function () {
+        // ── Top header shrink + Main nav floating (dynamic island) ──
+        const topHeader = document.getElementById('topHeader');
+        const mainNav   = document.getElementById('mainNav');
+        const navSpacer = document.getElementById('navSpacer');
+        const THRESHOLD = 80;
+
+        function setSpacerHeight() {
+            navSpacer.style.height = mainNav.offsetHeight + 'px';
+        }
+
+        function handleScroll() {
+            const scrolled = window.scrollY > THRESHOLD;
+            topHeader.classList.toggle('scrolled', window.scrollY > 50);
+
+            if (scrolled && !mainNav.classList.contains('floating')) {
+                setSpacerHeight();
+                navSpacer.style.display = 'block';
+                mainNav.classList.add('floating');
+            } else if (!scrolled && mainNav.classList.contains('floating')) {
+                mainNav.classList.remove('floating');
+                navSpacer.style.display = 'none';
+            }
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', function () {
+            if (mainNav.classList.contains('floating')) setSpacerHeight();
+        });
+
+        // ── User dropdown menu ──────────────────────────
+        const userToggle = document.getElementById('userMenuToggle');
+        const userDropdown = document.getElementById('userDropdown');
+        if (userToggle) {
+            userToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                userToggle.classList.toggle('open');
+                userDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', function (e) {
+                if (!userDropdown.contains(e.target) && !userToggle.contains(e.target)) {
+                    userToggle.classList.remove('open');
+                    userDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // ── Mobile menu ────────────────────────────────
+        const mobileMenu    = document.getElementById('mobileMenu');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+
+        function openMenu() {
+            mobileMenu.classList.add('active');
+            mobileOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMenu() {
+            mobileMenu.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('mobileMenuBtn').addEventListener('click', openMenu);
+        document.getElementById('closeMobileMenu').addEventListener('click', closeMenu);
+        mobileOverlay.addEventListener('click', closeMenu);
+        window.addEventListener('resize', function () {
+            if (window.innerWidth >= 992) closeMenu();
+        });
+
+        // ── Active nav link ────────────────────────────
+        const path = window.location.pathname;
+        document.querySelectorAll('.main-nav .nav-link, .mobile-menu-body .nav-link').forEach(function (link) {
+            const href = link.getAttribute('href');
+            if (href && href !== '/' && path.startsWith(href)) {
+                link.classList.add('active');
+            } else if (href === '/' && path === '/') {
+                link.classList.add('active');
+            }
+        });
+
+        // ── Bootstrap tooltips ─────────────────────────
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

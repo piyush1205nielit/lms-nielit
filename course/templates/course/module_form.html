@@ -1,0 +1,31 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if module %}Edit Module{% else %}Add Module{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-collection me-2"></i>{% if module %}Edit Module{% else %}Add Module{% endif %}</h2>
+    <p>{{ course.course_name }}</p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 600px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Module Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Display Order</label>
+            {{ form.order }}
+            <div class="form-text">Lower numbers appear first.</div>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Module</button>
+        <a href="{% url 'course:modules' course.id %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

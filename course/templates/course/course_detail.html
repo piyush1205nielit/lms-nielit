@@ -1,0 +1,178 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}{{ course.course_name }} - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --primary2: #172281; --accent: #f59e0b; --text-muted: #64748b; --border: #e2e8f0; }
+
+    .detail-hero {
+        background: linear-gradient(135deg, #0a1f4f, #172281);
+        color: white;
+        padding: 44px 0;
+    }
+    .detail-hero .badge-featured {
+        background: var(--accent); color: #0a1f4f;
+        font-size: 0.72rem; font-weight: 700;
+        padding: 4px 12px; border-radius: 20px;
+        display: inline-block; margin-bottom: 12px;
+    }
+    .detail-hero h1 { font-size: 1.7rem; font-weight: 700; margin: 0 0 10px; }
+    .detail-hero p.desc { color: rgba(255,255,255,0.8); font-size: 0.94rem; max-width: 680px; line-height: 1.7; }
+    .detail-hero .meta-row { display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap; }
+    .detail-hero .meta-item { font-size: 0.84rem; color: rgba(255,255,255,0.85); }
+    .detail-hero .meta-item i { margin-right: 6px; color: var(--accent); }
+
+    .detail-body { padding: 40px 0 60px; }
+    .detail-card {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        padding: 24px; margin-bottom: 20px;
+    }
+    .detail-card h5 { font-size: 1rem; font-weight: 700; color: #0e1b2e; margin: 0 0 12px; }
+    .detail-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+
+    .module-block { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .module-block-head {
+        background: #f8fafc; padding: 12px 16px;
+        font-size: 0.88rem; font-weight: 700; color: #0e1b2e;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .module-block-head .module-lesson-count { font-size: 0.76rem; font-weight: 500; color: var(--text-muted); }
+    .lesson-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 16px; font-size: 0.86rem; color: #374151;
+        border-top: 1px solid #f1f5f9;
+    }
+    .lesson-row .lesson-name { display: flex; align-items: center; gap: 10px; }
+    .lesson-row i.lesson-icon { color: var(--primary2); font-size: 0.9rem; width: 16px; }
+    .lesson-row i.lock-icon { color: #cbd5e1; font-size: 0.85rem; }
+
+    .enroll-sidebar {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        padding: 24px; position: sticky; top: 100px;
+    }
+    .enroll-sidebar .price-tag { font-size: 1.3rem; font-weight: 700; color: var(--primary2); margin-bottom: 4px; }
+    .enroll-sidebar .price-note { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 18px; }
+    .btn-enroll-full {
+        display: block; width: 100%; text-align: center;
+        background: var(--primary2); color: white; border: none;
+        font-weight: 600; font-size: 0.92rem;
+        padding: 12px; border-radius: 10px;
+        text-decoration: none;
+        transition: background 0.2s ease;
+    }
+    .btn-enroll-full:hover { background: #0f2b6d; color: white; }
+    .btn-enrolled {
+        display: block; width: 100%; text-align: center;
+        background: #d1fae5; color: #065f46; border: none;
+        font-weight: 600; font-size: 0.92rem;
+        padding: 12px; border-radius: 10px;
+        text-decoration: none;
+    }
+    .sidebar-stat { display: flex; justify-content: space-between; font-size: 0.84rem; padding: 8px 0; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .sidebar-stat:last-of-type { border-bottom: none; }
+    .sidebar-stat i { color: var(--primary2); margin-right: 6px; }
+
+    @media (max-width: 991px) { .enroll-sidebar { position: static; margin-top: 20px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="detail-hero">
+    <div class="container">
+        {% if course.is_featured %}<span class="badge-featured"><i class="fas fa-star me-1"></i>Featured Course</span>{% endif %}
+        <h1>{{ course.course_name }}</h1>
+        <p class="desc">{{ course.course_description }}</p>
+        <div class="meta-row">
+            <span class="meta-item"><i class="fas fa-layer-group"></i>{{ modules|length }} Module{{ modules|length|pluralize }}</span>
+            <span class="meta-item"><i class="fas fa-play-circle"></i>{{ total_lessons }} Lesson{{ total_lessons|pluralize }}</span>
+            {% if course.published_date %}<span class="meta-item"><i class="fas fa-calendar"></i>Published {{ course.published_date|date:"M Y" }}</span>{% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="detail-body">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                {% if course.learning_outcomes %}
+                <div class="detail-card">
+                    <h5><i class="fas fa-bullseye me-2" style="color: var(--primary2);"></i>What You'll Learn</h5>
+                    <p style="white-space: pre-line;">{{ course.learning_outcomes }}</p>
+                </div>
+                {% endif %}
+
+                {% if course.pre_requisites %}
+                <div class="detail-card">
+                    <h5><i class="fas fa-clipboard-check me-2" style="color: var(--primary2);"></i>Pre-requisites</h5>
+                    <p style="white-space: pre-line;">{{ course.pre_requisites }}</p>
+                </div>
+                {% endif %}
+
+                <div class="detail-card">
+                    <h5><i class="fas fa-list-ul me-2" style="color: var(--primary2);"></i>Course Content</h5>
+
+                    {% for module in modules %}
+                        <div class="module-block">
+                            <div class="module-block-head">
+                                <span>{{ module.title }}</span>
+                                <span class="module-lesson-count">{{ module.lessons.count }} lesson{{ module.lessons.count|pluralize }}</span>
+                            </div>
+                       {% for lesson in module.lessons.all %}
+                            <div class="lesson-row">
+                                {% if is_enrolled %}
+                                    <a href="{% url 'stream:player' course.slug lesson.id %}" class="lesson-name text-decoration-none">
+                                        <i class="fas fa-play-circle lesson-icon"></i>
+                                        <span class="text-dark">{{ lesson.title }}</span>
+                                    </a>
+                                {% else %}
+                                    <span class="lesson-name">
+                                        <i class="fas fa-lock lock-icon"></i>
+                                        {{ lesson.title }}
+                                    </span>
+                                    <span class="text-muted" style="font-size: 0.76rem;">Enroll to access</span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="lesson-row text-muted">No lessons added yet.</div>
+                        {% endfor %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small">Course content is being prepared.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="enroll-sidebar">
+                    <div class="price-tag"><i class="fas fa-certificate me-1"></i>Free</div>
+                    <div class="price-note">Government-certified course, no cost</div>
+
+                    {% if request.user.is_authenticated %}
+                        {% if is_enrolled %}
+                            <span class="btn-enrolled"><i class="fas fa-check-circle me-1"></i>You're Enrolled</span>
+                        {% else %}
+                            <form method="post" action="{% url 'course:enroll' course.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-enroll-full border-0">
+                                    <i class="fas fa-plus-circle me-1"></i> Enroll Now
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'user:login' %}?next={% url 'course:enroll' course.slug %}" class="btn-enroll-full">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login to Enroll
+                        </a>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <div class="sidebar-stat"><span><i class="fas fa-layer-group"></i>Modules</span><span>{{ modules|length }}</span></div>
+                        <div class="sidebar-stat"><span><i class="fas fa-play-circle"></i>Lessons</span><span>{{ total_lessons }}</span></div>
+                        <div class="sidebar-stat"><span><i class="fas fa-certificate"></i>Certificate</span><span>On Completion</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

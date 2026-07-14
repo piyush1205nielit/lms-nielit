@@ -1,0 +1,97 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}Login - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-wrapper {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2f9 100%);
+    }
+    .auth-card {
+        background: white;
+        border-radius: 18px;
+        border: 1px solid #e2e8f0;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 20px 45px rgba(15,43,109,0.08);
+    }
+    .auth-icon-wrap {
+        width: 56px; height: 56px;
+        border-radius: 14px;
+        background: #eff6ff;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+        font-size: 1.4rem;
+        color: #172281;
+    }
+    .auth-card h4 { font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px; }
+    .auth-card p.subtitle { color: #64748b; font-size: 0.86rem; }
+    .auth-card .form-label { font-size: 0.84rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .auth-card .form-control {
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        padding: 10px 14px;
+        font-size: 0.92rem;
+    }
+    .auth-card .form-control:focus {
+        border-color: #172281;
+        box-shadow: 0 0 0 3px rgba(23,34,129,0.1);
+    }
+    .btn-auth-primary {
+        background: #172281;
+        border: none;
+        color: white;
+        font-weight: 600;
+        font-size: 0.94rem;
+        padding: 11px;
+        border-radius: 10px;
+        transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-1px); color: white; }
+    .auth-footer-link { text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.25rem; }
+    .auth-footer-link a { color: #172281; font-weight: 600; text-decoration: none; }
+    .auth-footer-link a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-icon-wrap"><i class="fas fa-graduation-cap"></i></div>
+            <h4>Welcome Back</h4>
+            <p class="subtitle">Sign in to continue learning</p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">Email or Mobile Number</label>
+                {{ form.identifier }}
+                {% if form.identifier.errors %}<div class="text-danger small mt-1">{{ form.identifier.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>{% endif %}
+            </div>
+            <button type="submit" class="btn btn-auth-primary w-100">
+                <i class="fas fa-sign-in-alt me-1"></i> Sign In
+            </button>
+        </form>
+
+        <p class="auth-footer-link">
+            New here? <a href="{% url 'user:signup' %}">Create an account</a>
+        </p>
+    </div>
+</section>
+{% endblock %}

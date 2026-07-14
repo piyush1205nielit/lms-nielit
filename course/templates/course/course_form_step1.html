@@ -1,0 +1,67 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if course %}Edit Course{% else %}Create Course{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-journal-plus me-2"></i>{% if course %}Edit Course{% else %}Create New Course{% endif %}</h2>
+    <p>Step 1 of 3 — Basic course information</p>
+</div>
+
+<div class="d-flex align-items-center mb-4" style="max-width: 520px;">
+    <div class="d-flex align-items-center flex-grow-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">1</div>
+        <span class="ms-2 small fw-semibold text-dark">Basic Info</span>
+    </div>
+    <div class="flex-grow-1 mx-2" style="height:2px;background:#e2e6ea;"></div>
+    <div class="d-flex align-items-center flex-grow-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">2</div>
+        <span class="ms-2 small text-muted">Modules &amp; Lessons</span>
+    </div>
+    <div class="flex-grow-1 mx-2" style="height:2px;background:#e2e6ea;"></div>
+    <div class="d-flex align-items-center">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">3</div>
+        <span class="ms-2 small text-muted">Publish</span>
+    </div>
+</div>
+
+<div class="card-panel p-4" style="max-width: 720px;">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Course Name</label>
+            {{ form.course_name }}
+            {% if form.course_name.errors %}<div class="text-danger small mt-1">{{ form.course_name.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Course Description</label>
+            {{ form.course_description }}
+            {% if form.course_description.errors %}<div class="text-danger small mt-1">{{ form.course_description.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Course Banner Image</label>
+            {{ form.course_banner }}
+            {% if course.course_banner %}
+                <div class="form-text">Current: <a href="{{ course.course_banner.url }}" target="_blank">view banner</a></div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Learning Outcomes</label>
+            {{ form.learning_outcomes }}
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Pre-requisites <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.pre_requisites }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            {% if course %}Save &amp; Continue{% else %}Create &amp; Continue to Modules{% endif %} <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+        <a href="{% url 'course:manage_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

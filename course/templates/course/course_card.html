@@ -1,0 +1,60 @@
+<div class="course-card card-hover">
+    <div class="course-card-banner">
+        {% if course.course_banner %}
+            <img src="{{ course.course_banner.url }}" alt="{{ course.course_name }}">
+        {% else %}
+            <div class="course-card-banner-placeholder"><i class="fas fa-graduation-cap"></i></div>
+        {% endif %}
+        {% if course.is_featured %}
+            <span class="course-card-badge"><i class="fas fa-star me-1"></i>Featured</span>
+        {% endif %}
+    </div>
+    <div class="course-card-body">
+        <h5 class="course-card-title">{{ course.course_name }}</h5>
+        <p class="course-card-desc">{{ course.course_description|truncatewords:16 }}</p>
+        <div class="course-card-meta">
+            <span><i class="fas fa-layer-group me-1"></i>{{ course.modules.count }} Module{{ course.modules.count|pluralize }}</span>
+        </div>
+        <a href="{% url 'course:detail' course.slug %}" class="course-card-btn">
+            View Course <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+</div>
+
+<style>
+    .course-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .course-card-banner { position: relative; height: 150px; background: #eff6ff; }
+    .course-card-banner img { width: 100%; height: 100%; object-fit: cover; }
+    .course-card-banner-placeholder {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.2rem; color: #172281; opacity: 0.3;
+    }
+    .course-card-badge {
+        position: absolute; top: 10px; right: 10px;
+        background: #f59e0b; color: white;
+        font-size: 0.7rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 20px;
+    }
+    .course-card-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; }
+    .course-card-title { font-size: 0.96rem; font-weight: 700; color: #0e1b2e; margin: 0 0 8px; line-height: 1.35; }
+    .course-card-desc { font-size: 0.82rem; color: #64748b; line-height: 1.6; margin: 0 0 12px; flex: 1; }
+    .course-card-meta { font-size: 0.76rem; color: #94a3b8; margin-bottom: 14px; }
+    .course-card-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.84rem; font-weight: 600;
+        color: #172281; border: 1.5px solid #172281;
+        padding: 8px; border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+    .course-card-btn:hover { background: #172281; color: white; }
+</style>

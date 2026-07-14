@@ -1,0 +1,83 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Admin Management{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="bi bi-person-badge-fill me-2"></i>Admin Management</h2>
+        <p>Manage base admin accounts created under this platform.</p>
+    </div>
+    {% if request.user.role == 'superadmin' %}
+    <a href="{% url 'accounts:admin_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Add New Admin
+    </a>
+    {% endif %}
+</div>
+
+<div class="card-panel p-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Contact</th>
+                    <th>Designation</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr>
+                    <td class="fw-semibold">{{ admin.name }}</td>
+                    <td>{{ admin.user.email }}</td>
+                    <td>{{ admin.user.contact|default:"—" }}</td>
+                    <td>{{ admin.bio|default:"—" }}</td>
+                    <td>
+                        {% if admin.user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ admin.created_by.email|default:"—" }}</td>
+                    <td class="text-end">
+                        {% if request.user.role == 'superadmin' %}
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'accounts:admin_edit' admin.user.id %}"
+                               class="btn btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="{% url 'accounts:admin_change_password' admin.user.id %}"
+                               class="btn btn-outline-secondary" title="Change Password">
+                                <i class="bi bi-key-fill"></i>
+                            </a>
+                            <form method="post" action="{% url 'accounts:admin_toggle_active' admin.user.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-warning" title="{% if admin.user.is_active %}Disable{% else %}Enable{% endif %}">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'accounts:admin_delete' admin.user.id %}" class="d-inline"
+                                  onsubmit="return confirm('Permanently delete this admin account? This cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                            <span class="text-muted small">View only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No base admins created yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Modules — {{ course.course_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-collection-play me-2"></i>{{ course.course_name }}</h2>
+    <p>Step 2 of 3 — Add modules and lessons</p>
+</div>
+
+<div class="d-flex align-items-center mb-4" style="max-width: 520px;">
+    <div class="d-flex align-items-center flex-grow-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white" style="width:32px;height:32px;font-size:0.85rem;flex-shrink:0;"><i class="bi bi-check-lg"></i></div>
+        <span class="ms-2 small text-muted">Basic Info</span>
+    </div>
+    <div class="flex-grow-1 mx-2" style="height:2px;background:#198754;"></div>
+    <div class="d-flex align-items-center flex-grow-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">2</div>
+        <span class="ms-2 small fw-semibold text-dark">Modules &amp; Lessons</span>
+    </div>
+    <div class="flex-grow-1 mx-2" style="height:2px;background:#e2e6ea;"></div>
+    <div class="d-flex align-items-center">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">3</div>
+        <span class="ms-2 small text-muted">Publish</span>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'course:module_add' course.id %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Add Module
+    </a>
+    <a href="{% url 'course:publish' course.id %}" class="btn btn-success btn-sm">
+        Continue to Publish Settings <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>
+
+{% for module in modules %}
+<div class="card-panel p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <span class="badge bg-secondary me-1">#{{ module.order }}</span>
+            <strong>{{ module.title }}</strong>
+            {% if module.description %}<p class="text-muted small mb-0 mt-1">{{ module.description }}</p>{% endif %}
+        </div>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'course:lesson_add' module.id %}" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> Lesson</a>
+            <a href="{% url 'course:module_edit' module.id %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+            <form method="post" action="{% url 'course:module_delete' module.id %}" class="d-inline" onsubmit="return confirm('Delete this module and all its lessons?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash3"></i></button>
+            </form>
+        </div>
+    </div>
+
+    {% if module.lessons.all %}
+    <table class="table table-sm mt-3 mb-0">
+        <thead class="table-light">
+            <tr><th>#</th><th>Lesson</th><th>Video Status</th><th class="text-end">Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for lesson in module.lessons.all %}
+            <tr>
+                <td>{{ lesson.order }}</td>
+                <td>{{ lesson.title }}</td>
+                <td>
+                    {% if lesson.video_status == 'ready' %}<span class="badge bg-success">Ready</span>
+                    {% elif lesson.video_status == 'processing' %}<span class="badge bg-primary">Processing</span>
+                    {% elif lesson.video_status == 'failed' %}<span class="badge bg-danger">Failed</span>
+                    {% else %}<span class="badge bg-warning text-dark">No Video Yet</span>{% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{% url 'course:lesson_edit' lesson.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+                    <form method="post" action="{% url 'course:lesson_delete' lesson.id %}" class="d-inline" onsubmit="return confirm('Delete this lesson?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash3"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="text-muted small mt-3 mb-0">No lessons added yet.</p>
+    {% endif %}
+</div>
+{% empty %}
+<div class="card-panel p-5 text-center text-muted">
+    <i class="bi bi-collection" style="font-size: 2rem; color: #cbd5e0;"></i>
+    <p class="mt-2 mb-0">No modules yet. Add your first module to get started.</p>
+</div>
+{% endfor %}
+{% endblock %}

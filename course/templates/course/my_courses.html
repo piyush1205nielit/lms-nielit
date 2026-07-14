@@ -1,0 +1,54 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>My Courses</h2>
+    <p>Courses you're currently enrolled in.</p>
+</div>
+
+{% if enrollment_data %}
+<div class="row g-3">
+    {% for item in enrollment_data %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card-glow p-3 h-100 d-flex flex-column">
+            <div class="d-flex align-items-start justify-content-between mb-2">
+                <h6 class="fw-bold mb-0">{{ item.enrollment.course.course_name }}</h6>
+                {% if item.enrollment.status == 'completed' %}
+                    <span class="badge bg-success">Completed</span>
+                {% else %}
+                    <span class="badge bg-primary">In Progress</span>
+                {% endif %}
+            </div>
+            <p class="text-muted small mb-3">{{ item.enrollment.course.course_description|truncatewords:14 }}</p>
+
+            <div class="mt-auto">
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>{{ item.completed_lessons }}/{{ item.total_lessons }} lessons</span>
+                    <span>{{ item.percent }}%</span>
+                </div>
+                <div class="progress mb-3" style="height: 6px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ item.percent }}%; background: linear-gradient(90deg, #4facfe, #00f2fe);"></div>
+                </div>
+             {% with first_lesson=item.enrollment.course.modules.first.lessons.first %}
+                  {% if first_lesson %}
+                      <a href="{% url 'stream:player' item.enrollment.course.slug first_lesson.id %}" class="btn btn-sm w-100" style="background: linear-gradient(90deg, #4facfe, #00f2fe); color: white; font-weight: 600;">
+                          {% if item.percent > 0 %}Continue Learning{% else %}Start Course{% endif %}
+                      </a>
+                  {% else %}
+                      <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn btn-sm w-100 btn-outline-secondary">View Course</a>
+                  {% endif %}
+              {% endwith %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-glow p-5 text-center text-muted">
+    <i class="bi bi-journal-x" style="font-size: 2.5rem; color: #cbd5e0;"></i>
+    <p class="mt-3 mb-3">You haven't enrolled in any courses yet.</p>
+    <a href="{% url 'public:courses' %}" class="btn btn-primary btn-sm">Browse Courses</a>
+</div>
+{% endif %}
+{% endblock %}

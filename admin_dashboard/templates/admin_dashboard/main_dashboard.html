@@ -1,0 +1,14 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Admin Dashboard Page</h2>
+    <p>Welcome back, {{ request.user.admin_profile.name|default:request.user.email }}.</p>
+</div>
+
+<div class="card-panel p-5 text-center text-muted">
+    <i class="bi bi-speedometer2" style="font-size: 2.5rem; color: #cbd5e0;"></i>
+    <p class="mt-2 mb-0">Analytics widgets will appear here.</p>
+</div>
+{% endblock %}

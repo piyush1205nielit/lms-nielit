@@ -1,0 +1,60 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Add New Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-person-plus-fill me-2"></i>Add New Admin</h2>
+    <p>Create a base admin account. Only super admins can perform this action.</p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 560px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Designation / Bio <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.bio }}
+            {% if form.bio.errors %}<div class="text-danger small mt-1">{{ form.bio.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Contact Number <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.contact }}
+            {% if form.contact.errors %}<div class="text-danger small mt-1">{{ form.contact.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Confirm Password</label>
+                {{ form.confirm_password }}
+                {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors|join:", " }}</div>{% endif %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i> Create Admin Account
+        </button>
+        <a href="{% url 'accounts:admin_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

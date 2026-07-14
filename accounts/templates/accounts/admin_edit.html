@@ -1,0 +1,36 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Edit Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-pencil-square me-2"></i>Edit Admin</h2>
+    <p>Editing <strong>{{ target_admin.email }}</strong></p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 520px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Designation / Bio</label>
+            {{ form.bio }}
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Contact Number</label>
+            {{ form.contact }}
+            {% if form.contact.errors %}<div class="text-danger small mt-1">{{ form.contact.errors|join:", " }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+        <a href="{% url 'accounts:admin_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
