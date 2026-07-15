@@ -27,6 +27,7 @@ lms-venv/
 # ── Django ──
 media/
 media/*
+media/**
 !media/.gitkeep
 logs/
 *.log
