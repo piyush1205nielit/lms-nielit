@@ -1,0 +1,44 @@
+# .github/workflows/deploy.yml
+#
+# Triggers on every push to `main`. SSHes into EC2, pulls latest code,
+# installs deps, runs migrations, collects static, restarts gunicorn-lms.
+# Scoped entirely to lms-nielit-delhi — does not touch scsptsp, webinar1,
+# or webinarnielit.
+
+name: Deploy lms-nielit-delhi to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.PROJECT_PATH }}
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Activating venv and installing dependencies..."
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            echo "Running migrations..."
+            python manage.py migrate --noinput
+
+            echo "Collecting static files..."
+            python manage.py collectstatic --noinput
+
+            echo "Restarting gunicorn-lms..."
+            sudo systemctl restart gunicorn-lms
+
+            echo "Deploy complete."

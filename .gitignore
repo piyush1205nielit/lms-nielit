@@ -1,0 +1,36 @@
+# ── Environment / secrets ──
+.env
+.env.*
+
+# ── Database ──
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+dist/
+downloads/
+
+
+# ── Virtual environments ──
+venv/
+env/
+lms-venv/
+.venv/
+
+# ── Django ──
+media/
+media/*
+!media/.gitkeep
+logs/
+*.log
+
+# ── Celery ──
+celerybeat-schedule
+celerybeat.pid
