@@ -22,6 +22,7 @@
                     <th>Courses Enrolled</th>
                     <th>Profile Status</th>
                     <th>Joined On</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,6 +42,18 @@
                         {% endif %}
                     </td>
                     <td>{{ profile.created_at|date:"d M Y" }}</td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'admin_dashboard:user_profile_edit' profile.user.id %}" class="btn btn-outline-secondary" title="Edit Profile">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            {% if request.user.role == 'superadmin' %}
+                            <a href="{% url 'admin_dashboard:user_credentials_edit' profile.user.id %}" class="btn btn-outline-warning" title="Edit Login Credentials">
+                                <i class="bi bi-shield-lock"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="8" class="text-center text-muted py-4">No registered users yet.</td></tr>

@@ -108,6 +108,13 @@
         </a>
         <a href="#" class="nav-link"><i class="bi bi-graph-up-arrow"></i> My Progress</a>
         <a href="#" class="nav-link"><i class="bi bi-award-fill"></i> Certificates</a>
+
+        <a href="{% url 'user:profile_edit' %}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+            <i class="bi bi-pencil-square"></i> Edit Profile
+        </a>
+        <a href="{% url 'user:change_password' %}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+            <i class="bi bi-key-fill"></i> Change Password
+        </a>
     </nav>
 
     <main class="main-content">

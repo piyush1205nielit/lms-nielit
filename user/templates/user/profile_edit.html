@@ -1,0 +1,78 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>Edit Profile</h2>
+    <p>Update your personal details below.</p>
+</div>
+
+<div class="card-glow p-4" style="max-width: 640px;">
+    <div class="alert alert-info small mb-4">
+        <i class="bi bi-info-circle me-1"></i>
+        Your email and mobile number cannot be changed here. Contact an administrator if these need updating.
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            {{ form.full_name }}
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Date of Birth</label>
+                {{ form.date_of_birth }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Gender</label>
+                {{ form.gender }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Profile Photo</label>
+            {{ form.profile_image }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Aadhar Number</label>
+            {{ form.aadhar_number }}
+            {% if form.aadhar_number.errors %}<div class="text-danger small mt-1">{{ form.aadhar_number.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            {{ form.address }}
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">City</label>
+                {{ form.city }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">State</label>
+                {{ form.state }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">PIN Code</label>
+                {{ form.pin_code }}
+                {% if form.pin_code.errors %}<div class="text-danger small mt-1">{{ form.pin_code.errors|join:", " }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Highest Qualification</label>
+            {{ form.highest_qualification }}
+        </div>
+
+        <button type="submit" class="btn text-white" style="background: linear-gradient(90deg, #4facfe, #00f2fe); font-weight: 600;">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+        <a href="{% url 'user_dashboard:home' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

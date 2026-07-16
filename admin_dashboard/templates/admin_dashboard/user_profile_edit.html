@@ -1,0 +1,75 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Edit User Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-person-lines-fill me-2"></i>Edit User Profile</h2>
+    <p>{{ target_user.email }} &mdash; {{ target_user.learner_profile.enrollment_number }}</p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 640px;">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            {{ form.full_name }}
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Date of Birth</label>
+                {{ form.date_of_birth }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Gender</label>
+                {{ form.gender }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Profile Photo</label>
+            {{ form.profile_image }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Aadhar Number</label>
+            {{ form.aadhar_number }}
+            {% if form.aadhar_number.errors %}<div class="text-danger small mt-1">{{ form.aadhar_number.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            {{ form.address }}
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">City</label>
+                {{ form.city }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">State</label>
+                {{ form.state }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">PIN Code</label>
+                {{ form.pin_code }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Highest Qualification</label>
+            {{ form.highest_qualification }}
+        </div>
+
+        <div class="form-check mb-4">
+            {{ form.profile_completed }}
+            <label class="form-check-label" for="{{ form.profile_completed.id_for_label }}">Profile marked as complete</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+        <a href="{% url 'admin_dashboard:registered_users' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

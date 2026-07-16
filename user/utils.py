@@ -29,3 +29,6 @@ def generate_enrollment_number():
         "Could not generate a unique enrollment number after "
         f"{max_attempts} attempts. Check LearnerProfile volume for this month."
     )
+
+def generate_otp():
+    return str(random.randint(0, 999999)).zfill(6)
