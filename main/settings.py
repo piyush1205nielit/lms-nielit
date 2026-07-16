@@ -218,13 +218,14 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TIMEZONE = 'Asia/Kolkata'
 
 # ── Email — via Amazon SES ──
+# ── Email — plain SMTP (Gmail, or any SMTP provider) ──
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default=f'email-smtp.{AWS_S3_REGION_NAME}.amazonaws.com')
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env('SES_SMTP_USER', default=None)
-EMAIL_HOST_PASSWORD = env('SES_SMTP_PASSWORD', default=None)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='no-reply@nielitdelhiforum.online')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default=None)
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default=None)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='no-reply@example.com')
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
