@@ -2,7 +2,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
-
+from stream.storage import RawVideoStorage
 
 def course_banner_upload_path(instance, filename):
     return f"courses/{instance.id}/banner/{filename}"
@@ -102,7 +102,11 @@ class Lesson(models.Model):
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
 
-    video_file = models.FileField(upload_to=lesson_video_upload_path, null=True, blank=True)
+    video_file = models.FileField(
+        upload_to=lesson_video_upload_path,
+        storage=RawVideoStorage() if settings.USE_S3 else None,
+        null=True, blank=True,
+    )
 
     # kept for a future upgrade to the full MediaConvert/HLS pipeline — unused for now
     raw_upload_key = models.CharField(max_length=500, blank=True)
