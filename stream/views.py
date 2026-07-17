@@ -4,8 +4,11 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-
-from course.models import Course, Module, Lesson, Enrollment, Progress
+import boto3
+from django.conf import settings
+from accounts.decorators import admin_required
+from .utils import generate_presigned_upload
+from course.models import *
 
 
 @login_required(login_url='user:login')
@@ -19,7 +22,7 @@ def lesson_player_view(request, slug, lesson_id):
         messages.error(request, "You need to enroll in this course to access its content.")
         return redirect('course:detail', slug=slug)
 
-    if lesson.video_status != Lesson.VideoStatus.READY or not lesson.video_file:
+    if lesson.video_status != Lesson.VideoStatus.READY or not lesson.get_video_url():
         messages.error(request, "This lesson's video isn't available yet.")
         return redirect('course:detail', slug=slug)
 
@@ -97,3 +100,45 @@ def mark_lesson_progress(request, lesson_id):
         'total_lessons': total_lessons,
         'course_completed': course_completed,
     })
+
+
+
+@admin_required
+@require_POST
+def request_video_upload_url(request, lesson_id):
+    """Step 1: browser asks Django for permission to upload. Returns instantly —
+    no file has been touched, Django just talks to the S3 API for a moment."""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    filename = request.POST.get('filename', 'video.mp4')
+    content_type = request.POST.get('content_type', 'video/mp4')
+
+    if not settings.USE_S3:
+        return JsonResponse({'error': 'Direct S3 upload is only available when USE_S3 is enabled.'}, status=400)
+
+    upload_data = generate_presigned_upload(lesson.id, filename, content_type)
+
+    lesson.video_status = Lesson.VideoStatus.UPLOADING
+    lesson.raw_upload_key = upload_data['key']
+    lesson.save(update_fields=['video_status', 'raw_upload_key'])
+
+    return JsonResponse(upload_data)
+
+
+@admin_required
+@require_POST
+def confirm_video_upload(request, lesson_id):
+    """Step 3: browser tells Django the direct-to-S3 upload finished. This is a
+    tiny confirmation call — a few bytes of JSON, not the video itself."""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    if not lesson.raw_upload_key:
+        return JsonResponse({'error': 'No upload was initiated for this lesson.'}, status=400)
+
+    # For now: mark ready immediately, since transcoding (Phase 2) isn't wired up yet.
+    # Once MediaConvert is added, this becomes 'processing' instead, and the webhook
+    # (built in Phase 2) will be what flips it to 'ready'.
+    lesson.video_status = Lesson.VideoStatus.READY
+    lesson.save(update_fields=['video_status'])
+
+    return JsonResponse({'success': True, 'status': lesson.video_status})

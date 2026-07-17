@@ -100,7 +100,7 @@
                 disablePictureInPicture
                 oncontextmenu="return false;"
                 {% if progress.watched_seconds %}data-resume="{{ progress.watched_seconds }}"{% endif %}>
-                <source src="{{ lesson.video_file.url }}" type="video/mp4">
+               <source src="{{ lesson.get_video_url }}" type="video/mp4">
                 Your browser does not support video playback.
             </video>
         </div>

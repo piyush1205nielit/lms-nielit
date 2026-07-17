@@ -8,7 +8,7 @@
 </div>
 
 <div class="card-panel p-4" style="max-width: 600px;">
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate id="lessonDetailsForm">
         {% csrf_token %}
         <div class="mb-3">
             <label class="form-label">Lesson Title</label>
@@ -27,22 +27,135 @@
             <label class="form-label">Thumbnail Image <span class="text-muted fw-normal">(optional)</span></label>
             {{ form.thumbnail }}
         </div>
-
-       <div class="mb-4">
-            <label class="form-label">Lesson Video <span class="text-muted fw-normal">(MP4, WebM, or MOV — max 1GB)</span></label>
-            {{ form.video_file }}
-            {% if form.video_file.errors %}<div class="text-danger small mt-1">{{ form.video_file.errors|join:", " }}</div>{% endif %}
-            {% if lesson.video_file %}
-                <div class="form-text">
-                    <i class="bi bi-check-circle-fill text-success me-1"></i>
-                    Current video: {{ lesson.video_file.name|slice:"-40:" }}
-                    <span class="badge bg-success ms-1">Ready</span>
-                </div>
-            {% endif %}
-        </div>
-
-        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Lesson</button>
-        <a href="{% url 'course:modules' module.course.id %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Lesson Details</button>
+        <a href="{% url 'course:modules' module.course.id %}" class="btn btn-outline-secondary">Back to Modules</a>
     </form>
+
+    {% if lesson %}
+    <hr class="my-4">
+
+    <h6 class="fw-bold mb-3"><i class="bi bi-camera-video me-1"></i> Lesson Video</h6>
+
+    <div id="videoStatusBadge" class="mb-3">
+        {% if lesson.video_status == 'ready' %}
+            <span class="badge bg-success">Ready</span> Video uploaded and available.
+        {% elif lesson.video_status == 'processing' %}
+            <span class="badge bg-primary">Processing</span> Video is being processed.
+        {% elif lesson.video_status == 'failed' %}
+            <span class="badge bg-danger">Failed</span> Upload failed — please try again.
+        {% else %}
+            <span class="badge bg-secondary">No video uploaded yet</span>
+        {% endif %}
+    </div>
+
+    {% if not settings_use_s3 %}
+        {# Local dev: plain form field, direct-to-disk #}
+        <form method="post" enctype="multipart/form-data" action="{% url 'course:lesson_edit' lesson.id %}">
+            {% csrf_token %}
+            <input type="file" name="video_file_local" accept="video/mp4,video/webm,video/quicktime" class="form-control mb-2">
+            <button type="submit" name="upload_local_video" class="btn btn-outline-primary btn-sm">Upload Video (Local)</button>
+        </form>
+    {% else %}
+        {# Production: direct browser-to-S3 upload #}
+        <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/quicktime" class="form-control mb-2">
+        <div class="progress mb-2" style="height: 8px; display: none;" id="uploadProgressWrap">
+            <div class="progress-bar" id="uploadProgressBar" role="progressbar" style="width: 0%;"></div>
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="uploadVideoBtn">
+            <i class="bi bi-cloud-upload me-1"></i> Upload Video
+        </button>
+        <div id="uploadStatusText" class="small text-muted mt-2"></div>
+    {% endif %}
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if lesson and settings_use_s3 %}
+<script>
+(function () {
+    const fileInput = document.getElementById('videoFileInput');
+    const uploadBtn = document.getElementById('uploadVideoBtn');
+    const progressWrap = document.getElementById('uploadProgressWrap');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const statusText = document.getElementById('uploadStatusText');
+    const statusBadge = document.getElementById('videoStatusBadge');
+    const lessonId = "{{ lesson.id }}";
+    const csrfToken = "{{ csrf_token }}";
+
+    uploadBtn.addEventListener('click', function () {
+        const file = fileInput.files[0];
+        if (!file) {
+            statusText.textContent = 'Please choose a video file first.';
+            return;
+        }
+
+        uploadBtn.disabled = true;
+        statusText.textContent = 'Requesting upload permission...';
+
+        // Step 1: ask Django for a presigned upload URL
+        const requestForm = new FormData();
+        requestForm.append('filename', file.name);
+        requestForm.append('content_type', file.type);
+
+        fetch(`/stream/admin/lesson/${lessonId}/request-upload/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: requestForm,
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+
+            // Step 2: upload the file directly to S3 — Django is not involved here at all
+            statusText.textContent = 'Uploading to storage...';
+            progressWrap.style.display = 'block';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', data.upload_url);
+            xhr.setRequestHeader('Content-Type', file.type);
+
+            xhr.upload.addEventListener('progress', function (e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    statusText.textContent = `Uploading... ${percent}%`;
+                }
+            });
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    // Step 3: tell Django the upload finished
+                    statusText.textContent = 'Finalizing...';
+                    fetch(`/stream/admin/lesson/${lessonId}/confirm-upload/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken },
+                    })
+                    .then(res => res.json())
+                    .then(confirmData => {
+                        statusText.textContent = 'Upload complete.';
+                        statusBadge.innerHTML = '<span class="badge bg-success">Ready</span> Video uploaded and available.';
+                        uploadBtn.disabled = false;
+                    });
+                } else {
+                    statusText.textContent = 'Upload failed. Please try again.';
+                    uploadBtn.disabled = false;
+                }
+            };
+
+            xhr.onerror = function () {
+                statusText.textContent = 'Upload failed — network error.';
+                uploadBtn.disabled = false;
+            };
+
+            xhr.send(file);
+        })
+        .catch(err => {
+            statusText.textContent = 'Error: ' + err.message;
+            uploadBtn.disabled = false;
+        });
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}

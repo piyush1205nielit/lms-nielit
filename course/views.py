@@ -7,6 +7,7 @@ from .models import Course, Module, Lesson
 from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm
 from django.contrib.auth.decorators import login_required
 from .models import Course, Module, Lesson, Enrollment
+from django.conf import settings as django_settings
 
 # ... (all the admin-side views from before stay exactly as they are) ...
 
@@ -125,11 +126,9 @@ def lesson_create_view(request, module_id):
     if request.method == 'POST' and form.is_valid():
         lesson = form.save(commit=False)
         lesson.module = module
-        if lesson.video_file:
-            lesson.video_status = Lesson.VideoStatus.READY
         lesson.save()
-        messages.success(request, f"Lesson '{lesson.title}' added.")
-        return redirect('course:modules', course_id=module.course.id)
+        messages.success(request, f"Lesson '{lesson.title}' added. Now upload its video.")
+        return redirect('course:lesson_edit', lesson_id=lesson.id)   # go straight to the video upload step
 
     return render(request, 'course/lesson_form.html', {
         'form': form,
@@ -141,13 +140,21 @@ def lesson_create_view(request, module_id):
 @admin_required
 def lesson_edit_view(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    # Local-dev-only video upload path (separate from the main details form)
+    if request.method == 'POST' and 'upload_local_video' in request.POST:
+        video_file = request.FILES.get('video_file_local')
+        if video_file:
+            lesson.video_file = video_file
+            lesson.video_status = Lesson.VideoStatus.READY
+            lesson.save(update_fields=['video_file', 'video_status'])
+            messages.success(request, "Video uploaded.")
+        return redirect('course:lesson_edit', lesson_id=lesson.id)
+
     form = LessonForm(request.POST or None, request.FILES or None, instance=lesson)
 
-    if request.method == 'POST' and form.is_valid():
-        updated_lesson = form.save(commit=False)
-        if updated_lesson.video_file:
-            updated_lesson.video_status = Lesson.VideoStatus.READY
-        updated_lesson.save()
+    if request.method == 'POST' and 'title' in request.POST and form.is_valid():
+        form.save()
         messages.success(request, "Lesson updated.")
         return redirect('course:modules', course_id=lesson.module.course.id)
 
@@ -156,6 +163,7 @@ def lesson_edit_view(request, lesson_id):
         'module': lesson.module,
         'lesson': lesson,
         'active_page': 'courses',
+        'settings_use_s3': django_settings.USE_S3,
     })
 
 
