@@ -100,7 +100,7 @@
                 disablePictureInPicture
                 oncontextmenu="return false;"
                 {% if progress.watched_seconds %}data-resume="{{ progress.watched_seconds }}"{% endif %}>
-               <source src="{{ lesson.get_video_url }}" type="video/mp4">
+               <source src="{{ video_manifest_url }}" type="application/x-mpegURL">
                 Your browser does not support video playback.
             </video>
         </div>
@@ -146,6 +146,12 @@
         speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
         seekTime: 10,
         disableContextMenu: true,
+    });
+
+    const hls = new Hls({
+        xhrSetup: function(xhr) {
+            xhr.withCredentials = true;
+        }
     });
 
     // resume from last watched position, once metadata is ready

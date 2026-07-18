@@ -86,6 +86,7 @@ else:
 # not through Django's default file storage.
 AWS_RAW_VIDEO_BUCKET = env("AWS_RAW_VIDEO_BUCKET", default=None)
 AWS_PROCESSED_VIDEO_BUCKET = env("AWS_PROCESSED_VIDEO_BUCKET", default=None)
+
 MEDIACONVERT_ENDPOINT = env("MEDIACONVERT_ENDPOINT", default=None)
 MEDIACONVERT_ROLE_ARN = env("MEDIACONVERT_ROLE_ARN", default=None)
 MEDIACONVERT_JOB_TEMPLATE = env("MEDIACONVERT_JOB_TEMPLATE", default=None)
@@ -93,10 +94,11 @@ MEDIACONVERT_JOB_TEMPLATE = env("MEDIACONVERT_JOB_TEMPLATE", default=None)
 MEDIACONVERT_WEBHOOK_SECRET = env('MEDIACONVERT_WEBHOOK_SECRET', default=None)
 
 # CloudFront signed cookies for lesson playback
-CLOUDFRONT_DOMAIN = env("CLOUDFRONT_DOMAIN", default=None)                     # e.g. d123abc.cloudfront.net
-CLOUDFRONT_KEY_PAIR_ID = env("CLOUDFRONT_KEY_PAIR_ID", default=None)
-CLOUDFRONT_PRIVATE_KEY = env("CLOUDFRONT_PRIVATE_KEY", default=None)           # loaded from Secrets Manager at deploy time
-CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS = env.int("CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS", default=14400)  # 4 hours
+
+CLOUDFRONT_DOMAIN = env('CLOUDFRONT_DOMAIN', default=None)
+CLOUDFRONT_KEY_PAIR_ID = env('CLOUDFRONT_KEY_PAIR_ID', default=None)
+CLOUDFRONT_SECRET_NAME = env('CLOUDFRONT_SECRET_NAME', default=None)  # loaded from Secrets Manager at deploy time
+CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS = env.int('CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS', default=14400) # 4 hours
 
 # ── Application definition ──
 INSTALLED_APPS = [

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 import boto3
@@ -12,6 +12,8 @@ from course.models import *
 import json
 from django.views.decorators.csrf import csrf_exempt
 from course.models import Lesson
+from django.template.loader import render_to_string
+from .utils import generate_signed_cookies
 
 
 @login_required(login_url='user:login')
@@ -45,7 +47,11 @@ def lesson_player_view(request, slug, lesson_id):
     current_index = next((i for i, l in enumerate(all_lessons) if l.id == lesson.id), None)
     next_lesson = all_lessons[current_index + 1] if current_index is not None and current_index + 1 < len(all_lessons) else None
 
-    return render(request, 'course/course_player.html', {
+    video_manifest_url = f"https://{settings.CLOUDFRONT_DOMAIN}/{lesson.hls_manifest_key}"
+
+    lesson_folder_prefix = '/'.join(lesson.hls_manifest_key.split('/')[:-1]) + '/*'
+
+    context = {
         'course': course,
         'modules': modules,
         'lesson': lesson,
@@ -53,7 +59,25 @@ def lesson_player_view(request, slug, lesson_id):
         'completed_lesson_ids': completed_lesson_ids,
         'progress': progress,
         'is_enrolled': is_enrolled,
-    })
+        'video_manifest_url': video_manifest_url,
+    }
+
+    html = render_to_string('course/course_player.html', context, request=request)
+    response = HttpResponse(html)
+
+    cookies = generate_signed_cookies(lesson_folder_prefix)
+    for cookie_name, cookie_value in cookies.items():
+        response.set_cookie(
+            cookie_name,
+            cookie_value,
+            domain=f".{settings.CLOUDFRONT_DOMAIN.split('.', 1)[-1]}" if '.' in settings.CLOUDFRONT_DOMAIN else None,
+            secure=True,
+            httponly=True,
+            samesite='None',
+            max_age=settings.CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS,
+        )
+
+    return response
 
 
 @login_required(login_url='user:login')
