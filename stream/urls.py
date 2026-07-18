@@ -9,4 +9,6 @@ urlpatterns = [
 
     path('admin/lesson/<uuid:lesson_id>/request-upload/', views.request_video_upload_url, name='request_upload'),
     path('admin/lesson/<uuid:lesson_id>/confirm-upload/', views.confirm_video_upload, name='confirm_upload'),
+
+    path('webhook/mediaconvert/', views.mediaconvert_webhook, name='mediaconvert_webhook'),
 ]

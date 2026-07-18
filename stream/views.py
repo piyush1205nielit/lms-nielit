@@ -9,6 +9,9 @@ from django.conf import settings
 from accounts.decorators import admin_required
 from .utils import generate_presigned_upload
 from course.models import *
+import json
+from django.views.decorators.csrf import csrf_exempt
+from course.models import Lesson
 
 
 @login_required(login_url='user:login')
@@ -142,3 +145,44 @@ def confirm_video_upload(request, lesson_id):
     lesson.save(update_fields=['video_status'])
 
     return JsonResponse({'success': True, 'status': lesson.video_status})
+
+
+
+@csrf_exempt
+@require_POST
+def mediaconvert_webhook(request):
+    # Verify this request genuinely came from our pipeline, not a random caller
+    provided_secret = request.headers.get('X-Webhook-Secret')
+    if provided_secret != settings.MEDIACONVERT_WEBHOOK_SECRET:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    lesson_id = payload.get('lesson_id')
+    job_status = payload.get('status')       # 'COMPLETE' or 'ERROR'
+    manifest_key = payload.get('manifest_key')
+    duration_seconds = payload.get('duration_seconds')
+
+    if not lesson_id:
+        return JsonResponse({'error': 'Missing lesson_id'}, status=400)
+
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        return JsonResponse({'error': 'Lesson not found'}, status=404)
+
+    if job_status == 'COMPLETE':
+        lesson.video_status = Lesson.VideoStatus.READY
+        if manifest_key:
+            lesson.hls_manifest_key = manifest_key
+        if duration_seconds:
+            lesson.duration_seconds = int(duration_seconds)
+        lesson.save(update_fields=['video_status', 'hls_manifest_key', 'duration_seconds'])
+    elif job_status == 'ERROR':
+        lesson.video_status = Lesson.VideoStatus.FAILED
+        lesson.save(update_fields=['video_status'])
+
+    return JsonResponse({'success': True, 'lesson_id': str(lesson.id), 'new_status': lesson.video_status})

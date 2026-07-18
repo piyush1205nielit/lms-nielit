@@ -90,6 +90,8 @@ MEDIACONVERT_ENDPOINT = env("MEDIACONVERT_ENDPOINT", default=None)
 MEDIACONVERT_ROLE_ARN = env("MEDIACONVERT_ROLE_ARN", default=None)
 MEDIACONVERT_JOB_TEMPLATE = env("MEDIACONVERT_JOB_TEMPLATE", default=None)
 
+MEDIACONVERT_WEBHOOK_SECRET = env('MEDIACONVERT_WEBHOOK_SECRET', default=None)
+
 # CloudFront signed cookies for lesson playback
 CLOUDFRONT_DOMAIN = env("CLOUDFRONT_DOMAIN", default=None)                     # e.g. d123abc.cloudfront.net
 CLOUDFRONT_KEY_PAIR_ID = env("CLOUDFRONT_KEY_PAIR_ID", default=None)
