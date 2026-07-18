@@ -1,19 +1,18 @@
+import json
+import boto3
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
-from django.utils import timezone
-import boto3
-from django.conf import settings
-from accounts.decorators import admin_required
-from .utils import generate_presigned_upload
-from course.models import *
-import json
 from django.views.decorators.csrf import csrf_exempt
-from course.models import Lesson
 from django.template.loader import render_to_string
-from .utils import generate_signed_cookies
+from django.utils import timezone
+from django.conf import settings
+
+from accounts.decorators import admin_required
+from course.models import Course, Module, Lesson, Enrollment, Progress
+from .utils import generate_presigned_upload, generate_signed_cookies
 
 
 @login_required(login_url='user:login')
@@ -27,7 +26,10 @@ def lesson_player_view(request, slug, lesson_id):
         messages.error(request, "You need to enroll in this course to access its content.")
         return redirect('course:detail', slug=slug)
 
-    if lesson.video_status != Lesson.VideoStatus.READY or not lesson.get_video_url():
+    # single source of truth: video is playable only if status is READY *and*
+    # the manifest key is actually set — closes the gap where a lesson could
+    # show as ready before MediaConvert's webhook has actually populated it
+    if lesson.video_status != Lesson.VideoStatus.READY or not lesson.hls_manifest_key:
         messages.error(request, "This lesson's video isn't available yet.")
         return redirect('course:detail', slug=slug)
 
@@ -48,7 +50,6 @@ def lesson_player_view(request, slug, lesson_id):
     next_lesson = all_lessons[current_index + 1] if current_index is not None and current_index + 1 < len(all_lessons) else None
 
     video_manifest_url = f"https://{settings.CLOUDFRONT_DOMAIN}/{lesson.hls_manifest_key}"
-
     lesson_folder_prefix = '/'.join(lesson.hls_manifest_key.split('/')[:-1]) + '/*'
 
     context = {
@@ -70,7 +71,8 @@ def lesson_player_view(request, slug, lesson_id):
         response.set_cookie(
             cookie_name,
             cookie_value,
-            domain=f".{settings.CLOUDFRONT_DOMAIN.split('.', 1)[-1]}" if '.' in settings.CLOUDFRONT_DOMAIN else None,
+            domain=settings.CLOUDFRONT_DOMAIN,   # exact domain — CloudFront's domain is a public
+                                                   # suffix parent (.cloudfront.net) rejects cookies
             secure=True,
             httponly=True,
             samesite='None',
@@ -106,7 +108,6 @@ def mark_lesson_progress(request, lesson_id):
 
     progress.save()
 
-    # check if the whole course is now complete for this learner
     total_lessons = Lesson.objects.filter(module__course=course).count()
     completed_lessons = Progress.objects.filter(
         user=request.user, lesson__module__course=course, completed=True
@@ -118,8 +119,7 @@ def mark_lesson_progress(request, lesson_id):
             status=Enrollment.Status.COMPLETED,
             completed_at=timezone.now()
         )
-        # Certificate generation would be triggered here (Celery task) — not built yet,
-        # left as a clear next step once the certificate app's PDF generation is wired up.
+        # Certificate generation would be triggered here (Celery task) — not built yet.
 
     return JsonResponse({
         'success': True,
@@ -127,7 +127,6 @@ def mark_lesson_progress(request, lesson_id):
         'total_lessons': total_lessons,
         'course_completed': course_completed,
     })
-
 
 
 @admin_required
@@ -155,21 +154,19 @@ def request_video_upload_url(request, lesson_id):
 @admin_required
 @require_POST
 def confirm_video_upload(request, lesson_id):
-    """Step 3: browser tells Django the direct-to-S3 upload finished. This is a
-    tiny confirmation call — a few bytes of JSON, not the video itself."""
+    """Step 3: browser tells Django the direct-to-S3 upload finished. This does
+    NOT mean the video is watchable yet — it means the raw file has landed in S3,
+    which triggers Lambda -> MediaConvert automatically. The lesson stays in
+    'processing' until mediaconvert_webhook confirms transcoding actually completed."""
     lesson = get_object_or_404(Lesson, id=lesson_id)
 
     if not lesson.raw_upload_key:
         return JsonResponse({'error': 'No upload was initiated for this lesson.'}, status=400)
 
-    # For now: mark ready immediately, since transcoding (Phase 2) isn't wired up yet.
-    # Once MediaConvert is added, this becomes 'processing' instead, and the webhook
-    # (built in Phase 2) will be what flips it to 'ready'.
-    lesson.video_status = Lesson.VideoStatus.READY
+    lesson.video_status = Lesson.VideoStatus.PROCESSING
     lesson.save(update_fields=['video_status'])
 
     return JsonResponse({'success': True, 'status': lesson.video_status})
-
 
 
 @csrf_exempt

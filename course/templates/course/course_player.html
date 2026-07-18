@@ -35,11 +35,23 @@
     .sb-lesson-link .locked-icon { color: #cbd5e1; }
 
     .player-main { flex: 1; padding: 24px 32px; max-width: 900px; }
-    .video-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+    .video-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 20px; position: relative; }
 
     /* Plyr theme tuned to brand color */
     .plyr { --plyr-color-main: #172281; border-radius: 12px; }
     .plyr__video-wrapper { border-radius: 12px; }
+
+    .video-error-overlay {
+        position: absolute; inset: 0;
+        display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        background: #0e1b2e; color: white; text-align: center; padding: 24px;
+        border-radius: 12px; z-index: 10;
+    }
+    .video-error-overlay.show { display: flex; }
+    .video-error-overlay i { font-size: 2.2rem; color: #f59e0b; margin-bottom: 12px; }
+    .video-error-overlay h5 { font-size: 1rem; font-weight: 700; margin: 0 0 6px; }
+    .video-error-overlay p { font-size: 0.85rem; color: #cbd5e1; margin: 0; max-width: 380px; }
 
     .lesson-title { font-size: 1.25rem; font-weight: 700; color: #0e1b2e; margin-bottom: 6px; }
     .lesson-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
@@ -100,9 +112,14 @@
                 disablePictureInPicture
                 oncontextmenu="return false;"
                 {% if progress.watched_seconds %}data-resume="{{ progress.watched_seconds }}"{% endif %}>
-               <source src="{{ video_manifest_url }}" type="application/x-mpegURL">
                 Your browser does not support video playback.
             </video>
+
+            <div class="video-error-overlay" id="videoErrorOverlay">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h5>Video unavailable</h5>
+                <p id="videoErrorMessage">We couldn't load this video right now. Please refresh the page, or contact support if the problem continues.</p>
+            </div>
         </div>
 
         <h4 class="lesson-title">{{ lesson.title }}</h4>
@@ -130,39 +147,110 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15"></script>
 <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 <script>
 (function () {
     const videoEl = document.getElementById('lessonVideo');
     const markBtn = document.getElementById('markCompleteBtn');
+    const errorOverlay = document.getElementById('videoErrorOverlay');
+    const errorMessageEl = document.getElementById('videoErrorMessage');
     const csrfToken = "{{ csrf_token }}";
+    const manifestUrl = "{{ video_manifest_url }}";
 
-    const player = new Plyr('#lessonVideo', {
-        controls: [
-            'play-large', 'play', 'progress', 'current-time', 'duration',
-            'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
-        ],
-        settings: ['speed'],
-        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-        seekTime: 10,
-        disableContextMenu: true,
-    });
+    function showVideoError(message) {
+        errorMessageEl.textContent = message;
+        errorOverlay.classList.add('show');
+    }
 
-    const hls = new Hls({
-        xhrSetup: function(xhr) {
-            xhr.withCredentials = true;
-        }
-    });
+    if (!manifestUrl) {
+        showVideoError("This lesson's video hasn't finished processing yet. Please check back shortly.");
+        return;
+    }
 
-    // resume from last watched position, once metadata is ready
-    const resumeAt = videoEl.dataset.resume;
-    player.on('loadedmetadata', function () {
-        if (resumeAt) {
-            player.currentTime = parseFloat(resumeAt);
-        }
-    });
+    let player = null;
+    let hls = null;
+
+    function initPlyr() {
+        player = new Plyr('#lessonVideo', {
+            controls: [
+                'play-large', 'play', 'progress', 'current-time', 'duration',
+                'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
+            ],
+            settings: ['speed'],
+            speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
+            seekTime: 10,
+            disableContextMenu: true,
+        });
+
+        // resume from last watched position, once metadata is ready
+        const resumeAt = videoEl.dataset.resume;
+        player.on('loadedmetadata', function () {
+            if (resumeAt) {
+                player.currentTime = parseFloat(resumeAt);
+            }
+        });
+
+        player.on('ended', function () {
+            sendProgress(true);
+        });
+
+        let lastSaved = 0;
+        player.on('timeupdate', function () {
+            if (player.currentTime - lastSaved > 15) {
+                lastSaved = player.currentTime;
+                sendProgress(false);
+            }
+        });
+    }
+
+    if (window.Hls && Hls.isSupported()) {
+        // Most browsers (Chrome, Firefox, Edge) need hls.js to play HLS at all
+        hls = new Hls({
+            xhrSetup: function (xhr) {
+                xhr.withCredentials = true;   // send CloudFront signed cookies with every segment request
+            },
+        });
+
+        hls.loadSource(manifestUrl);
+        hls.attachMedia(videoEl);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            initPlyr();
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            if (data.fatal) {
+                console.error('HLS fatal error:', data.type, data.details);
+                if (data.response && data.response.code === 403) {
+                    showVideoError("You don't have permission to view this video, or your access has expired. Try refreshing the page.");
+                } else if (data.response && data.response.code === 404) {
+                    showVideoError("This video could not be found. It may still be processing.");
+                } else {
+                    showVideoError("There was a problem loading this video. Please refresh and try again.");
+                }
+                if (hls) {
+                    hls.destroy();
+                }
+            }
+        });
+
+    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari supports HLS natively, no hls.js needed
+        videoEl.src = manifestUrl;
+        videoEl.addEventListener('loadedmetadata', function () {
+            initPlyr();
+        });
+        videoEl.addEventListener('error', function () {
+            showVideoError("There was a problem loading this video. Please refresh and try again.");
+        });
+
+    } else {
+        showVideoError("Your browser doesn't support video playback for this content. Please try a different browser.");
+    }
 
     function sendProgress(completed) {
+        if (!player) return;
         const formData = new FormData();
         formData.append('watched_seconds', player.currentTime);
         formData.append('completed', completed ? 'true' : 'false');
@@ -181,18 +269,6 @@
         })
         .catch(err => console.error('Progress update failed:', err));
     }
-
-    player.on('ended', function () {
-        sendProgress(true);
-    });
-
-    let lastSaved = 0;
-    player.on('timeupdate', function () {
-        if (player.currentTime - lastSaved > 15) {
-            lastSaved = player.currentTime;
-            sendProgress(false);
-        }
-    });
 
     if (markBtn) {
         markBtn.addEventListener('click', function () {
