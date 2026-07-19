@@ -20,15 +20,11 @@ def lesson_player_view(request, slug, lesson_id):
     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
     lesson = get_object_or_404(Lesson, id=lesson_id, module__course=course)
 
-    # access control — the real gate: enrolled learners, or admins previewing content
     is_enrolled = Enrollment.objects.filter(user=request.user, course=course).exists()
     if not is_enrolled and not request.user.is_admin_role:
         messages.error(request, "You need to enroll in this course to access its content.")
         return redirect('course:detail', slug=slug)
 
-    # single source of truth: video is playable only if status is READY *and*
-    # the manifest key is actually set — closes the gap where a lesson could
-    # show as ready before MediaConvert's webhook has actually populated it
     if lesson.video_status != Lesson.VideoStatus.READY or not lesson.hls_manifest_key:
         messages.error(request, "This lesson's video isn't available yet.")
         return redirect('course:detail', slug=slug)
@@ -44,7 +40,6 @@ def lesson_player_view(request, slug, lesson_id):
 
     progress, _ = Progress.objects.get_or_create(user=request.user, lesson=lesson) if is_enrolled else (None, None)
 
-    # figure out "next lesson" for the continue button
     all_lessons = list(Lesson.objects.filter(module__course=course).order_by('module__order', 'order'))
     current_index = next((i for i, l in enumerate(all_lessons) if l.id == lesson.id), None)
     next_lesson = all_lessons[current_index + 1] if current_index is not None and current_index + 1 < len(all_lessons) else None
@@ -71,8 +66,10 @@ def lesson_player_view(request, slug, lesson_id):
         response.set_cookie(
             cookie_name,
             cookie_value,
-            domain=settings.CLOUDFRONT_DOMAIN,   # exact domain — CloudFront's domain is a public
-                                                   # suffix parent (.cloudfront.net) rejects cookies
+            domain=settings.COOKIE_DOMAIN,   # must be a shared parent domain of BOTH
+                                               # the app (lms.x) and the CDN (videos.x) —
+                                               # a cookie can never be set for an entirely
+                                               # unrelated domain like *.cloudfront.net
             secure=True,
             httponly=True,
             samesite='None',

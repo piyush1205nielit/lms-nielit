@@ -100,6 +100,14 @@ CLOUDFRONT_KEY_PAIR_ID = env('CLOUDFRONT_KEY_PAIR_ID', default=None)
 CLOUDFRONT_SECRET_NAME = env('CLOUDFRONT_SECRET_NAME', default=None)  # loaded from Secrets Manager at deploy time
 CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS = env.int('CLOUDFRONT_SIGNED_URL_EXPIRY_SECONDS', default=14400) # 4 hours
 
+
+# Shared parent domain for the app and the CDN — required so signed cookies set by
+# Django can actually be received by the CloudFront custom domain. Must be a real
+# parent of both e.g. lms.nielitdelhiforum.online and videos.nielitdelhiforum.online
+# share '.nielitdelhiforum.online' — a cookie can never be set for an unrelated
+# domain like *.cloudfront.net, which is why this had to change.
+COOKIE_DOMAIN = env('COOKIE_DOMAIN', default=None)
+
 # ── Application definition ──
 INSTALLED_APPS = [
     "django.contrib.admin",
