@@ -5,331 +5,122 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 <style>
-    :root { 
-        --primary2: #172281; 
-        --border: #e2e8f0; 
-        --text-muted: #64748b;
-        --success: #059669;
-        --bg-sidebar: #f8fafc;
-        --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    }
+    :root { --primary2: #172281; --border: #e2e8f0; --text-muted: #64748b; }
 
-    /* --- Layout --- */
-    .player-layout { 
-        display: flex; 
-        min-height: calc(100vh - 200px); 
-        background: #f1f5f9;
-    }
-    
-    /* --- Sidebar --- */
+    .player-layout { display: flex; min-height: calc(100vh - 200px); }
     .player-sidebar {
-        width: 340px; 
-        flex-shrink: 0;
-        background: var(--bg-sidebar);
+        width: 320px; flex-shrink: 0;
         border-right: 1px solid var(--border);
+        background: #f8fafc;
         overflow-y: auto;
         max-height: calc(100vh - 120px);
-        position: sticky; 
-        top: 100px;
-        box-shadow: var(--shadow-sm);
+        position: sticky; top: 100px;
     }
-    
-    .player-sidebar-header { 
-        padding: 20px 20px 16px; 
-        border-bottom: 1px solid var(--border);
-        background: white;
-    }
-    .player-sidebar-header h6 { 
-        font-weight: 700; 
-        font-size: 0.95rem; 
-        margin: 0 0 6px; 
-        color: #0e1b2e; 
-    }
-    .player-sidebar-header .course-progress-text { 
-        font-size: 0.78rem; 
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .progress-bar-mini {
-        flex: 1;
-        height: 4px;
-        background: #e2e8f0;
-        border-radius: 4px;
-        overflow: hidden;
-        max-width: 120px;
-    }
-    .progress-bar-mini .progress-fill {
-        height: 100%;
-        background: var(--primary2);
-        border-radius: 4px;
-        transition: width 0.3s ease;
-    }
+    .player-sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+    .player-sidebar-header h6 { font-weight: 700; font-size: 0.9rem; margin: 0 0 8px; color: #0e1b2e; }
+    .course-progress-text { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .course-progress-bar { height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .course-progress-bar-fill { height: 100%; background: linear-gradient(90deg, #172281, #4f5fd6); border-radius: 3px; transition: width 0.3s ease; }
 
     .sb-module-title {
-        padding: 16px 20px 6px; 
-        font-size: 0.7rem; 
-        font-weight: 700;
-        text-transform: uppercase; 
-        letter-spacing: 0.06em; 
-        color: var(--text-muted);
+        padding: 14px 16px 6px; font-size: 0.76rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
     }
     .sb-lesson-link {
-        display: flex; 
-        align-items: center; 
-        gap: 12px;
-        padding: 10px 20px; 
-        font-size: 0.85rem; 
-        color: #374151;
-        text-decoration: none; 
-        border-left: 3px solid transparent;
-        transition: all 0.15s ease;
-        position: relative;
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 16px; font-size: 0.86rem; color: #374151;
+        text-decoration: none; border-left: 3px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease;
     }
-    .sb-lesson-link:hover { 
-        background: #eef2f9; 
-        color: var(--primary2); 
-    }
-    .sb-lesson-link.active { 
-        background: #eaf1fb; 
-        border-left-color: var(--primary2); 
-        color: var(--primary2); 
-        font-weight: 600; 
-    }
-    .sb-lesson-link i.status-icon { 
-        font-size: 0.9rem; 
-        width: 20px; 
-        flex-shrink: 0; 
-        text-align: center;
-    }
-    .sb-lesson-link .locked-icon { 
-        color: #cbd5e1; 
-    }
-    .sb-lesson-link .lesson-number {
-        font-size: 0.7rem;
-        color: var(--text-muted);
-        font-weight: 500;
-        min-width: 28px;
-    }
-    .sb-lesson-link.active .lesson-number {
-        color: var(--primary2);
-    }
-    .sb-lesson-link .lesson-title-text {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .sb-lesson-link .badge-duration {
-        font-size: 0.65rem;
-        background: #e2e8f0;
-        padding: 2px 8px;
-        border-radius: 10px;
-        color: var(--text-muted);
-    }
+    .sb-lesson-link:hover { background: #eef2f9; color: #172281; }
+    .sb-lesson-link.active { background: #eaf1fb; border-left-color: var(--primary2); color: var(--primary2); font-weight: 600; }
+    .sb-lesson-link i.status-icon { font-size: 0.85rem; width: 16px; flex-shrink: 0; }
+    .sb-lesson-link .locked-icon { color: #cbd5e1; }
+    .sb-lesson-link span.lesson-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    /* --- Main Content --- */
-    .player-main { 
-        flex: 1; 
-        padding: 24px 40px 40px; 
-        max-width: 1000px; 
-        margin: 0 auto;
-        width: 100%;
+    .player-main { flex: 1; padding: 24px 32px; max-width: 900px; }
+    .video-wrap {
+        background: #000; border-radius: 12px; overflow: hidden;
+        margin-bottom: 20px; position: relative; aspect-ratio: 16 / 9;
     }
+    .video-wrap video { width: 100%; height: 100%; display: block; }
 
-    /* Video Container */
-    .video-wrap { 
-        background: #0a0a0a; 
-        border-radius: 16px; 
-        overflow: hidden; 
-        margin-bottom: 24px; 
-        position: relative;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
+    /* Plyr theme tuned to brand color */
+    .plyr { --plyr-color-main: #172281; border-radius: 12px; height: 100%; }
+    .plyr__video-wrapper { border-radius: 12px; }
 
-    /* Plyr Customization */
-    .plyr { 
-        --plyr-color-main: #172281;
-        --plyr-control-radius: 8px;
-        --plyr-control-spacing: 12px;
-        --plyr-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        border-radius: 16px; 
+    /* Loading spinner shown while the HLS manifest is being fetched/parsed */
+    .video-loading-overlay {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #0e1b2e; border-radius: 12px; z-index: 5;
+        transition: opacity 0.2s ease;
     }
-    .plyr__video-wrapper { 
-        border-radius: 16px; 
-        background: #0a0a0a;
+    .video-loading-overlay.hide { opacity: 0; pointer-events: none; }
+    .spinner {
+        width: 40px; height: 40px;
+        border: 3px solid rgba(255,255,255,0.15);
+        border-top-color: #4f5fd6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
     }
-    .plyr__controls {
-        background: linear-gradient(transparent, rgba(0,0,0,0.75)) !important;
-        padding: 20px 16px 16px !important;
-    }
-    .plyr__control--overlaid {
-        background: rgba(23, 34, 129, 0.85) !important;
-        backdrop-filter: blur(4px);
-    }
-    .plyr__control--overlaid:hover {
-        background: var(--primary2) !important;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Video Error Overlay */
     .video-error-overlay {
-        position: absolute; 
-        inset: 0;
+        position: absolute; inset: 0;
         display: none;
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center;
-        background: #0e1b2e; 
-        color: white; 
-        text-align: center; 
-        padding: 24px;
-        border-radius: 16px; 
-        z-index: 10;
+        flex-direction: column; align-items: center; justify-content: center;
+        background: #0e1b2e; color: white; text-align: center; padding: 24px;
+        border-radius: 12px; z-index: 10;
     }
-    .video-error-overlay.show { 
-        display: flex; 
+    .video-error-overlay.show { display: flex; }
+    .video-error-overlay i { font-size: 2.2rem; color: #f59e0b; margin-bottom: 12px; }
+    .video-error-overlay h5 { font-size: 1rem; font-weight: 700; margin: 0 0 6px; }
+    .video-error-overlay p { font-size: 0.85rem; color: #cbd5e1; margin: 0 0 16px; max-width: 380px; }
+    .video-error-overlay button {
+        background: #172281; color: white; border: none; padding: 8px 20px;
+        border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
     }
-    .video-error-overlay i { 
-        font-size: 2.8rem; 
-        color: #f59e0b; 
-        margin-bottom: 16px; 
-    }
-    .video-error-overlay h5 { 
-        font-size: 1.1rem; 
-        font-weight: 700; 
-        margin: 0 0 8px; 
-    }
-    .video-error-overlay p { 
-        font-size: 0.88rem; 
-        color: #cbd5e1; 
-        margin: 0; 
-        max-width: 400px; 
-        line-height: 1.6;
-    }
+    .video-error-overlay button:hover { background: #0f1a5f; }
 
-    /* Lesson Info */
-    .lesson-title { 
-        font-size: 1.4rem; 
-        font-weight: 700; 
-        color: #0e1b2e; 
-        margin-bottom: 8px; 
+    .lesson-meta-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+    .lesson-title { font-size: 1.25rem; font-weight: 700; color: #0e1b2e; margin: 0; }
+    .quality-badge {
+        font-size: 0.72rem; font-weight: 700; color: #172281; background: #eaf1fb;
+        padding: 4px 10px; border-radius: 20px; white-space: nowrap;
     }
-    .lesson-desc { 
-        font-size: 0.95rem; 
-        color: var(--text-muted); 
-        line-height: 1.8; 
-        margin-bottom: 24px; 
-    }
+    .lesson-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
 
-    /* Player Actions */
-    .player-actions { 
-        display: flex; 
-        gap: 12px; 
-        flex-wrap: wrap; 
-        align-items: center;
-        padding-top: 8px;
-        border-top: 1px solid var(--border);
-    }
+    .player-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-mark-complete {
-        background: var(--success); 
-        border: none; 
-        color: white; 
-        font-weight: 600;
-        padding: 10px 24px; 
-        border-radius: 8px; 
-        font-size: 0.88rem;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        background: #059669; border: none; color: white; font-weight: 600;
+        padding: 10px 20px; border-radius: 8px; font-size: 0.88rem;
+        transition: background 0.15s ease;
     }
-    .btn-mark-complete:hover:not(:disabled) {
-        background: #047857;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-    }
-    .btn-mark-complete:disabled { 
-        background: #94a3b8; 
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
+    .btn-mark-complete:hover:not(:disabled) { background: #047857; }
+    .btn-mark-complete:disabled { background: #94a3b8; }
     .btn-next-lesson {
-        background: var(--primary2); 
-        border: none; 
-        color: white; 
-        font-weight: 600;
-        padding: 10px 24px; 
-        border-radius: 8px; 
-        font-size: 0.88rem; 
-        text-decoration: none;
-        display: inline-flex; 
-        align-items: center; 
-        gap: 8px;
-        transition: all 0.2s ease;
+        background: var(--primary2); border: none; color: white; font-weight: 600;
+        padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: background 0.15s ease;
     }
-    .btn-next-lesson:hover {
-        background: #0f1a5c;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(23, 34, 129, 0.3);
-        color: white;
-        text-decoration: none;
-    }
-    .btn-outline-secondary {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--text-muted);
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 0.88rem;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-    }
-    .btn-outline-secondary:hover {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-        color: #0e1b2e;
-        text-decoration: none;
-    }
+    .btn-next-lesson:hover { background: #0f1a5f; color: white; }
 
-    /* --- Responsive --- */
-    @media (max-width: 992px) {
-        .player-sidebar { width: 280px; }
-        .player-main { padding: 20px 24px; }
-    }
-
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
         .player-layout { flex-direction: column; }
-        .player-sidebar { 
-            width: 100%; 
-            position: static; 
-            max-height: 400px;
-            border-right: none;
-            border-bottom: 1px solid var(--border);
-        }
-        .player-main { padding: 16px; }
-        .lesson-title { font-size: 1.2rem; }
-        .player-actions { flex-direction: column; align-items: stretch; }
-        .player-actions .btn { justify-content: center; }
+        .player-sidebar { width: 100%; position: static; max-height: none; }
+        .player-main { padding: 20px 16px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="player-layout">
-    <!-- Sidebar -->
     <aside class="player-sidebar">
         <div class="player-sidebar-header">
             <h6>{{ course.course_name }}</h6>
-            <div class="course-progress-text">
-                <span>{{ completed_lesson_ids|length }} of {{ modules|length|add:"0" }} lessons completed</span>
-                <div class="progress-bar-mini">
-                    <div class="progress-fill" style="width: {{ progress_percentage|default:0 }}%;"></div>
-                </div>
-            </div>
+            <span class="course-progress-text">{{ completed_lesson_ids|length }} lesson{{ completed_lesson_ids|length|pluralize }} completed</span>
         </div>
 
         {% for module in modules %}
@@ -339,22 +130,17 @@
                     {% if l.id in completed_lesson_ids %}
                         <i class="fas fa-check-circle status-icon text-success"></i>
                     {% elif l.video_status == 'ready' %}
-                        <i class="fas fa-play-circle status-icon" style="color: var(--primary2);"></i>
+                        <i class="fas fa-play-circle status-icon"></i>
                     {% else %}
                         <i class="fas fa-lock status-icon locked-icon"></i>
                     {% endif %}
-                    <span class="lesson-title-text">{{ l.title }}</span>
-                    {% if l.duration %}
-                        <span class="badge-duration">{{ l.duration }}</span>
-                    {% endif %}
+                    <span class="lesson-name-text">{{ l.title }}</span>
                 </a>
             {% endfor %}
         {% endfor %}
     </aside>
 
-    <!-- Main Content -->
     <main class="player-main">
-        <!-- Video Player -->
         <div class="video-wrap">
             <video
                 id="lessonVideo"
@@ -368,18 +154,24 @@
                 Your browser does not support video playback.
             </video>
 
+            <div class="video-loading-overlay" id="videoLoadingOverlay">
+                <div class="spinner"></div>
+            </div>
+
             <div class="video-error-overlay" id="videoErrorOverlay">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h5>Video unavailable</h5>
                 <p id="videoErrorMessage">We couldn't load this video right now. Please refresh the page, or contact support if the problem continues.</p>
+                <button onclick="window.location.reload()">Refresh Page</button>
             </div>
         </div>
 
-        <!-- Lesson Info -->
-        <h4 class="lesson-title">{{ lesson.title }}</h4>
+        <div class="lesson-meta-row">
+            <h4 class="lesson-title">{{ lesson.title }}</h4>
+            <span class="quality-badge" id="qualityBadge" style="display:none;"></span>
+        </div>
         {% if lesson.description %}<p class="lesson-desc">{{ lesson.description }}</p>{% endif %}
 
-        <!-- Actions -->
         <div class="player-actions">
             {% if lesson.id in completed_lesson_ids %}
                 <button class="btn-mark-complete" disabled><i class="fas fa-check-circle me-1"></i> Completed</button>
@@ -396,10 +188,6 @@
                     <i class="fas fa-flag-checkered"></i> Back to My Courses
                 </a>
             {% endif %}
-            
-            <a href="{% url 'course:my_courses' %}" class="btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> All Courses
-            </a>
         </div>
     </main>
 </div>
@@ -414,12 +202,31 @@
     const markBtn = document.getElementById('markCompleteBtn');
     const errorOverlay = document.getElementById('videoErrorOverlay');
     const errorMessageEl = document.getElementById('videoErrorMessage');
+    const loadingOverlay = document.getElementById('videoLoadingOverlay');
+    const qualityBadge = document.getElementById('qualityBadge');
     const csrfToken = "{{ csrf_token }}";
     const manifestUrl = "{{ video_manifest_url }}";
 
+    let player = null;
+    let hls = null;
+
     function showVideoError(message) {
+        loadingOverlay.classList.add('hide');
         errorMessageEl.textContent = message;
         errorOverlay.classList.add('show');
+    }
+
+    function hideLoadingOverlay() {
+        loadingOverlay.classList.add('hide');
+    }
+
+    function updateQualityBadge(heightLabel) {
+        if (!heightLabel) {
+            qualityBadge.style.display = 'none';
+            return;
+        }
+        qualityBadge.textContent = heightLabel === 'Auto' ? 'Auto' : heightLabel + 'p';
+        qualityBadge.style.display = 'inline-block';
     }
 
     if (!manifestUrl) {
@@ -427,84 +234,53 @@
         return;
     }
 
-    let player = null;
-    let hls = null;
-    let availableQualities = [];
-    let qualityLabels = {};
+    function initPlyr(availableQualities) {
+        const qualityOptions = availableQualities && availableQualities.length
+            ? [0, ...availableQualities]   // 0 = "Auto"
+            : undefined;
 
-    function getQualityLabel(height) {
-        const labels = {
-            2160: '4K',
-            1440: '1440p',
-            1080: '1080p',
-            720: '720p',
-            480: '480p',
-            360: '360p',
-            240: '240p',
-            144: '144p'
-        };
-        return labels[height] || height + 'p';
-    }
-
-    function initPlyr() {
-        // Build quality options for Plyr
-        const qualityOptions = availableQualities.map(h => ({
-            label: getQualityLabel(h),
-            value: h
-        }));
-
-        // Add "Auto" as first option
-        qualityOptions.unshift({ label: 'Auto', value: 0 });
-
-        player = new Plyr('#lessonVideo', {
+        const plyrOptions = {
             controls: [
-                'play-large', 
-                'play', 
-                'progress', 
-                'current-time', 
-                'duration',
-                'mute', 
-                'volume', 
-                'settings', 
-                'pip', 
-                'airplay', 
-                'fullscreen'
+                'play-large', 'play', 'progress', 'current-time', 'duration',
+                'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
             ],
-            settings: ['quality', 'speed'],
-            speed: { 
-                selected: 1, 
-                options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] 
-            },
-            quality: {
-                default: 0,  // Auto by default
-                options: qualityOptions,
-                forced: true,
-                onChange: function(newQuality) {
-                    updateHlsQuality(parseInt(newQuality));
-                },
-            },
+            settings: qualityOptions ? ['quality', 'speed'] : ['speed'],
+            speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
             seekTime: 10,
             disableContextMenu: true,
-            tooltips: {
-                controls: true,
-                seek: true,
-            },
-            captions: { active: false },
-            keyboard: { focused: true, global: false },
-        });
+        };
 
-        // Resume from last watched position
-        const resumeAt = videoEl.dataset.resume;
-        if (resumeAt) {
-            player.once('loadedmetadata', function () {
-                const resumeTime = parseFloat(resumeAt);
-                if (resumeTime > 5 && resumeTime < videoEl.duration - 5) {
-                    player.currentTime = resumeTime;
-                }
-            });
+        if (qualityOptions) {
+            plyrOptions.quality = {
+                default: 0,
+                options: qualityOptions,
+                forced: true,
+                onChange: function (newQuality) {
+                    updateHlsQuality(newQuality);
+                    updateQualityBadge(newQuality === 0 ? 'Auto' : newQuality);
+                },
+            };
         }
 
-        // Track progress
+        player = new Plyr('#lessonVideo', plyrOptions);
+
+        if (qualityOptions) {
+            updateQualityBadge('Auto');
+        }
+
+        // resume from last watched position, once metadata is ready
+        const resumeAt = videoEl.dataset.resume;
+        player.on('loadedmetadata', function () {
+            hideLoadingOverlay();
+            if (resumeAt) {
+                player.currentTime = parseFloat(resumeAt);
+            }
+        });
+
+        player.on('ended', function () {
+            sendProgress(true);
+        });
+
         let lastSaved = 0;
         player.on('timeupdate', function () {
             if (player.currentTime - lastSaved > 15) {
@@ -512,89 +288,69 @@
                 sendProgress(false);
             }
         });
-
-        player.on('ended', function () {
-            sendProgress(true);
-        });
     }
 
     function updateHlsQuality(newQuality) {
         if (!hls) return;
         if (newQuality === 0) {
-            // Auto — let hls.js choose based on bandwidth
-            hls.currentLevel = -1;
+            hls.currentLevel = -1;   // Auto — hls.js decides based on bandwidth
         } else {
-            // Find the closest matching level
-            let targetLevel = -1;
-            for (let i = 0; i < hls.levels.length; i++) {
-                if (hls.levels[i].height === newQuality) {
-                    targetLevel = i;
-                    break;
+            hls.levels.forEach(function (level, levelIndex) {
+                if (level.height === newQuality) {
+                    hls.currentLevel = levelIndex;
                 }
-            }
-            if (targetLevel !== -1) {
-                hls.currentLevel = targetLevel;
-            }
+            });
         }
     }
 
-    // --- HLS Setup ---
     if (window.Hls && Hls.isSupported()) {
         hls = new Hls({
             xhrSetup: function (xhr) {
-                xhr.withCredentials = true;
+                xhr.withCredentials = true;   // send CloudFront signed cookies with every segment request
             },
-            enableWorker: true,
-            lowLatencyMode: false,
-            backbufferLength: 30,
         });
 
         hls.loadSource(manifestUrl);
         hls.attachMedia(videoEl);
 
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
-            // Extract available qualities from HLS levels
-            availableQualities = hls.levels
-                .map((level) => level.height)
-                .filter((h, i, arr) => arr.indexOf(h) === i) // unique
-                .sort((a, b) => b - a); // descending
+            const availableQualities = hls.levels
+                .map(function (level) { return level.height; })
+                .sort(function (a, b) { return b - a; });   // highest first, e.g. [720, 480, 360]
 
-            if (availableQualities.length === 0) {
-                // Fallback: try to detect from bitrates or use default
-                availableQualities = [1080, 720, 480, 360];
+            initPlyr(availableQualities);
+        });
+
+        // reflect automatic quality switches (e.g. due to bandwidth changes) in the badge,
+        // but only while the user hasn't manually forced a specific level
+        hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+            if (hls.autoLevelEnabled) {
+                const level = hls.levels[data.level];
+                if (level) updateQualityBadge('Auto');
             }
-
-            initPlyr();
         });
 
         hls.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 console.error('HLS fatal error:', data.type, data.details);
-                
-                let errorMsg = "There was a problem loading this video. Please refresh and try again.";
-                if (data.response) {
-                    if (data.response.code === 403) {
-                        errorMsg = "You don't have permission to view this video. Try refreshing the page.";
-                    } else if (data.response.code === 404) {
-                        errorMsg = "This video could not be found. It may still be processing.";
-                    }
+                if (data.response && data.response.code === 403) {
+                    showVideoError("You don't have permission to view this video, or your access has expired. Try refreshing the page.");
+                } else if (data.response && data.response.code === 404) {
+                    showVideoError("This video could not be found. It may still be processing.");
+                } else {
+                    showVideoError("There was a problem loading this video. Please refresh and try again.");
                 }
-                showVideoError(errorMsg);
-                
                 if (hls) {
                     hls.destroy();
-                    hls = null;
                 }
             }
         });
 
     } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari native HLS
+        // Safari supports HLS natively — no manual quality menu available here,
+        // Safari's own adaptive switching handles quality automatically
         videoEl.src = manifestUrl;
         videoEl.addEventListener('loadedmetadata', function () {
-            // For Safari, we can't easily get quality levels from HLS
-            // Use reasonable defaults
-            availableQualities = [1080, 720, 480, 360];
             initPlyr();
         });
         videoEl.addEventListener('error', function () {
@@ -605,7 +361,6 @@
         showVideoError("Your browser doesn't support video playback for this content. Please try a different browser.");
     }
 
-    // --- Progress Tracking ---
     function sendProgress(completed) {
         if (!player) return;
         const formData = new FormData();
@@ -617,37 +372,23 @@
             headers: { 'X-CSRFToken': csrfToken },
             body: formData,
         })
-        .then(res => res.json())
-        .then(data => {
+        .then(function (res) { return res.json(); })
+        .then(function () {
             if (completed && markBtn) {
                 markBtn.disabled = true;
                 markBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Completed';
-                // Update sidebar progress indicator if needed
-                location.reload(); // Refresh to update sidebar state
             }
         })
-        .catch(err => console.error('Progress update failed:', err));
+        .catch(function (err) { console.error('Progress update failed:', err); });
     }
 
-    // --- Mark Complete Button ---
     if (markBtn) {
         markBtn.addEventListener('click', function () {
             sendProgress(true);
         });
     }
 
-    // --- Prevent Context Menu ---
-    document.querySelector('.video-wrap').addEventListener('contextmenu', e => e.preventDefault());
-
-    // --- Cleanup on page unload ---
-    window.addEventListener('beforeunload', function() {
-        if (hls) {
-            hls.destroy();
-        }
-        if (player) {
-            player.destroy();
-        }
-    });
+    document.querySelector('.video-wrap').addEventListener('contextmenu', function (e) { e.preventDefault(); });
 })();
 </script>
 {% endblock %}
