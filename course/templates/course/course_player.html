@@ -172,13 +172,19 @@
     let hls = null;
 
     function initPlyr() {
-        player = new Plyr('#lessonVideo', {
+            player = new Plyr('#lessonVideo', {
             controls: [
                 'play-large', 'play', 'progress', 'current-time', 'duration',
                 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'
             ],
-            settings: ['speed'],
+            settings: ['quality', 'speed'],
             speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
+            quality: {
+                default: availableQualities[0],
+                options: availableQualities,
+                forced: true,
+                onChange: (newQuality) => updateHlsQuality(newQuality),
+            },
             seekTime: 10,
             disableContextMenu: true,
         });
@@ -203,6 +209,19 @@
             }
         });
     }
+    function updateHlsQuality(newQuality) {
+        if (!hls) return;
+        if (newQuality === 0) {
+            // "Auto" — let hls.js choose based on bandwidth
+            hls.currentLevel = -1;
+        } else {
+            hls.levels.forEach((level, levelIndex) => {
+                if (level.height === newQuality) {
+                    hls.currentLevel = levelIndex;
+                }
+            });
+        }
+    }
 
     if (window.Hls && Hls.isSupported()) {
         // Most browsers (Chrome, Firefox, Edge) need hls.js to play HLS at all
@@ -216,7 +235,9 @@
         hls.attachMedia(videoEl);
 
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
-            initPlyr();
+            const availableQualities = hls.levels.map((level) => level.height);
+
+            initPlyr(availableQualities);
         });
 
         hls.on(Hls.Events.ERROR, function (event, data) {
