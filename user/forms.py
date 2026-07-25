@@ -36,7 +36,7 @@ class SignupForm(forms.Form):
         contact = self.cleaned_data['contact'].strip()
         if not contact.isdigit():
             raise ValidationError("Contact number must contain digits only.")
-        if contact[0] not in '6789':
+        if len(contact) != 10:
             raise ValidationError("Enter a valid 10-digit Indian mobile number.")
         if User.objects.filter(contact=contact).exists():
             raise ValidationError("An account with this contact number already exists.")

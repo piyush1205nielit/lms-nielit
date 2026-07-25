@@ -50,7 +50,7 @@ class AdminCreateForm(forms.Form):
     def clean_contact(self):
         contact = self.cleaned_data.get('contact', '').strip()
         if contact:
-            if not contact.isdigit() or contact[0] not in '6789':
+            if not contact.isdigit() or len(contact) != 10:
                 raise ValidationError("Enter a valid 10-digit Indian mobile number.")
             if User.objects.filter(contact=contact).exists():
                 raise ValidationError("An account with this contact number already exists.")
