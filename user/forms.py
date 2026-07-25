@@ -8,6 +8,46 @@ from .models import LearnerProfile
 
 TEXT_INPUT_CLASS = 'form-control'
 
+# Delhi NCT first, then all other States/UTs in ascending (alphabetical) order
+INDIAN_STATES_UTS = [
+    ('Delhi (NCT of Delhi)', 'Delhi (NCT of Delhi)'),
+    ('Andaman and Nicobar Islands', 'Andaman and Nicobar Islands'),
+    ('Andhra Pradesh', 'Andhra Pradesh'),
+    ('Arunachal Pradesh', 'Arunachal Pradesh'),
+    ('Assam', 'Assam'),
+    ('Bihar', 'Bihar'),
+    ('Chandigarh', 'Chandigarh'),
+    ('Chhattisgarh', 'Chhattisgarh'),
+    ('Dadra and Nagar Haveli and Daman and Diu', 'Dadra and Nagar Haveli and Daman and Diu'),
+    ('Goa', 'Goa'),
+    ('Gujarat', 'Gujarat'),
+    ('Haryana', 'Haryana'),
+    ('Himachal Pradesh', 'Himachal Pradesh'),
+    ('Jammu and Kashmir', 'Jammu and Kashmir'),
+    ('Jharkhand', 'Jharkhand'),
+    ('Karnataka', 'Karnataka'),
+    ('Kerala', 'Kerala'),
+    ('Ladakh', 'Ladakh'),
+    ('Lakshadweep', 'Lakshadweep'),
+    ('Madhya Pradesh', 'Madhya Pradesh'),
+    ('Maharashtra', 'Maharashtra'),
+    ('Manipur', 'Manipur'),
+    ('Meghalaya', 'Meghalaya'),
+    ('Mizoram', 'Mizoram'),
+    ('Nagaland', 'Nagaland'),
+    ('Odisha', 'Odisha'),
+    ('Puducherry', 'Puducherry'),
+    ('Punjab', 'Punjab'),
+    ('Rajasthan', 'Rajasthan'),
+    ('Sikkim', 'Sikkim'),
+    ('Tamil Nadu', 'Tamil Nadu'),
+    ('Telangana', 'Telangana'),
+    ('Tripura', 'Tripura'),
+    ('Uttar Pradesh', 'Uttar Pradesh'),
+    ('Uttarakhand', 'Uttarakhand'),
+    ('West Bengal', 'West Bengal'),
+]
+
 
 class SignupForm(forms.Form):
     email = forms.EmailField(
@@ -67,6 +107,11 @@ class UserLoginForm(forms.Form):
 
 
 class ProfileCompletionForm(forms.ModelForm):
+    state = forms.ChoiceField(
+        choices=INDIAN_STATES_UTS,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = LearnerProfile
         fields = [
@@ -81,7 +126,6 @@ class ProfileCompletionForm(forms.ModelForm):
             'aadhar_number': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': '12-digit Aadhar number', 'maxlength': '12'}),
             'address': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3, 'placeholder': 'House no., street, locality'}),
             'city': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
-            'state': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
             'pin_code': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'maxlength': '6'}),
             'highest_qualification': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. B.Tech, 12th Grade'}),
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -99,6 +143,16 @@ class ProfileCompletionForm(forms.ModelForm):
             raise ValidationError("Enter a valid 6-digit PIN code.")
         return pin
 
+    def clean_profile_image(self):
+        image = self.cleaned_data.get('profile_image')
+        if image:
+            valid_types = ['image/jpeg', 'image/jpg', 'image/png']
+            if hasattr(image, 'content_type') and image.content_type not in valid_types:
+                raise ValidationError("Only JPG, JPEG or PNG image formats are allowed.")
+            if image.size > 1 * 1024 * 1024:
+                raise ValidationError("Image size must not exceed 1 MB.")
+        return image
+
     def save(self, commit=True):
         profile = super().save(commit=False)
         profile.profile_completed = True   # marking this here means the middleware gate lifts the moment this form is saved
@@ -112,6 +166,12 @@ class ProfileEditForm(forms.ModelForm):
     """Self-service profile editing. Deliberately excludes email and contact —
     those live on the User model and can only be changed by an admin, via the
     separate admin_dashboard credentials-edit page."""
+
+    state = forms.ChoiceField(
+        choices=INDIAN_STATES_UTS,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = LearnerProfile
         fields = [
@@ -126,7 +186,6 @@ class ProfileEditForm(forms.ModelForm):
             'aadhar_number': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'maxlength': '12'}),
             'address': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3}),
             'city': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
-            'state': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
             'pin_code': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'maxlength': '6'}),
             'highest_qualification': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -143,6 +202,16 @@ class ProfileEditForm(forms.ModelForm):
         if pin and (not pin.isdigit() or len(pin) != 6):
             raise ValidationError("Enter a valid 6-digit PIN code.")
         return pin
+
+    def clean_profile_image(self):
+        image = self.cleaned_data.get('profile_image')
+        if image and hasattr(image, 'content_type'):
+            valid_types = ['image/jpeg', 'image/jpg', 'image/png']
+            if image.content_type not in valid_types:
+                raise ValidationError("Only JPG, JPEG or PNG image formats are allowed.")
+            if image.size > 1 * 1024 * 1024:
+                raise ValidationError("Image size must not exceed 1 MB.")
+        return image
 
 
 class UserPasswordChangeForm(DjangoPasswordChangeForm):

@@ -17,6 +17,8 @@
             --primary-light: #1e40af;
             --accent:        #f59e0b;
             --footer-bg:     #0a1a2f;
+            --nav-gradient: linear-gradient(120deg, #0b1f4d 0%, #163a8c 55%, #0a1f4f 100%);
+            --nav-gradient-floating: linear-gradient(120deg, rgba(11,31,77,0.95) 0%, rgba(22,58,140,0.95) 55%, rgba(10,31,79,0.95) 100%);
         }
 
         /* ── Base ────────────────────────────────────────── */
@@ -71,42 +73,46 @@
             .top-header .sub-title  { font-size: 0.6rem; }
         }
 
-        /* ── Nav wrapper + spacer (prevents layout jump when nav goes fixed) ── */
-        .nav-wrapper { position: sticky; top: 0; z-index: 1000; }
-        #navSpacer { display: none; }
+        /* ── Nav wrapper (sticky host — animates the "gap" that creates the floating pill) ── */
+        .nav-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding-top: 0;
+            transition: padding-top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .nav-wrapper.floating-wrap { padding-top: 14px; }
 
         /* ── Main Nav ────────────────────────────────────── */
         .main-nav {
-            background: linear-gradient(135deg, #0a1f4f 0%, #0f2b6d 100%);
+            background: var(--nav-gradient);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 0;
+            width: 100%;
+            margin: 0 auto;
+            transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* ── Floating "dynamic island" state ────────────── */
+        /* ── Floating "dynamic island" state — evolves in place, no jump ── */
         .main-nav.floating {
-            position: fixed;
-            top: 14px;
-            left: 50%;
-            transform: translateX(-50%);
             width: min(94%, 1140px);
             border-radius: 999px;
             box-shadow: 0 12px 32px rgba(5,12,33,0.35);
-            background: rgba(10,31,79,0.92);
+            background: var(--nav-gradient-floating);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
             border: 1px solid rgba(255,255,255,0.08);
         }
         .main-nav.floating .nav-inner { padding-top: 4px; padding-bottom: 4px; }
-        .main-nav.floating .navbar-brand span { display: none; }
-        .main-nav.floating .navbar-brand i { font-size: 1.3rem; }
+        .main-nav.floating .brand-text { display: none; }
 
         .nav-inner {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            transition: padding 0.3s ease;
+            transition: padding 0.3s ease, gap 0.3s ease;
+            gap: 8px;
         }
 
         .navbar-brand {
@@ -119,6 +125,22 @@
             gap: 10px;
             flex-shrink: 0;
         }
+        /* Logo: full image, no crop/circle — just height + slight rounding */
+        .navbar-brand .brand-logo {
+            height: 34px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+            background: transparent;
+            padding: 0;
+            flex-shrink: 0;
+            transition: height 0.3s ease;
+        }
+        .main-nav.floating .navbar-brand .brand-logo { height: 26px; }
+        @media (max-width: 576px) {
+            .navbar-brand .brand-text { display: none; }
+            .navbar-brand .brand-logo { height: 28px; }
+        }
 
         .nav-links { display: flex; align-items: center; gap: 2px; }
 
@@ -129,9 +151,11 @@
             padding: 8px 14px;
             border-radius: 6px;
             position: relative;
-            transition: color 0.2s ease, background 0.2s ease;
+            transition: color 0.2s ease, background 0.2s ease, padding 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
         }
         .main-nav .nav-link::after {
             content: '';
@@ -153,7 +177,7 @@
         .main-nav .nav-link:hover::after,
         .main-nav .nav-link.active::after { width: 60%; }
 
-        /* ── Auth area (desktop) ─────────────────────────── */
+        /* ── Auth area ────────────────────────────────────── */
         .nav-auth { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px; }
 
         .btn-nav-login {
@@ -182,7 +206,7 @@
         }
         .btn-nav-signup:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
-        /* ── User menu (logged in) ───────────────────────── */
+        /* ── User / Guest menu (shared look) ─────────────── */
         .user-menu-toggle {
             display: flex;
             align-items: center;
@@ -192,7 +216,7 @@
             border-radius: 999px;
             padding: 4px 14px 4px 4px;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, padding 0.2s ease;
         }
         .user-menu-toggle:hover { background: rgba(255,255,255,0.16); }
         .user-avatar {
@@ -204,6 +228,7 @@
             font-size: 0.82rem; font-weight: 700; color: var(--primary-dark);
             flex-shrink: 0;
         }
+        .guest-avatar { background: rgba(255,255,255,0.18); color: white; font-size: 0.9rem; }
         .user-menu-toggle .user-name {
             font-size: 0.85rem;
             font-weight: 500;
@@ -253,13 +278,14 @@
         .user-dropdown a.logout-item { color: #dc2626; }
         .user-dropdown a.logout-item i { color: #dc2626; }
         .user-dropdown a.logout-item:hover { background: #fef2f2; }
-        .nav-user-wrap { position: relative; }
+        .nav-user-wrap, .nav-guest-wrap { position: relative; }
+        .nav-guest-wrap { display: none; } /* shown only on mobile-floating, see media query */
 
         /* ── Mobile hamburger ─────────────────────────────── */
-        #mobileMenuBtn { background: none; border: none; color: white; padding: 6px 10px; }
+        #mobileMenuBtn { background: none; border: none; color: white; padding: 6px 10px; transition: opacity 0.2s ease; }
         #mobileMenuBtn i { font-size: 1.4rem; color: white; }
 
-        /* ── Mobile Menu ─────────────────────────────────── */
+        /* ── Mobile Menu drawer (used only in the non-floating/top state) ── */
         .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; display: none; }
         .mobile-overlay.active { display: block; }
 
@@ -274,7 +300,7 @@
         .mobile-menu.active { right: 0; }
 
         .mobile-menu-header {
-            background: linear-gradient(135deg, #0a1f4f, #0f2b6d);
+            background: var(--nav-gradient);
             color: white; padding: 18px 20px;
             position: sticky; top: 0; z-index: 10;
             display: flex; justify-content: space-between; align-items: center;
@@ -323,12 +349,35 @@
         /* ── Alerts ──────────────────────────────────────── */
         .alert { font-size: 0.92rem; border-radius: 10px; border: none; }
 
-        /* ── Footer ──────────────────────────────────────── */
-        footer { background: linear-gradient(135deg, #0a1a2f 0%, #051220 100%); color: #9ca3af; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); }
-        footer a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.88rem; transition: color 0.2s ease; }
-        footer a:hover { color: white; }
-        footer .copyright { font-size: 0.85rem; color: rgba(255,255,255,0.45); }
-        footer .copyright strong { color: rgba(255,255,255,0.7); }
+        /* ── Responsive collapse rules ────────────────────── */
+        @media (max-width: 991px) {
+            /* Default mobile (top / non-scrolled) state: hamburger drawer, no inline nav */
+            .nav-links, .nav-auth { display: none; }
+
+            /* Scrolled / floating pill on mobile: show icon-only nav directly, hide hamburger */
+            .main-nav.floating .nav-links,
+            .main-nav.floating .nav-auth { display: flex; }
+            .main-nav.floating #mobileMenuBtn { display: none; }
+
+            .main-nav.floating .nav-inner { gap: 2px; padding-left: 12px; padding-right: 12px; }
+
+            /* Icon-only nav links */
+            .main-nav.floating .nav-link { padding: 8px 9px; }
+            .main-nav.floating .nav-link .link-text { display: none; }
+            .main-nav.floating .nav-link i { margin: 0 !important; font-size: 1.05rem; }
+
+            /* Guest icon replaces text Login/Sign Up buttons */
+            .main-nav.floating .btn-nav-login,
+            .main-nav.floating .btn-nav-signup { display: none; }
+            .main-nav.floating .nav-guest-wrap { display: flex; }
+
+            /* User icon: avatar only, name/chevron hidden, dropdown still works */
+            .main-nav.floating .user-menu-toggle { padding: 4px; gap: 0; }
+            .main-nav.floating .user-menu-toggle .user-name,
+            .main-nav.floating .user-menu-toggle i.chev { display: none; }
+
+            .user-dropdown { right: -8px; min-width: 230px; }
+        }
 
         /* ── Utility ─────────────────────────────────────── */
         .card-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
@@ -336,9 +385,77 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeInDown 0.3s ease; }
 
-        @media (max-width: 991px) {
-            .nav-links, .nav-auth { display: none !important; }
+        /* ── Footer ──────────────────────────────────────── */
+        footer {
+            background: linear-gradient(180deg, #0a1a2f 0%, #051220 100%);
+            color: #9ca3af;
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
+        .footer-brand-logo { height: 42px; width: auto; object-fit: contain; border-radius: 6px; }
+        .footer-brand-title { color: white; font-weight: 700; font-size: 1rem; margin: 0 0 2px; }
+        .footer-brand-sub { font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+        .footer-about-text { font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.55); max-width: 320px; }
+
+        .footer-col-title {
+            color: white;
+            font-size: 0.92rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            position: relative;
+            padding-bottom: 8px;
+        }
+        .footer-col-title::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0;
+            width: 28px; height: 2px;
+            background: var(--accent);
+            border-radius: 1px;
+        }
+
+        footer ul.footer-links { list-style: none; padding: 0; margin: 0; }
+        footer ul.footer-links li { margin-bottom: 10px; }
+        footer ul.footer-links a {
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 0.87rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        footer ul.footer-links a i { font-size: 0.7rem; color: var(--accent); }
+        footer ul.footer-links a:hover { color: white; transform: translateX(3px); }
+
+        .footer-contact-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 0.85rem; color: rgba(255,255,255,0.55); }
+        .footer-contact-item i { color: var(--accent); margin-top: 3px; width: 16px; }
+
+        .footer-social { display: flex; gap: 10px; margin-top: 4px; }
+        .footer-social a {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+        .footer-social a:hover { background: var(--accent); color: var(--primary-dark); transform: translateY(-2px); }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 18px;
+            margin-top: 30px;
+            font-size: 0.83rem;
+            color: rgba(255,255,255,0.4);
+        }
+        .footer-bottom strong { color: rgba(255,255,255,0.7); }
+        .footer-bottom-links { display: flex; gap: 18px; flex-wrap: wrap; }
+        .footer-bottom-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 0.8rem; transition: color 0.2s ease; }
+        .footer-bottom-links a:hover { color: white; }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -382,25 +499,33 @@
     </div>
 
     <!-- ── Main Navigation ─────────────────────────────── -->
-    <div class="nav-wrapper">
+    <div class="nav-wrapper" id="navWrapper">
         <nav class="main-nav" id="mainNav">
             <div class="container nav-inner">
 
                 <a class="navbar-brand" href="{% url 'public:home' %}">
-                    <i class="fas fa-graduation-cap fs-4"></i>
-                    <span>NIELIT Delhi</span>
+                    <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT"
+                         class="brand-logo"
+                         onerror="this.src='https://via.placeholder.com/120x34?text=NIELIT'">
+                    <span class="brand-text">NIELIT Delhi</span>
                 </a>
 
                 <div class="nav-links">
-                    <a href="{% url 'public:home' %}" class="nav-link"><i class="fas fa-home me-1"></i>Home</a>
-                    {% comment %} <a href="{% url 'public:announcements' %}" class="nav-link"><i class="fas fa-bullhorn me-1"></i>Announcements</a> {% endcomment %}
-                    <a href="{% url 'public:courses' %}" class="nav-link"><i class="fas fa-book me-1"></i>Courses</a>
+                    <a href="{% url 'public:home' %}" class="nav-link" title="Home">
+                        <i class="fas fa-home me-1"></i><span class="link-text">Home</span>
+                    </a>
+                    <a href="#" class="nav-link" title="Announcements">
+                        <i class="fas fa-bullhorn me-1"></i><span class="link-text">Announcements</span>
+                    </a>
+                    <a href="{% url 'public:courses' %}" class="nav-link" title="Courses">
+                        <i class="fas fa-book me-1"></i><span class="link-text">Courses</span>
+                    </a>
                 </div>
 
                 <div class="nav-auth">
                     {% if user.is_authenticated %}
                         <div class="nav-user-wrap">
-                            <button type="button" class="user-menu-toggle" id="userMenuToggle">
+                            <button type="button" class="user-menu-toggle" id="userMenuToggle" title="Account">
                                 {% if user.learner_profile.profile_image %}
                                     <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
                                 {% else %}
@@ -423,6 +548,18 @@
                     {% else %}
                         <a href="{% url 'user:login' %}" class="btn-nav-login">Login</a>
                         <a href="{% url 'user:signup' %}" class="btn-nav-signup">Sign Up</a>
+
+                        <!-- Icon-only guest menu, shown only on mobile in the scrolled/floating nav -->
+                        <div class="nav-guest-wrap">
+                            <button type="button" class="user-menu-toggle" id="guestMenuToggle" title="Account">
+                                <span class="user-avatar guest-avatar"><i class="fas fa-user"></i></span>
+                                <i class="fas fa-chevron-down chev"></i>
+                            </button>
+                            <div class="user-dropdown" id="guestDropdown">
+                                <a href="{% url 'user:login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                                <a href="{% url 'user:signup' %}"><i class="fas fa-user-plus"></i> Sign Up</a>
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
 
@@ -432,10 +569,9 @@
 
             </div>
         </nav>
-        <div id="navSpacer"></div>
     </div>
 
-    <!-- ── Mobile Menu ─────────────────────────────────── -->
+    <!-- ── Mobile Menu drawer (top/non-scrolled state) ──── -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
     <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-header">
@@ -461,11 +597,11 @@
 
         <div class="mobile-menu-body">
             <a href="{% url 'public:home' %}" class="nav-link"><i class="fas fa-home fa-fw"></i>Home</a>
-            {% comment %} <a href="{% url 'public:announcements' %}" class="nav-link"><i class="fas fa-bullhorn fa-fw"></i>Announcements</a> {% endcomment %}
+            <a href="#" class="nav-link"><i class="fas fa-bullhorn fa-fw"></i>Announcements</a>
             <a href="{% url 'public:courses' %}" class="nav-link"><i class="fas fa-book fa-fw"></i>Courses</a>
-            {% comment %} <a href="{% url 'public:centres' %}" class="nav-link"><i class="fas fa-building fa-fw"></i>Centers</a>  {% endcomment %}
             {% if user.is_authenticated %}
                 <a href="{% url 'user_dashboard:home' %}" class="nav-link"><i class="fas fa-th-large fa-fw"></i>My Dashboard</a>
+                <a href="{% url 'user_dashboard:home' %}" class="nav-link"><i class="fas fa-user fa-fw"></i>My Profile</a>
                 <a href="{% url 'user:logout' %}" class="nav-link logout-item"><i class="fas fa-sign-out-alt fa-fw"></i>Logout</a>
             {% endif %}
         </div>
@@ -497,24 +633,75 @@
 
     <!-- ── Footer ──────────────────────────────────────── -->
     <footer>
-        <div class="container py-4">
-            <div class="row justify-content-center mb-3">
-                <div class="col-md-10">
-                    <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4">
-                        <a href="{% url 'public:home' %}">Home</a>
-                        {% comment %} <a href="{% url 'public:courses' %}">Courses</a>
-                        <a href="{% url 'public:centres' %}">Centers</a>
-                        <a href="{% url 'user:login' %}">Student Portal</a> {% endcomment %}
-                        <a href="https://www.nielit.gov.in/delhi/index.php" target="_blank">NIELIT Official Website</a>
-                        <a href="https://onlineapply.nielit.in/" target="_blank">NIELIT Online Apply</a>
-                        <a href="{% url 'accounts:admin_login' %}" target="_blank">Admin Login</a>
+        <div class="container py-5">
+            <div class="row gy-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT" class="footer-brand-logo"
+                             onerror="this.src='https://via.placeholder.com/120x42?text=NIELIT'">
+                        <div>
+                            <p class="footer-brand-title">NIELIT Delhi</p>
+                            <p class="footer-brand-sub mb-0">Ministry of Electronics &amp; IT, Govt. of India</p>
+                        </div>
+                    </div>
+                    <p class="footer-about-text">
+                        National Institute of Electronics &amp; Information Technology, Delhi Centre —
+                        empowering learners with quality IT &amp; electronics education, skill
+                        development programs, and government-recognized certifications.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 col-6">
+                    <p class="footer-col-title">Quick Links</p>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'public:home' %}"><i class="fas fa-chevron-right"></i>Home</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i>Announcements</a></li>
+                        <li><a href="{% url 'public:courses' %}"><i class="fas fa-chevron-right"></i>Courses</a></li>
+                        <li><a href="{% url 'user:login' %}"><i class="fas fa-chevron-right"></i>Student Login</a></li>
+                        <li><a href="{% url 'user:signup' %}"><i class="fas fa-chevron-right"></i>Sign Up</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6 col-6">
+                    <p class="footer-col-title">Resources</p>
+                    <ul class="footer-links">
+                        <li><a href="https://www.nielit.gov.in/delhi/index.php" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Official Website</a></li>
+                        <li><a href="https://onlineapply.nielit.in/" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Online Apply</a></li>
+                        <li><a href="{% url 'accounts:admin_login' %}" target="_blank"><i class="fas fa-chevron-right"></i>Admin Login</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <p class="footer-col-title">Get in Touch</p>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>NIELIT Delhi Centre, New Delhi, India</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>info@nielitdelhi.gov.in</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>+91-11-XXXXXXXX</span>
                     </div>
                 </div>
             </div>
-            <hr style="border-color:rgba(255,255,255,0.1);margin:0 0 16px;">
-            <div class="text-center copyright">
-                <p class="mb-1"><i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved.</p>
-                <p class="mb-0">Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong></p>
+
+            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <p class="mb-0"><i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved. Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong></p>
+                <div class="footer-bottom-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Use</a>
+                    <a href="#">Sitemap</a>
+                </div>
             </div>
         </div>
     </footer>
@@ -527,52 +714,42 @@
 
     <script>
     (function () {
-        // ── Top header shrink + Main nav floating (dynamic island) ──
+        // ── Top header shrink + Main nav floating (evolves in place) ──
         const topHeader = document.getElementById('topHeader');
         const mainNav   = document.getElementById('mainNav');
-        const navSpacer = document.getElementById('navSpacer');
+        const navWrapper = document.getElementById('navWrapper');
         const THRESHOLD = 80;
-
-        function setSpacerHeight() {
-            navSpacer.style.height = mainNav.offsetHeight + 'px';
-        }
 
         function handleScroll() {
             const scrolled = window.scrollY > THRESHOLD;
             topHeader.classList.toggle('scrolled', window.scrollY > 50);
-
-            if (scrolled && !mainNav.classList.contains('floating')) {
-                setSpacerHeight();
-                navSpacer.style.display = 'block';
-                mainNav.classList.add('floating');
-            } else if (!scrolled && mainNav.classList.contains('floating')) {
-                mainNav.classList.remove('floating');
-                navSpacer.style.display = 'none';
-            }
+            navWrapper.classList.toggle('floating-wrap', scrolled);
+            mainNav.classList.toggle('floating', scrolled);
         }
         window.addEventListener('scroll', handleScroll, { passive: true });
-        window.addEventListener('resize', function () {
-            if (mainNav.classList.contains('floating')) setSpacerHeight();
-        });
+        handleScroll();
 
-        // ── User dropdown menu ──────────────────────────
-        const userToggle = document.getElementById('userMenuToggle');
-        const userDropdown = document.getElementById('userDropdown');
-        if (userToggle) {
-            userToggle.addEventListener('click', function (e) {
+        // ── Generic dropdown wiring (used for user + guest menus) ──
+        function wireDropdown(toggleId, dropdownId) {
+            const toggle = document.getElementById(toggleId);
+            const dropdown = document.getElementById(dropdownId);
+            if (!toggle || !dropdown) return;
+            toggle.addEventListener('click', function (e) {
                 e.stopPropagation();
-                userToggle.classList.toggle('open');
-                userDropdown.classList.toggle('show');
+                toggle.classList.toggle('open');
+                dropdown.classList.toggle('show');
             });
             document.addEventListener('click', function (e) {
-                if (!userDropdown.contains(e.target) && !userToggle.contains(e.target)) {
-                    userToggle.classList.remove('open');
-                    userDropdown.classList.remove('show');
+                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+                    toggle.classList.remove('open');
+                    dropdown.classList.remove('show');
                 }
             });
         }
+        wireDropdown('userMenuToggle', 'userDropdown');
+        wireDropdown('guestMenuToggle', 'guestDropdown');
 
-        // ── Mobile menu ────────────────────────────────
+        // ── Mobile menu drawer ──────────────────────────
         const mobileMenu    = document.getElementById('mobileMenu');
         const mobileOverlay = document.getElementById('mobileOverlay');
 
@@ -592,12 +769,16 @@
         window.addEventListener('resize', function () {
             if (window.innerWidth >= 992) closeMenu();
         });
+        // Close the drawer automatically if the user scrolls into the floating icon nav
+        window.addEventListener('scroll', function () {
+            if (window.scrollY > THRESHOLD) closeMenu();
+        }, { passive: true });
 
         // ── Active nav link ────────────────────────────
         const path = window.location.pathname;
         document.querySelectorAll('.main-nav .nav-link, .mobile-menu-body .nav-link').forEach(function (link) {
             const href = link.getAttribute('href');
-            if (href && href !== '/' && path.startsWith(href)) {
+            if (href && href !== '/' && href !== '#' && path.startsWith(href)) {
                 link.classList.add('active');
             } else if (href === '/' && path === '/') {
                 link.classList.add('active');

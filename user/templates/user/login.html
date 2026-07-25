@@ -4,23 +4,93 @@
 
 {% block extra_css %}
 <style>
+    /* ── Dark animated background ─────────────────────── */
     .auth-wrapper {
-        min-height: 70vh;
+        position: relative;
+        min-height: 82vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 48px 16px;
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2f9 100%);
+        padding: 40px 16px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #050b1a 0%, #0a1a3d 45%, #0d1f52 100%);
+        background-size: 200% 200%;
+        animation: bgShift 14s ease-in-out infinite;
     }
+    @keyframes bgShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* faint grid texture over the dark bg */
+    .auth-wrapper::before {
+        content: '';
+        position: absolute; inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+        background-size: 42px 42px;
+        pointer-events: none;
+    }
+
+    /* floating glow orbs */
+    .auth-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        pointer-events: none;
+        opacity: 0.55;
+    }
+    .orb-1 {
+        width: 340px; height: 340px;
+        background: radial-gradient(circle, #1e3a8a 0%, transparent 70%);
+        top: -100px; left: -80px;
+        animation: floatA 12s ease-in-out infinite;
+    }
+    .orb-2 {
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+        bottom: -120px; right: -60px;
+        opacity: 0.18;
+        animation: floatB 15s ease-in-out infinite;
+    }
+    .orb-3 {
+        width: 220px; height: 220px;
+        background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+        top: 40%; right: 12%;
+        opacity: 0.25;
+        animation: floatC 10s ease-in-out infinite;
+    }
+    @keyframes floatA {
+        0%, 100% { transform: translate(0, 0); }
+        50%      { transform: translate(40px, 30px); }
+    }
+    @keyframes floatB {
+        0%, 100% { transform: translate(0, 0); }
+        50%      { transform: translate(-30px, -25px); }
+    }
+    @keyframes floatC {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%      { transform: translate(-20px, 20px) scale(1.08); }
+    }
+
+    /* ── White card ───────────────────────────────────── */
     .auth-card {
+        position: relative;
+        z-index: 2;
         background: white;
         border-radius: 18px;
-        border: 1px solid #e2e8f0;
-        padding: 2.5rem;
+        padding: 2.6rem 2.5rem;
         width: 100%;
         max-width: 420px;
-        box-shadow: 0 20px 45px rgba(15,43,109,0.08);
+        box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+        animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
+    @keyframes cardIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
     .auth-icon-wrap {
         width: 56px; height: 56px;
         border-radius: 14px;
@@ -29,20 +99,115 @@
         margin: 0 auto 14px;
         font-size: 1.4rem;
         color: #172281;
+        opacity: 0;
+        transform: scale(0.7) rotate(-8deg);
+        animation: iconPop 0.55s 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
-    .auth-card h4 { font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px; }
-    .auth-card p.subtitle { color: #64748b; font-size: 0.86rem; }
+    @keyframes iconPop { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+
+    .auth-card h4 {
+        font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px;
+        opacity: 0; transform: translateY(8px);
+        animation: fadeUp 0.5s 0.32s ease forwards;
+    }
+    .auth-card p.subtitle {
+        color: #64748b; font-size: 0.86rem;
+        opacity: 0; transform: translateY(8px);
+        animation: fadeUp 0.5s 0.38s ease forwards;
+    }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* staggered field entrance */
+    .field-group {
+        margin-bottom: 18px;
+        position: relative;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeUp 0.5s ease forwards;
+    }
+    .field-group:nth-of-type(1) { animation-delay: 0.44s; }
+    .field-group:nth-of-type(2) { animation-delay: 0.5s; }
+
     .auth-card .form-label { font-size: 0.84rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+
     .auth-card .form-control {
         border-radius: 10px;
         border: 1.5px solid #e2e8f0;
         padding: 10px 14px;
         font-size: 0.92rem;
+        background: #fbfcfe;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.15s ease;
     }
     .auth-card .form-control:focus {
         border-color: #172281;
-        box-shadow: 0 0 0 3px rgba(23,34,129,0.1);
+        box-shadow: 0 0 0 4px rgba(23,34,129,0.1);
+        background: white;
+        outline: none;
+        transform: translateY(-1px);
     }
+
+    .field-group.has-error .form-control {
+        border-color: #ef4444;
+        animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+    @keyframes shake {
+        10%, 90% { transform: translateX(-1px); }
+        20%, 80% { transform: translateX(2px); }
+        30%, 50%, 70% { transform: translateX(-4px); }
+        40%, 60% { transform: translateX(4px); }
+    }
+
+    .pwd-toggle-btn {
+        position: absolute;
+        right: 12px;
+        top: 37px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.86rem;
+        cursor: pointer;
+        padding: 4px 6px;
+        transition: color 0.15s ease;
+    }
+    .pwd-toggle-btn:hover { color: #172281; }
+
+    .field-error {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: #dc2626;
+        margin-top: 6px;
+        opacity: 0;
+        animation: errIn 0.25s ease forwards;
+    }
+    @keyframes errIn { to { opacity: 1; } }
+
+    .alert-form-error {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 0.84rem;
+        margin-bottom: 18px;
+        animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+    .alert-form-error i { margin-top: 2px; flex-shrink: 0; }
+
+    .form-utility-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+        opacity: 0;
+        animation: fadeUp 0.5s 0.54s ease forwards;
+    }
+    .forgot-link { font-size: 0.82rem; color: #172281; font-weight: 500; text-decoration: none; transition: color 0.15s ease; }
+    .forgot-link:hover { color: #f59e0b; text-decoration: underline; }
+
     .btn-auth-primary {
         background: #172281;
         border: none;
@@ -51,17 +216,50 @@
         font-size: 0.94rem;
         padding: 11px;
         border-radius: 10px;
-        transition: background 0.2s ease, transform 0.15s ease;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        opacity: 0;
+        animation: fadeUp 0.5s 0.6s ease forwards;
     }
-    .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-1px); color: white; }
-    .auth-footer-link { text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.25rem; }
+    .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15,43,109,0.3); color: white; }
+    .btn-auth-primary:active { transform: translateY(0); }
+    .btn-auth-primary:disabled { opacity: 0.75 !important; cursor: not-allowed; transform: none; }
+
+    .btn-spinner {
+        width: 15px; height: 15px;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .auth-footer-link {
+        text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.25rem;
+        opacity: 0;
+        animation: fadeUp 0.5s 0.66s ease forwards;
+    }
     .auth-footer-link a { color: #172281; font-weight: 600; text-decoration: none; }
     .auth-footer-link a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .auth-wrapper, .auth-orb, .auth-card, .auth-icon-wrap, .auth-card h4,
+        .auth-card p.subtitle, .field-group, .form-utility-row, .btn-auth-primary, .auth-footer-link {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="auth-wrapper">
+    <span class="auth-orb orb-1"></span>
+    <span class="auth-orb orb-2"></span>
+    <span class="auth-orb orb-3"></span>
+
     <div class="auth-card">
         <div class="text-center mb-4">
             <div class="auth-icon-wrap"><i class="fas fa-graduation-cap"></i></div>
@@ -69,27 +267,44 @@
             <p class="subtitle">Sign in to continue learning</p>
         </div>
 
-        <form method="post" novalidate>
+        <form method="post" novalidate id="loginForm">
             {% csrf_token %}
+
             {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                <div class="alert-form-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span>{{ form.non_field_errors|join:", " }}</span>
+                </div>
             {% endif %}
-            <div class="mb-3">
+
+            <div class="field-group {% if form.identifier.errors %}has-error{% endif %}">
                 <label class="form-label">Email or Mobile Number</label>
                 {{ form.identifier }}
-                {% if form.identifier.errors %}<div class="text-danger small mt-1">{{ form.identifier.errors|join:", " }}</div>{% endif %}
+                {% if form.identifier.errors %}
+                    <div class="field-error"><i class="fas fa-circle-exclamation"></i>{{ form.identifier.errors|join:", " }}</div>
+                {% endif %}
             </div>
-            <div class="mb-3">
+
+            <div class="field-group {% if form.password.errors %}has-error{% endif %}" id="pwdGroup">
                 <label class="form-label">Password</label>
                 {{ form.password }}
-                {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>{% endif %}
+                <button type="button" class="pwd-toggle-btn" id="pwdToggle" tabindex="-1" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                </button>
+                {% if form.password.errors %}
+                    <div class="field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password.errors|join:", " }}</div>
+                {% endif %}
             </div>
-            <button type="submit" class="btn btn-auth-primary w-100">
-                <i class="fas fa-sign-in-alt me-1"></i> Sign In
+
+            <div class="form-utility-row">
+                <a href="{% url 'user:forgot_password' %}" class="forgot-link">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-auth-primary w-100" id="loginBtn">
+                <span class="btn-spinner" id="btnSpinner"></span>
+                <i class="fas fa-sign-in-alt" id="btnIcon"></i>
+                <span id="btnLabel">Sign In</span>
             </button>
-            <div class="d-flex justify-content-end mb-3">
-                <a href="{% url 'user:forgot_password' %}" class="small" style="color:#172281;">Forgot password?</a>
-            </div>
         </form>
 
         <p class="auth-footer-link">
@@ -97,4 +312,39 @@
         </p>
     </div>
 </section>
+
+<script>
+(function () {
+    // ── Password show/hide toggle ──
+    const pwdGroup  = document.getElementById('pwdGroup');
+    const pwdToggle = document.getElementById('pwdToggle');
+    const pwdInput  = pwdGroup ? pwdGroup.querySelector('input') : null;
+
+    if (pwdToggle && pwdInput) {
+        pwdToggle.addEventListener('click', function () {
+            const isHidden = pwdInput.type === 'password';
+            pwdInput.type = isHidden ? 'text' : 'password';
+            pwdToggle.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            pwdToggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        });
+    }
+
+    // ── Loading state on submit ──
+    const form  = document.getElementById('loginForm');
+    const btn   = document.getElementById('loginBtn');
+    const spin  = document.getElementById('btnSpinner');
+    const icon  = document.getElementById('btnIcon');
+    const label = document.getElementById('btnLabel');
+
+    if (form) {
+        form.addEventListener('submit', function () {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            icon.style.display = 'none';
+            spin.style.display = 'inline-block';
+            label.textContent = 'Signing in...';
+        });
+    }
+})();
+</script>
 {% endblock %}

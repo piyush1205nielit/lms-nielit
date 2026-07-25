@@ -4,23 +4,105 @@
 
 {% block extra_css %}
 <style>
+    /* ── Dark animated background (matches login) ────── */
     .auth-wrapper {
-        min-height: 70vh;
+        position: relative;
+        min-height: 88vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 48px 16px;
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2f9 100%);
+        padding: 40px 16px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #050b1a 0%, #0a1a3d 45%, #0d1f52 100%);
+        background-size: 200% 200%;
+        animation: bgShift 14s ease-in-out infinite;
     }
+    @keyframes bgShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .auth-wrapper::before {
+        content: '';
+        position: absolute; inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+        background-size: 42px 42px;
+        pointer-events: none;
+    }
+    .auth-orb { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; opacity: 0.5; }
+    .orb-1 { width: 340px; height: 340px; background: radial-gradient(circle, #1e3a8a 0%, transparent 70%); top: -100px; left: -80px; animation: floatA 12s ease-in-out infinite; }
+    .orb-2 { width: 300px; height: 300px; background: radial-gradient(circle, #f59e0b 0%, transparent 70%); bottom: -120px; right: -60px; opacity: 0.16; animation: floatB 15s ease-in-out infinite; }
+    .orb-3 { width: 220px; height: 220px; background: radial-gradient(circle, #3b82f6 0%, transparent 70%); top: 45%; right: 8%; opacity: 0.22; animation: floatC 10s ease-in-out infinite; }
+    @keyframes floatA { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
+    @keyframes floatB { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,-25px); } }
+    @keyframes floatC { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px,20px) scale(1.08); } }
+
+    /* ── Shell: guidelines panel + form card ──────────── */
+    .signup-shell {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        gap: 22px;
+        width: 100%;
+        max-width: 940px;
+        align-items: stretch;
+    }
+
+    /* ── Guidelines panel (glass) ──────────────────────── */
+    .guide-panel {
+        flex: 0 0 300px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 18px;
+        padding: 28px 24px;
+        color: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        opacity: 0;
+        transform: translateX(-14px);
+        animation: panelIn 0.6s 0.1s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    @keyframes panelIn { to { opacity: 1; transform: translateX(0); } }
+
+    .guide-panel h6 {
+        color: white;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .guide-panel h6 i { color: #f59e0b; }
+    .guide-panel .guide-block { margin-bottom: 22px; }
+    .guide-panel .guide-block:last-child { margin-bottom: 0; }
+    .guide-panel ul { list-style: none; padding: 0; margin: 0; }
+    .guide-panel ul li {
+        display: flex; align-items: flex-start; gap: 8px;
+        font-size: 0.78rem;
+        line-height: 1.55;
+        color: rgba(255,255,255,0.65);
+        margin-bottom: 9px;
+    }
+    .guide-panel ul li i { color: #34d399; font-size: 0.68rem; margin-top: 4px; flex-shrink: 0; }
+    .guide-panel ul.pwd-rules li i { color: #60a5fa; }
+
+    /* ── White form card ───────────────────────────────── */
     .auth-card {
         background: white;
         border-radius: 18px;
-        border: 1px solid #e2e8f0;
-        padding: 2.5rem;
-        width: 100%;
-        max-width: 460px;
-        box-shadow: 0 20px 45px rgba(15,43,109,0.08);
+        padding: 2.4rem 2.3rem;
+        flex: 1;
+        min-width: 0;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+        animation: cardIn 0.6s cubic-bezier(0.22,1,0.36,1) forwards;
     }
+    @keyframes cardIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
     .auth-icon-wrap {
         width: 56px; height: 56px;
         border-radius: 14px;
@@ -29,87 +111,521 @@
         margin: 0 auto 14px;
         font-size: 1.4rem;
         color: #172281;
+        opacity: 0;
+        transform: scale(0.7) rotate(-8deg);
+        animation: iconPop 0.55s 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards;
     }
-    .auth-card h4 { font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px; }
-    .auth-card p.subtitle { color: #64748b; font-size: 0.86rem; }
-    .auth-card .form-label { font-size: 0.84rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    @keyframes iconPop { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+
+    .auth-card h4 { font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px; opacity: 0; transform: translateY(8px); animation: fadeUp 0.5s 0.32s ease forwards; }
+    .auth-card p.subtitle { color: #64748b; font-size: 0.86rem; opacity: 0; transform: translateY(8px); animation: fadeUp 0.5s 0.38s ease forwards; }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+    .field-group {
+        margin-bottom: 16px;
+        position: relative;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeUp 0.5s ease forwards;
+    }
+    .field-group:nth-of-type(1) { animation-delay: 0.42s; }
+    .field-group:nth-of-type(2) { animation-delay: 0.46s; }
+    .field-group:nth-of-type(3) { animation-delay: 0.5s; }
+    .field-group:nth-of-type(4) { animation-delay: 0.54s; }
+
+    .auth-card .form-label { font-size: 0.83rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+
     .auth-card .form-control {
         border-radius: 10px;
         border: 1.5px solid #e2e8f0;
         padding: 10px 14px;
         font-size: 0.92rem;
+        width: 100%;
+        background: #fbfcfe;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.15s ease;
     }
     .auth-card .form-control:focus {
         border-color: #172281;
-        box-shadow: 0 0 0 3px rgba(23,34,129,0.1);
+        box-shadow: 0 0 0 4px rgba(23,34,129,0.1);
+        background: white;
+        outline: none;
+        transform: translateY(-1px);
     }
-    .btn-auth-primary {
-        background: #172281;
+    .field-group.is-valid .form-control { border-color: #10b981; }
+    .field-group.has-error .form-control {
+        border-color: #ef4444;
+        animation: shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+    }
+    @keyframes shake {
+        10%,90% { transform: translateX(-1px); }
+        20%,80% { transform: translateX(2px); }
+        30%,50%,70% { transform: translateX(-4px); }
+        40%,60% { transform: translateX(4px); }
+    }
+
+    .field-status-icon {
+        position: absolute;
+        right: 12px;
+        top: 36px;
+        font-size: 0.8rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .field-group.is-valid .field-status-icon.icon-valid { opacity: 1; color: #10b981; }
+    .field-group.has-error .field-status-icon.icon-error { opacity: 1; color: #ef4444; }
+
+    .pwd-toggle-btn {
+        position: absolute;
+        right: 32px;
+        top: 33px;
+        background: none;
         border: none;
-        color: white;
-        font-weight: 600;
-        font-size: 0.94rem;
-        padding: 11px;
-        border-radius: 10px;
-        transition: background 0.2s ease, transform 0.15s ease;
+        color: #94a3b8;
+        font-size: 0.82rem;
+        cursor: pointer;
+        padding: 4px;
+        transition: color 0.15s ease;
     }
-    .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-1px); color: white; }
-    .auth-footer-link { text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.25rem; }
-    .auth-footer-link a { color: #172281; font-weight: 600; text-decoration: none; }
-    .auth-footer-link a:hover { text-decoration: underline; }
+    .pwd-toggle-btn:hover { color: #172281; }
+
+    .field-error {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 0.76rem; color: #dc2626;
+        margin-top: 6px;
+        min-height: 0;
+    }
+    .field-hint { font-size: 0.74rem; color: #94a3b8; margin-top: 6px; }
+
+    .alert-form-error {
+        display: flex; align-items: flex-start; gap: 10px;
+        background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+        border-radius: 10px; padding: 11px 14px; font-size: 0.84rem; margin-bottom: 18px;
+        animation: shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+    }
+    .alert-form-error i { margin-top: 2px; flex-shrink: 0; }
+
+    /* password strength meter */
+    .pwd-strength { margin-top: 8px; }
+    .pwd-strength-bar { display: flex; gap: 4px; margin-bottom: 4px; }
+    .pwd-strength-bar span { height: 4px; flex: 1; border-radius: 3px; background: #e5e7eb; transition: background 0.25s ease; }
+    .pwd-strength-label { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
+    .pwd-strength.weak .pwd-strength-bar span:nth-child(1) { background: #ef4444; }
+    .pwd-strength.weak .pwd-strength-label { color: #ef4444; }
+    .pwd-strength.medium .pwd-strength-bar span:nth-child(1),
+    .pwd-strength.medium .pwd-strength-bar span:nth-child(2) { background: #f59e0b; }
+    .pwd-strength.medium .pwd-strength-label { color: #f59e0b; }
+    .pwd-strength.strong .pwd-strength-bar span { background: #10b981; }
+    .pwd-strength.strong .pwd-strength-label { color: #10b981; }
+
     .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 480px) { .row-2col { grid-template-columns: 1fr; } }
+
+    .btn-auth-primary {
+        background: #172281; border: none; color: white;
+        font-weight: 600; font-size: 0.94rem; padding: 11px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        opacity: 0; animation: fadeUp 0.5s 0.62s ease forwards;
+        width: 100%;
+    }
+    .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15,43,109,0.3); color: white; }
+    .btn-auth-primary:disabled { opacity: 0.6 !important; cursor: not-allowed; transform: none; }
+
+    .auth-footer-link {
+        text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.15rem;
+        opacity: 0; animation: fadeUp 0.5s 0.68s ease forwards;
+    }
+    .auth-footer-link a { color: #172281; font-weight: 600; text-decoration: none; }
+    .auth-footer-link a:hover { text-decoration: underline; }
+
+    /* ── Review & Confirm modal ────────────────────────── */
+    .review-modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(5,11,26,0.65);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .review-modal-overlay.show { display: flex; }
+
+    .review-modal {
+        background: white;
+        border-radius: 16px;
+        width: 100%; max-width: 440px;
+        padding: 28px 26px;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+        opacity: 0; transform: translateY(20px) scale(0.97);
+        animation: modalIn 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    @keyframes modalIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    .review-modal h5 {
+        font-weight: 700; color: #0e1b2e; font-size: 1.1rem;
+        display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+    }
+    .review-modal h5 i { color: #172281; }
+    .review-modal .review-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 18px; }
+
+    .review-detail-list { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 10px; padding: 4px 14px; margin-bottom: 18px; }
+    .review-detail-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; }
+    .review-detail-row:last-child { border-bottom: none; }
+    .review-detail-row .rd-label { color: #64748b; }
+    .review-detail-row .rd-value { color: #0e1b2e; font-weight: 600; text-align: right; word-break: break-word; }
+
+    .ack-box {
+        display: flex; gap: 10px; align-items: flex-start;
+        background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px;
+        padding: 12px 14px; margin-bottom: 18px;
+    }
+    .ack-box input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; accent-color: #172281; cursor: pointer; }
+    .ack-box label { font-size: 0.78rem; line-height: 1.55; color: #374151; cursor: pointer; margin: 0; }
+
+    .review-modal-actions { display: flex; gap: 10px; }
+    .btn-modal-secondary {
+        flex: 1; background: white; border: 1.5px solid #e2e8f0; color: #374151;
+        font-weight: 600; font-size: 0.86rem; padding: 10px; border-radius: 10px;
+        transition: background 0.15s ease;
+    }
+    .btn-modal-secondary:hover { background: #f8fafc; }
+
+    .btn-modal-confirm {
+        flex: 1.4; background: #172281; border: none; color: white;
+        font-weight: 600; font-size: 0.86rem; padding: 10px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        opacity: 0; max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0;
+        transition: opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease, transform 0.15s ease;
+    }
+    .btn-modal-confirm.visible { opacity: 1; max-height: 50px; padding-top: 10px; padding-bottom: 10px; }
+    .btn-modal-confirm:hover { transform: translateY(-1px); background: #0f2b6d; }
+    .btn-modal-confirm .btn-spinner {
+        width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 860px) {
+        .signup-shell { flex-direction: column; max-width: 460px; }
+        .guide-panel { flex: none; order: 2; }
+        .auth-card { order: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .auth-wrapper, .auth-orb, .auth-card, .guide-panel, .auth-icon-wrap, .auth-card h4,
+        .auth-card p.subtitle, .field-group, .btn-auth-primary, .auth-footer-link,
+        .review-modal { animation: none !important; opacity: 1 !important; transform: none !important; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="auth-wrapper">
-    <div class="auth-card">
-        <div class="text-center mb-4">
-            <div class="auth-icon-wrap"><i class="fas fa-user-plus"></i></div>
-            <h4>Create Your Account</h4>
-            <p class="subtitle">Start learning with NIELIT LMS</p>
-        </div>
+    <span class="auth-orb orb-1"></span>
+    <span class="auth-orb orb-2"></span>
+    <span class="auth-orb orb-3"></span>
 
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
-            {% endif %}
+    <div class="signup-shell">
 
-            <div class="mb-3">
-                <label class="form-label">Email Address</label>
-                {{ form.email }}
-                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>{% endif %}
+        <!-- ── Guidelines panel ─────────────────────────── -->
+        <aside class="guide-panel">
+            <div class="guide-block">
+                <h6><i class="fas fa-circle-info"></i> Before You Register</h6>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Provide your own valid email address and mobile number — these will be used for all official NIELIT communication.</li>
+                    <li><i class="fas fa-check-circle"></i> Details entered here should exactly match your identity documents used later during course/exam registration.</li>
+                    <li><i class="fas fa-check-circle"></i> Do not share your login credentials with anyone else.</li>
+                </ul>
+            </div>
+            <div class="guide-block">
+                <h6><i class="fas fa-shield-halush"></i> Password Guidelines</h6>
+                <ul class="pwd-rules">
+                    <li><i class="fas fa-check-circle"></i> Minimum 8 characters required</li>
+                    <li><i class="fas fa-check-circle"></i> Adding uppercase, numbers &amp; special characters is recommended for a stronger password, but not mandatory</li>
+                    <li><i class="fas fa-check-circle"></i> Avoid using your name, email or mobile number as password</li>
+                </ul>
+            </div>
+            <div class="guide-block">
+                <h6><i class="fas fa-envelope-open-text"></i> Communication</h6>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Admit cards, results, and course updates will be sent only to your registered email/mobile.</li>
+                    <li><i class="fas fa-check-circle"></i> Keep your credentials safe — NIELIT will never ask for your password over call or email.</li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- ── Form card ────────────────────────────────── -->
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <div class="auth-icon-wrap"><i class="fas fa-user-plus"></i></div>
+                <h4>Create Your Account</h4>
+                <p class="subtitle">Start learning with NIELIT LMS</p>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Mobile Number</label>
-                {{ form.contact }}
-                {% if form.contact.errors %}<div class="text-danger small mt-1">{{ form.contact.errors|join:", " }}</div>{% endif %}
-            </div>
+            <form method="post" novalidate id="signupForm">
+                {% csrf_token %}
 
-            <div class="row-2col mb-3">
-                <div>
+                {% if form.non_field_errors %}
+                    <div class="alert-form-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>{{ form.non_field_errors|join:", " }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="field-group {% if form.email.errors %}has-error{% endif %}" id="emailGroup">
+                    <label class="form-label"><i class="fas fa-envelope text-muted" style="font-size:0.72rem;"></i> Email Address</label>
+                    {{ form.email }}
+                    <i class="fas fa-check field-status-icon icon-valid"></i>
+                    <i class="fas fa-xmark field-status-icon icon-error"></i>
+                    <div class="field-error" id="emailError">{% if form.email.errors %}{{ form.email.errors|join:", " }}{% endif %}</div>
+                </div>
+
+                <div class="field-group {% if form.contact.errors %}has-error{% endif %}" id="contactGroup">
+                    <label class="form-label"><i class="fas fa-phone text-muted" style="font-size:0.72rem;"></i> Mobile Number</label>
+                    {{ form.contact }}
+                    <i class="fas fa-check field-status-icon icon-valid"></i>
+                    <i class="fas fa-xmark field-status-icon icon-error"></i>
+                    <div class="field-error" id="contactError">{% if form.contact.errors %}{{ form.contact.errors|join:", " }}{% endif %}</div>
+                </div>
+
+                <div class="field-group {% if form.password1.errors %}has-error{% endif %}" id="pwd1Group">
                     <label class="form-label">Password</label>
                     {{ form.password1 }}
-                    {% if form.password1.errors %}<div class="text-danger small mt-1">{{ form.password1.errors|join:", " }}</div>{% endif %}
+                    <button type="button" class="pwd-toggle-btn" id="pwd1Toggle" tabindex="-1" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <div class="pwd-strength" id="pwdStrength">
+                        <div class="pwd-strength-bar"><span></span><span></span><span></span></div>
+                        <span class="pwd-strength-label" id="pwdStrengthLabel"></span>
+                    </div>
+                    <div class="field-error" id="pwd1Error">{% if form.password1.errors %}{{ form.password1.errors|join:", " }}{% endif %}</div>
                 </div>
-                <div>
+
+                <div class="field-group {% if form.password2.errors %}has-error{% endif %}" id="pwd2Group">
                     <label class="form-label">Confirm Password</label>
                     {{ form.password2 }}
-                    {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors|join:", " }}</div>{% endif %}
+                    <button type="button" class="pwd-toggle-btn" id="pwd2Toggle" tabindex="-1" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <div class="field-error" id="pwd2Error">{% if form.password2.errors %}{{ form.password2.errors|join:", " }}{% endif %}</div>
                 </div>
-            </div>
 
-            <button type="submit" class="btn btn-auth-primary w-100">
-                <i class="fas fa-check-circle me-1"></i> Create Account
-            </button>
-        </form>
+                <button type="button" class="btn btn-auth-primary" id="reviewBtn">
+                    <i class="fas fa-clipboard-check"></i> Review Details
+                </button>
+            </form>
 
-        <p class="auth-footer-link">
-            Already have an account? <a href="{% url 'user:login' %}">Sign in</a>
-        </p>
+            <p class="auth-footer-link">
+                Already have an account? <a href="{% url 'user:login' %}">Sign in</a>
+            </p>
+        </div>
+
     </div>
 </section>
+
+<!-- ── Review & Confirm Modal ─────────────────────────── -->
+<div class="review-modal-overlay" id="reviewModalOverlay">
+    <div class="review-modal">
+        <h5><i class="fas fa-clipboard-check"></i> Confirm Your Details</h5>
+        <p class="review-sub">Please verify the information below before creating your account.</p>
+
+        <div class="review-detail-list">
+            <div class="review-detail-row">
+                <span class="rd-label">Email Address</span>
+                <span class="rd-value" id="reviewEmail">—</span>
+            </div>
+            <div class="review-detail-row">
+                <span class="rd-label">Mobile Number</span>
+                <span class="rd-value" id="reviewContact">—</span>
+            </div>
+            <div class="review-detail-row">
+                <span class="rd-label">Password</span>
+                <span class="rd-value">•••••••• (set)</span>
+            </div>
+        </div>
+
+        <div class="ack-box">
+            <input type="checkbox" id="ackCheckbox">
+            <label for="ackCheckbox">
+                I confirm that the details provided by me are correct to the best of my knowledge.
+                I understand that the email address and mobile number given above will be used by
+                NIELIT Delhi for all official communication, including admit cards, results, course
+                updates, and account-related notifications. I am solely responsible for the accuracy
+                of this information and for keeping my login credentials confidential.
+            </label>
+        </div>
+
+        <div class="review-modal-actions">
+            <button type="button" class="btn-modal-secondary" id="modalEditBtn">
+                <i class="fas fa-pen me-1"></i> Edit Details
+            </button>
+            <button type="button" class="btn-modal-confirm" id="modalConfirmBtn">
+                <span class="btn-spinner"></span>
+                <i class="fas fa-check"></i> Confirm &amp; Create Account
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('signupForm');
+
+    const emailGroup   = document.getElementById('emailGroup');
+    const contactGroup = document.getElementById('contactGroup');
+    const pwd1Group    = document.getElementById('pwd1Group');
+    const pwd2Group    = document.getElementById('pwd2Group');
+
+    const emailInput   = emailGroup.querySelector('input');
+    const contactInput = contactGroup.querySelector('input');
+    const pwd1Input    = pwd1Group.querySelector('input');
+    const pwd2Input    = pwd2Group.querySelector('input');
+
+    const emailError   = document.getElementById('emailError');
+    const contactError = document.getElementById('contactError');
+    const pwd1Error     = document.getElementById('pwd1Error');
+    const pwd2Error     = document.getElementById('pwd2Error');
+
+    // ── Password show/hide toggles ──
+    function wireToggle(btnId, input) {
+        const btn = document.getElementById(btnId);
+        if (!btn || !input) return;
+        btn.addEventListener('click', function () {
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+    }
+    wireToggle('pwd1Toggle', pwd1Input);
+    wireToggle('pwd2Toggle', pwd2Input);
+
+    // ── Validators ──
+    function setState(group, errEl, ok, msg) {
+        group.classList.remove('has-error', 'is-valid');
+        errEl.textContent = '';
+        if (ok === null) return; // untouched / empty, no state shown
+        if (ok) {
+            group.classList.add('is-valid');
+        } else {
+            group.classList.add('has-error');
+            errEl.textContent = msg;
+        }
+    }
+
+    function validateEmail(showEmpty) {
+        const val = emailInput.value.trim();
+        if (!val) { setState(emailGroup, emailError, showEmpty ? false : null, 'Email address is required.'); return false; }
+        const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+        setState(emailGroup, emailError, ok, 'Please enter a valid email address.');
+        return ok;
+    }
+
+    function validateContact(showEmpty) {
+        const val = contactInput.value.trim();
+        if (!val) { setState(contactGroup, contactError, showEmpty ? false : null, 'Mobile number is required.'); return false; }
+        const ok = /^[6-9]\d{9}$/.test(val);
+        setState(contactGroup, contactError, ok, 'Enter a valid 10-digit mobile number.');
+        return ok;
+    }
+
+    function pwdStrengthScore(val) {
+        let score = 0;
+        if (val.length >= 8) score++;
+        if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score++;
+        if (/\d/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+        return score; // 0-4
+    }
+
+    const strengthWrap  = document.getElementById('pwdStrength');
+    const strengthLabel = document.getElementById('pwdStrengthLabel');
+
+    function validatePwd1(showEmpty) {
+        const val = pwd1Input.value;
+        if (!val) {
+            setState(pwd1Group, pwd1Error, showEmpty ? false : null, 'Password is required.');
+            strengthWrap.className = 'pwd-strength';
+            strengthLabel.textContent = '';
+            return false;
+        }
+
+        // Strength is informational only — does not block submission
+        const score = pwdStrengthScore(val);
+        strengthWrap.classList.remove('weak', 'medium', 'strong');
+        if (score <= 1) { strengthWrap.classList.add('weak'); strengthLabel.textContent = 'Weak — consider adding numbers, symbols or capital letters'; }
+        else if (score <= 3) { strengthWrap.classList.add('medium'); strengthLabel.textContent = 'Good password strength'; }
+        else { strengthWrap.classList.add('strong'); strengthLabel.textContent = 'Strong password'; }
+
+        // Only mandatory rule: minimum 8 characters
+        const ok = val.length >= 8;
+        setState(pwd1Group, pwd1Error, ok, 'Password must be at least 8 characters long.');
+        return ok;
+    }
+
+    function validatePwd2(showEmpty) {
+        const val = pwd2Input.value;
+        if (!val) { setState(pwd2Group, pwd2Error, showEmpty ? false : null, 'Please confirm your password.'); return false; }
+        const ok = val === pwd1Input.value && pwd1Input.value.length > 0;
+        setState(pwd2Group, pwd2Error, ok, 'Passwords do not match.');
+        return ok;
+    }
+
+    // live validation as user types (debounced-ish via input event) + on blur
+    emailInput.addEventListener('input', () => validateEmail(false));
+    emailInput.addEventListener('blur', () => validateEmail(true));
+    contactInput.addEventListener('input', () => validateContact(false));
+    contactInput.addEventListener('blur', () => validateContact(true));
+    pwd1Input.addEventListener('input', () => { validatePwd1(false); if (pwd2Input.value) validatePwd2(false); });
+    pwd1Input.addEventListener('blur', () => validatePwd1(true));
+    pwd2Input.addEventListener('input', () => validatePwd2(false));
+    pwd2Input.addEventListener('blur', () => validatePwd2(true));
+
+    // ── Review modal flow ──
+    const reviewBtn      = document.getElementById('reviewBtn');
+    const overlay        = document.getElementById('reviewModalOverlay');
+    const reviewEmail    = document.getElementById('reviewEmail');
+    const reviewContact  = document.getElementById('reviewContact');
+    const ackCheckbox    = document.getElementById('ackCheckbox');
+    const confirmBtn     = document.getElementById('modalConfirmBtn');
+    const editBtn        = document.getElementById('modalEditBtn');
+
+    reviewBtn.addEventListener('click', function () {
+        const okEmail   = validateEmail(true);
+        const okContact = validateContact(true);
+        const okPwd1    = validatePwd1(true);
+        const okPwd2    = validatePwd2(true);
+
+        if (!(okEmail && okContact && okPwd1 && okPwd2)) {
+            const firstError = document.querySelector('.field-group.has-error');
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        reviewEmail.textContent = emailInput.value.trim();
+        reviewContact.textContent = contactInput.value.trim();
+        ackCheckbox.checked = false;
+        confirmBtn.classList.remove('visible');
+        overlay.classList.add('show');
+    });
+
+    ackCheckbox.addEventListener('change', function () {
+        confirmBtn.classList.toggle('visible', ackCheckbox.checked);
+    });
+
+    editBtn.addEventListener('click', function () {
+        overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) overlay.classList.remove('show');
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (!ackCheckbox.checked || confirmBtn.disabled) return;
+        confirmBtn.disabled = true;
+        confirmBtn.querySelector('.btn-spinner').style.display = 'inline-block';
+        confirmBtn.querySelector('i.fa-check').style.display = 'none';
+        form.submit();
+    });
+})();
+</script>
 {% endblock %}
