@@ -1,0 +1,373 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if course %}Edit Course{% else %}Create Course{% endif %}{% endblock %}
+{% block page_title %}{% if course %}Edit Course{% else %}Create Course{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-journal-plus"></i> {% if course %}Edit Course{% else %}Create New Course{% endif %}</h2>
+        <p>{% if course %}Update course details, resources, and status.{% else %}Step 1 of 2 — course details. You'll add modules and lessons next.{% endif %}</p>
+    </div>
+    {% if not course %}
+    <div class="form-stepper">
+        <div class="stepper-step stepper-active">
+            <div class="stepper-circle">1</div>
+            <span>Course Details</span>
+        </div>
+        <div class="stepper-line"></div>
+        <div class="stepper-step">
+            <div class="stepper-circle stepper-circle-pending">2</div>
+            <span class="text-muted">Modules &amp; Lessons</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate id="courseForm">
+    {% csrf_token %}
+
+    <div class="course-form-grid">
+
+        <!-- ═══════════ LEFT: main form content ═══════════ -->
+        <div class="course-form-main">
+
+            <!-- Basic Information -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-blue"><i class="bi bi-info-circle-fill"></i></div>
+                    <div>
+                        <h6>Basic Information</h6>
+                        <p>Core details that appear on the course catalog and overview page.</p>
+                    </div>
+                </div>
+                <div class="form-section-body">
+                    <div class="row-2col">
+                        <div class="field-block field-block-full">
+                            <label class="form-label">Course Name <span class="required-star">*</span></label>
+                            {{ form.course_name }}
+                            {% if form.course_name.errors %}<div class="text-danger small mt-1">{{ form.course_name.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="field-block field-block-full">
+                            <label class="form-label">Course Description <span class="required-star">*</span></label>
+                            {{ form.course_description }}
+                            {% if form.course_description.errors %}<div class="text-danger small mt-1">{{ form.course_description.errors|join:", " }}</div>{% endif %}
+                        </div>
+                        <div class="field-block field-block-full">
+                            <label class="form-label">Course Banner Image</label>
+                            {{ form.course_banner }}
+                            {% if course.course_banner %}
+                                <div class="form-text current-file-link"><i class="bi bi-image"></i> Current: <a href="{{ course.course_banner.url }}" target="_blank">view banner</a></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Domains -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-amber"><i class="bi bi-tags-fill"></i></div>
+                    <div>
+                        <h6>Domains <span class="required-star">*</span></h6>
+                        <p>Select at least one subject area — this powers search and filtering on the public catalog.</p>
+                    </div>
+                </div>
+                <div class="form-section-body">
+                    {% if form.domains.field.queryset %}
+                    <div class="domain-checkbox-grid">
+                        {% for checkbox in form.domains %}
+                            <label class="domain-checkbox-chip">
+                                {{ checkbox.tag }}
+                                <span>{{ checkbox.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                        <div class="alert alert-warning py-2 small mb-0">
+                            No active domains exist yet. <a href="{% url 'course:domain_create' %}">Create one first</a>.
+                        </div>
+                    {% endif %}
+                    {% if form.domains.errors %}<div class="text-danger small mt-2">{{ form.domains.errors|join:", " }}</div>{% endif %}
+                </div>
+            </div>
+
+            <!-- Learning Details + Documents, side by side on wide screens -->
+            <div class="two-panel-row">
+                <div class="card-panel form-section-card">
+                    <div class="form-section-header">
+                        <div class="form-section-icon icon-green"><i class="bi bi-mortarboard-fill"></i></div>
+                        <div>
+                            <h6>Learning Details</h6>
+                            <p>Outcomes and prerequisites for learners.</p>
+                        </div>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="field-block">
+                            <label class="form-label">Learning Outcomes</label>
+                            {{ form.learning_outcomes }}
+                        </div>
+                        <div class="field-block field-block-last">
+                            <label class="form-label">Pre-requisites <span class="optional-tag">Optional</span></label>
+                            {{ form.pre_requisites }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-panel form-section-card">
+                    <div class="form-section-header">
+                        <div class="form-section-icon icon-cyan"><i class="bi bi-folder-fill"></i></div>
+                        <div>
+                            <h6>Supporting Documents <span class="optional-tag">Optional</span></h6>
+                            <p>Downloadable resources for enrolled learners.</p>
+                        </div>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="field-block">
+                            <label class="form-label">Course Notes / Info Document</label>
+                            {{ form.info_doc }}
+                            {% if course.info_doc %}
+                                <div class="form-text current-file-link"><i class="bi bi-file-earmark-check-fill" style="color:#16a34a;"></i> Current: <a href="{{ course.info_doc.url }}" target="_blank">view file</a></div>
+                            {% endif %}
+                        </div>
+                        <div class="field-block field-block-last">
+                            <label class="form-label">Assignment Document</label>
+                            {{ form.assignment_doc }}
+                            {% if course.assignment_doc %}
+                                <div class="form-text current-file-link"><i class="bi bi-file-earmark-check-fill" style="color:#16a34a;"></i> Current: <a href="{{ course.assignment_doc.url }}" target="_blank">view file</a></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══════════ RIGHT: sticky publish sidebar ═══════════ -->
+        <aside class="course-form-sidebar">
+
+            <div class="card-panel sidebar-panel status-panel">
+                <div class="sidebar-panel-title"><i class="bi bi-broadcast"></i> Publish Status</div>
+                <div class="status-toggle-row">
+                    <div>
+                        <label class="form-label mb-0 fw-semibold">{{ form.is_active.label }}</label>
+                        <div class="small text-muted">{{ form.is_active.help_text }}</div>
+                    </div>
+                    <div class="form-check form-switch fs-4 mb-0">
+                        {{ form.is_active }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-panel sidebar-panel checklist-panel">
+                <div class="sidebar-panel-title"><i class="bi bi-check2-square"></i> Before You Save</div>
+                <ul class="checklist">
+                    <li><i class="bi bi-check-circle-fill"></i> Course name and description are clear and accurate</li>
+                    <li><i class="bi bi-check-circle-fill"></i> At least one domain is selected</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Banner image is recommended for catalog visibility</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Supporting documents are optional but improve learner experience</li>
+                </ul>
+            </div>
+
+            <div class="card-panel sidebar-panel action-panel">
+                <button type="submit" class="btn-admin-primary btn-form-submit w-100">
+                    {% if course %}
+                        <i class="bi bi-check-lg me-1"></i> Save Changes
+                    {% else %}
+                        Create &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+                    {% endif %}
+                </button>
+                {% if course %}
+                    <a href="{% url 'course:modules' course.id %}" class="btn-admin-secondary w-100 mt-2">
+                        <i class="bi bi-collection-play me-1"></i> Manage Modules
+                    </a>
+                {% endif %}
+                <a href="{% url 'course:manage_list' %}" class="btn-admin-cancel w-100 mt-2">
+                    <i class="bi bi-arrow-left me-1"></i> Cancel
+                </a>
+            </div>
+
+        </aside>
+
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ═══ Use full available width ═══ */
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+
+    /* ═══ Stepper ═══ */
+    .form-stepper {
+        display: flex; align-items: center;
+        background: #fff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 10px 18px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        flex-shrink: 0;
+    }
+    .stepper-step { display: flex; align-items: center; gap: 9px; }
+    .stepper-step span { font-size: 0.8rem; font-weight: 600; color: #0f172a; white-space: nowrap; }
+    .stepper-circle {
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.78rem; font-weight: 700; flex-shrink: 0;
+        background: #2563eb; color: white;
+    }
+    .stepper-circle-pending { background: #f1f5f9; color: #94a3b8; }
+    .stepper-line { width: 40px; height: 2px; background: #cbd5e1; margin: 0 12px; }
+
+    /* ═══ Grid: main content + sticky sidebar, full width ═══ */
+    .course-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    @media (max-width: 1100px) {
+        .course-form-grid { grid-template-columns: 1fr; }
+    }
+
+    .course-form-sidebar {
+        position: sticky;
+        top: calc(var(--topbar-height) + 1.25rem);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* two learning-details / documents cards side by side on wide screens */
+    .two-panel-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+    @media (max-width: 860px) {
+        .two-panel-row { grid-template-columns: 1fr; }
+    }
+
+    /* ═══ Section cards — darker, clearer boundaries ═══ */
+    .form-section-card {
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+        border: 1.5px solid #cbd5e1 !important;
+    }
+    .form-section-card:last-child,
+    .two-panel-row .form-section-card { margin-bottom: 0; }
+
+    .form-section-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 1rem 1.2rem;
+        background: #f1f5f9;
+        border-bottom: 2px solid #cbd5e1;
+    }
+    .form-section-icon {
+        width: 38px; height: 38px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; flex-shrink: 0; margin-top: 1px;
+        box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.03);
+    }
+    .icon-blue  { background: #dbeafe; color: #2563eb; }
+    .icon-amber { background: #fef3c7; color: #d97706; }
+    .icon-green { background: #dcfce7; color: #16a34a; }
+    .icon-cyan  { background: #cffafe; color: #0891b2; }
+
+    .form-section-header h6 {
+        font-size: 0.9rem; font-weight: 700; color: #0f172a;
+        margin: 0 0 2px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .form-section-header p {
+        font-size: 0.77rem; color: #64748b; margin: 0; line-height: 1.5;
+    }
+
+    .form-section-body { padding: 1.25rem 1.2rem; }
+
+    /* ═══ Field grid inside sections — 2 columns where sensible ═══ */
+    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+    .field-block-full { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .row-2col { grid-template-columns: 1fr; } }
+
+    .field-block {
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .field-block-last,
+    .field-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .required-star { color: #ef4444; font-weight: 700; }
+    .optional-tag {
+        font-size: 0.66rem; font-weight: 600; color: #94a3b8;
+        background: #f1f5f9; padding: 2px 8px; border-radius: 999px;
+        text-transform: none; margin-left: 4px; vertical-align: middle;
+    }
+
+    .current-file-link { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 0.8rem; }
+    .current-file-link a { font-weight: 600; }
+
+    /* ═══ Domain chips ═══ */
+    .domain-checkbox-grid { display: flex; flex-wrap: wrap; gap: 9px; }
+    .domain-checkbox-chip {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 8px 15px; border: 1.5px solid #cbd5e1; border-radius: 20px;
+        font-size: 0.83rem; font-weight: 500; color: #374151;
+        cursor: pointer; transition: all 0.15s ease; margin: 0;
+        background: #fff;
+    }
+    .domain-checkbox-chip:hover { background: #f0f4ff; border-color: #93b4f0; }
+    .domain-checkbox-chip input[type="checkbox"] { margin: 0; accent-color: #2563eb; }
+    .domain-checkbox-chip:has(input:checked) { background: #eaf1fb; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .domain-checkbox-chip:has(input:checked) span { font-weight: 700; color: #1d4ed8; }
+
+    /* ═══ Sidebar panels ═══ */
+    .sidebar-panel { padding: 1.1rem 1.15rem; border: 1.5px solid #cbd5e1 !important; }
+    .sidebar-panel-title {
+        font-size: 0.82rem; font-weight: 700; color: #0f172a;
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 0.9rem;
+        padding-bottom: 0.7rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .sidebar-panel-title i { color: #2563eb; }
+
+    .status-panel { background: #f8fafc; }
+    .status-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+
+    .checklist-panel { background: #f0fdf4; border-color: #bbf7d0 !important; }
+    .checklist-panel .sidebar-panel-title i { color: #16a34a; }
+    .checklist-panel .sidebar-panel-title { border-bottom-color: #bbf7d0; }
+    .checklist { list-style: none; padding: 0; margin: 0; }
+    .checklist li {
+        display: flex; align-items: flex-start; gap: 8px;
+        font-size: 0.78rem; color: #166534; line-height: 1.55;
+        margin-bottom: 10px;
+    }
+    .checklist li:last-child { margin-bottom: 0; }
+    .checklist li i { color: #22c55e; font-size: 0.85rem; margin-top: 2px; flex-shrink: 0; }
+
+    .action-panel { background: #fff; }
+    .btn-form-submit { padding: 0.68rem 1.5rem; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+
+    .btn-admin-cancel {
+        display: flex; align-items: center; justify-content: center;
+        background: #fef2f2; border: 1.5px solid #fecaca; color: #b91c1c;
+        font-weight: 600; font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 8px;
+        transition: background 0.15s ease;
+    }
+    .btn-admin-cancel:hover { background: #fee2e2; color: #991b1b; }
+
+    .btn-admin-secondary {
+        display: flex; align-items: center; justify-content: center;
+        background: #fff; border: 1.5px solid #cbd5e1; color: #374151;
+        font-weight: 600; font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-admin-secondary:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+</style>
+{% endblock %}

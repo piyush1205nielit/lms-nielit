@@ -1,0 +1,383 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load course_extras %}
+{% block title %}{{ course.course_name }} — Overview{% endblock %}
+{% block page_title %}{{ course.course_name }} — Overview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-journal-text"></i> {{ course.course_name }}</h2>
+        <p class="header-badges">
+            {% if course.status == 'active' %}
+                <span class="course-status-badge status-active"><span class="status-dot"></span> Active</span>
+            {% else %}
+                <span class="course-status-badge status-inactive"><span class="status-dot"></span> Draft / Inactive</span>
+            {% endif %}
+            {% if course.is_featured %}
+                <span class="course-status-badge status-featured"><i class="bi bi-star-fill"></i> Featured</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'course:detail' course.slug %}" target="_blank" class="btn-admin-secondary">
+            <i class="bi bi-box-arrow-up-right me-1"></i> View Public Page
+        </a>
+        <a href="{% url 'course:edit' course.id %}" class="btn-admin-secondary">
+            <i class="bi bi-pencil-square me-1"></i> Edit Details
+        </a>
+        <a href="{% url 'course:modules' course.id %}" class="btn-admin-primary">
+            <i class="bi bi-collection-play me-1"></i> Manage Modules
+        </a>
+    </div>
+</div>
+
+<!-- ═══ Stat row ═══ -->
+<div class="stat-grid stat-grid-6">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-collection-fill"></i></div>
+        <div><div class="stat-mini-value">{{ modules|length }}</div><div class="stat-mini-label">Modules</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-play-btn-fill"></i></div>
+        <div><div class="stat-mini-value">{{ total_lessons }}</div><div class="stat-mini-label">Lessons</div></div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-clock-fill"></i></div>
+        <div><div class="stat-mini-value">{{ total_duration|format_duration }}</div><div class="stat-mini-label">Duration</div></div>
+    </div>
+    <div class="stat-mini-card {% if ready_lessons == total_lessons and total_lessons > 0 %}stat-green{% else %}stat-red{% endif %}">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ ready_lessons }}/{{ total_lessons }}</div><div class="stat-mini-label">Videos Ready</div></div>
+    </div>
+    <a href="{% url 'course:students' course.id %}" class="stat-mini-card stat-cyan stat-mini-clickable">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ enrollment_count }}</div><div class="stat-mini-label">Enrolled <i class="bi bi-arrow-right"></i></div></div>
+    </a>
+    <div class="stat-mini-card stat-teal">
+        <div class="stat-mini-icon"><i class="bi bi-trophy-fill"></i></div>
+        <div><div class="stat-mini-value">{{ completed_count }}</div><div class="stat-mini-label">Completed</div></div>
+    </div>
+</div>
+
+{% if failed_lessons > 0 %}
+<div class="alert-banner alert-banner-danger">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span><strong>{{ failed_lessons }} lesson video{{ failed_lessons|pluralize }} failed to process.</strong> Check the modules list below and re-upload if needed.</span>
+</div>
+{% endif %}
+
+<div class="overview-grid">
+
+    <!-- ═══════════ LEFT: main content ═══════════ -->
+    <div class="overview-main">
+
+        <!-- Course info -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="form-section-icon icon-blue"><i class="bi bi-info-circle-fill"></i></div>
+                <div><h6>Course Information</h6><p>Description, domains, and publishing details.</p></div>
+            </div>
+            <div class="form-section-body">
+                <div class="d-flex gap-3">
+                    {% if course.course_banner %}
+                        <img src="{{ course.course_banner.url }}" class="overview-banner" alt="">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <p class="overview-description">{{ course.course_description }}</p>
+
+                        {% if course.domains.all %}
+                        <div class="domain-badge-row mb-2">
+                            {% for domain in course.domains.all %}
+                                <span class="badge domain-mini-badge" style="background:{{ domain.color_hex|default:'#172281' }}1A; color:{{ domain.color_hex|default:'#172281' }};">{{ domain.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="overview-meta-line">
+                            <i class="bi bi-person-circle"></i> {{ course.created_by.email|default:"Unknown creator" }}
+                            <span class="meta-sep">&middot;</span>
+                            <i class="bi bi-calendar-check"></i>
+                            {% if course.published_date %}Published {{ course.published_date|date:"d M Y" }}{% else %}Not yet published{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if course.learning_outcomes or course.pre_requisites %}
+                <div class="inner-divider"></div>
+                <div class="row-2col">
+                    {% if course.learning_outcomes %}
+                    <div>
+                        <h6 class="inner-block-title"><i class="bi bi-mortarboard-fill"></i> Learning Outcomes</h6>
+                        <p class="inner-block-text">{{ course.learning_outcomes }}</p>
+                    </div>
+                    {% endif %}
+                    {% if course.pre_requisites %}
+                    <div>
+                        <h6 class="inner-block-title"><i class="bi bi-list-check"></i> Pre-requisites</h6>
+                        <p class="inner-block-text">{{ course.pre_requisites }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if course.info_doc or course.assignment_doc %}
+                <div class="inner-divider"></div>
+                <h6 class="inner-block-title"><i class="bi bi-folder-fill"></i> Documents</h6>
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                    {% if course.info_doc %}<a href="{{ course.info_doc.url }}" target="_blank" class="btn-admin-secondary btn-sm-doc"><i class="bi bi-file-earmark-text me-1"></i> Info Document</a>{% endif %}
+                    {% if course.assignment_doc %}<a href="{{ course.assignment_doc.url }}" target="_blank" class="btn-admin-secondary btn-sm-doc"><i class="bi bi-file-earmark-text me-1"></i> Assignment</a>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modules & lessons -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="form-section-icon icon-green"><i class="bi bi-list-ul"></i></div>
+                <div><h6>Course Content</h6><p>Full module and lesson breakdown with video status.</p></div>
+            </div>
+            <div class="form-section-body">
+                {% for module in modules %}
+                    <div class="overview-module">
+                        <div class="overview-module-head">
+                            <span><span class="module-order-badge-sm">#{{ module.order }}</span>{{ module.title }}</span>
+                            <span class="text-muted small">{{ module.lessons.count }} lesson{{ module.lessons.count|pluralize }}</span>
+                        </div>
+                        {% for lesson in module.lessons.all %}
+                            <div class="overview-lesson-row {% if lesson.video_status == 'failed' %}lesson-row-failed{% endif %}">
+                                <span class="overview-lesson-title">
+                                    {% if lesson.video_status == 'ready' %}<i class="bi bi-play-circle-fill lesson-icon-ready"></i>
+                                    {% elif lesson.video_status == 'processing' %}<i class="bi bi-arrow-repeat lesson-icon-processing"></i>
+                                    {% elif lesson.video_status == 'failed' %}<i class="bi bi-exclamation-circle-fill lesson-icon-failed"></i>
+                                    {% else %}<i class="bi bi-dash-circle lesson-icon-pending"></i>{% endif %}
+                                    {{ lesson.title }}
+                                </span>
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="small text-muted">{{ lesson.duration_seconds|format_duration }}</span>
+                                    <a href="{% url 'course:lesson_edit' lesson.id %}" class="btn-admin-icon btn-icon-xs"><i class="bi bi-pencil-square"></i></a>
+                                </span>
+                            </div>
+                        {% empty %}
+                            <div class="overview-lesson-row text-muted">No lessons in this module yet.</div>
+                        {% endfor %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted small mb-0">No modules added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ RIGHT: sticky quick actions ═══════════ -->
+    <aside class="overview-sidebar">
+        <div class="card-panel sidebar-panel action-panel">
+            <div class="sidebar-panel-title"><i class="bi bi-lightning-charge-fill"></i> Quick Actions</div>
+            <div class="quick-action-list">
+                <a href="{% url 'course:modules' course.id %}" class="quick-action-item">
+                    <div class="quick-action-icon icon-blue"><i class="bi bi-collection-play"></i></div>
+                    <div>
+                        <div class="quick-action-title">Manage Modules &amp; Lessons</div>
+                        <div class="quick-action-sub">Add or edit course content</div>
+                    </div>
+                    <i class="bi bi-chevron-right quick-action-arrow"></i>
+                </a>
+                <a href="{% url 'course:students' course.id %}" class="quick-action-item">
+                    <div class="quick-action-icon icon-cyan"><i class="bi bi-people"></i></div>
+                    <div>
+                        <div class="quick-action-title">Enrolled Students</div>
+                        <div class="quick-action-sub">{{ enrollment_count }} learner{{ enrollment_count|pluralize }} enrolled</div>
+                    </div>
+                    <i class="bi bi-chevron-right quick-action-arrow"></i>
+                </a>
+                <a href="{% url 'course:edit' course.id %}" class="quick-action-item">
+                    <div class="quick-action-icon icon-amber"><i class="bi bi-pencil-square"></i></div>
+                    <div>
+                        <div class="quick-action-title">Edit Course Details</div>
+                        <div class="quick-action-sub">Name, description, domains &amp; docs</div>
+                    </div>
+                    <i class="bi bi-chevron-right quick-action-arrow"></i>
+                </a>
+                <a href="{% url 'course:detail' course.slug %}" target="_blank" class="quick-action-item">
+                    <div class="quick-action-icon icon-green"><i class="bi bi-box-arrow-up-right"></i></div>
+                    <div>
+                        <div class="quick-action-title">View Public Page</div>
+                        <div class="quick-action-sub">See how learners view this course</div>
+                    </div>
+                    <i class="bi bi-chevron-right quick-action-arrow"></i>
+                </a>
+            </div>
+        </div>
+
+        {% if failed_lessons > 0 %}
+        <div class="card-panel sidebar-panel warning-panel">
+            <div class="sidebar-panel-title warning-title"><i class="bi bi-exclamation-triangle-fill"></i> Needs Attention</div>
+            <p class="warning-text">{{ failed_lessons }} video{{ failed_lessons|pluralize }} failed processing and won't play for learners. Re-upload from the modules page.</p>
+            <a href="{% url 'course:modules' course.id %}" class="btn-admin-labeled btn-label-delete w-100 justify-content-center mt-2">
+                <i class="bi bi-arrow-right-circle"></i> Fix in Modules
+            </a>
+        </div>
+        {% endif %}
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .header-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+    /* ═══ Status badges ═══ */
+    .course-status-badge {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 0.76rem; font-weight: 700;
+        padding: 6px 13px; border-radius: 999px;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .status-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-active .status-dot { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .status-inactive { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .status-inactive .status-dot { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+    .status-featured { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-grid-6 { grid-template-columns: repeat(6, 1fr); }
+    @media (max-width: 1100px) { .stat-grid-6 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 640px) { .stat-grid-6 { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 14px; display: flex; align-items: center; gap: 10px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        text-decoration: none;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .stat-mini-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.2rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+    .stat-mini-label i { font-size: 0.65rem; margin-left: 2px; }
+
+    .stat-mini-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,23,42,0.08); border-color: #93c5fd; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-amber  { border-left-color: #d97706; } .stat-amber  .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-red    { border-left-color: #dc2626; } .stat-red    .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+    .stat-cyan   { border-left-color: #0891b2; } .stat-cyan   .stat-mini-icon { background: #cffafe; color: #0891b2; }
+    .stat-teal   { border-left-color: #0d9488; } .stat-teal   .stat-mini-icon { background: #ccfbf1; color: #0d9488; }
+
+    /* ═══ Alert banner ═══ */
+    .alert-banner {
+        display: flex; align-items: center; gap: 12px;
+        padding: 13px 16px; border-radius: 10px;
+        font-size: 0.87rem; margin-bottom: 1.25rem;
+    }
+    .alert-banner-danger { background: #fef2f2; border: 1.5px solid #fecaca; color: #b91c1c; }
+    .alert-banner-danger i { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ═══ Layout grid ═══ */
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 1100px) { .overview-grid { grid-template-columns: 1fr; } }
+    .overview-sidebar { position: sticky; top: calc(var(--topbar-height) + 1.25rem); display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ═══ Section cards (shared language) ═══ */
+    .form-section-card { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .form-section-card:last-child { margin-bottom: 0; }
+    .form-section-header { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .form-section-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .icon-blue  { background: #dbeafe; color: #2563eb; }
+    .icon-amber { background: #fef3c7; color: #d97706; }
+    .icon-green { background: #dcfce7; color: #16a34a; }
+    .icon-cyan  { background: #cffafe; color: #0891b2; }
+    .form-section-header h6 { font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+    .form-section-header p { font-size: 0.77rem; color: #64748b; margin: 0; }
+    .form-section-body { padding: 1.25rem 1.2rem; }
+
+    /* ═══ Course info block ═══ */
+    .overview-banner { width: 150px; height: 96px; object-fit: cover; border-radius: 10px; flex-shrink: 0; border: 1px solid #e2e8f0; }
+    .overview-description { font-size: 0.87rem; color: #475569; line-height: 1.6; margin-bottom: 12px; }
+    .domain-badge-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .domain-mini-badge { font-weight: 700; font-size: 0.68rem; padding: 4px 9px; border-radius: 6px; }
+
+    .overview-meta-line { font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .meta-sep { color: #cbd5e1; }
+
+    .inner-divider { border-top: 1.5px solid #e2e8f0; margin: 1.25rem 0; }
+    .inner-block-title { font-size: 0.8rem; font-weight: 700; color: #172281; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .inner-block-text { font-size: 0.83rem; color: #64748b; white-space: pre-line; line-height: 1.6; margin: 0; }
+    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 640px) { .row-2col { grid-template-columns: 1fr; } }
+
+    .btn-sm-doc { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+
+    /* ═══ Module / lesson list ═══ */
+    .overview-module { border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+    .overview-module:last-child { margin-bottom: 0; }
+    .overview-module-head {
+        background: #fafbfd; padding: 10px 14px; font-size: 0.85rem; font-weight: 700; color: #0e1b2e;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #eef1f6;
+    }
+    .module-order-badge-sm { background: #172281; color: white; font-size: 0.66rem; font-weight: 700; padding: 3px 8px; border-radius: 5px; margin-right: 8px; }
+
+    .overview-lesson-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 9px 14px; font-size: 0.83rem; color: #374151;
+        border-top: 1px solid #f1f5f9;
+    }
+    .lesson-row-failed { background: #fef8f8; }
+    .overview-lesson-title { display: flex; align-items: center; gap: 8px; }
+    .lesson-icon-ready { color: #16a34a; }
+    .lesson-icon-processing { color: #2563eb; animation: spin 1.2s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .lesson-icon-failed { color: #dc2626; }
+    .lesson-icon-pending { color: #94a3b8; }
+
+    .btn-admin-icon { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid #dbe2ea; background: #fff; color: #64748b; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+    .btn-admin-icon:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+    .btn-icon-xs { width: 28px; height: 28px; font-size: 0.8rem; }
+
+    /* ═══ Sidebar panels ═══ */
+    .sidebar-panel { padding: 1.1rem 1.15rem; border: 1.5px solid #cbd5e1 !important; }
+    .sidebar-panel-title {
+        font-size: 0.82rem; font-weight: 700; color: #0f172a;
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 0.9rem; padding-bottom: 0.7rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .sidebar-panel-title i { color: #2563eb; }
+
+    .quick-action-list { display: flex; flex-direction: column; gap: 8px; }
+    .quick-action-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px; border-radius: 9px;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .quick-action-item:hover { background: #f8fafc; border-color: #e2e8f0; }
+    .quick-action-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+    .quick-action-title { font-size: 0.82rem; font-weight: 600; color: #1e293b; }
+    .quick-action-sub { font-size: 0.72rem; color: #94a3b8; margin-top: 1px; }
+    .quick-action-arrow { margin-left: auto; color: #cbd5e1; font-size: 0.8rem; flex-shrink: 0; }
+
+    .warning-panel { background: #fef2f2; border-color: #fecaca !important; }
+    .warning-title { border-bottom-color: #fecaca; }
+    .warning-title i { color: #dc2626; }
+    .warning-text { font-size: 0.79rem; color: #991b1b; line-height: 1.55; margin: 0; }
+
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.79rem; font-weight: 600; text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .btn-label-delete { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fecaca; color: #991b1b; }
+</style>
+{% endblock %}

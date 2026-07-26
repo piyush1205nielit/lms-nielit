@@ -1,48 +1,406 @@
 {% extends "admin_dashboard/base_admin.html" %}
+{% load course_extras %}
 {% block title %}Manage Courses{% endblock %}
+{% block page_title %}Manage Courses{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-journal-bookmark-fill me-2"></i>Manage Courses</h2>
-        <p>{{ courses.count }} total courses</p>
+        <h2><i class="bi bi-journal-bookmark-fill"></i> Manage Courses</h2>
+        <p>{{ courses.count }} total course{{ courses.count|pluralize }} across all domains</p>
     </div>
-    <a href="{% url 'course:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> New Course</a>
+    <div class="page-header-actions">
+        <a href="{% url 'course:create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Course
+        </a>
+    </div>
 </div>
 
-<div class="card-panel p-3">
+<!-- Legend -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active course</span>
+    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive course</span>
+    <span class="legend-item"><i class="bi bi-star-fill" style="color:#f59e0b;"></i> Featured on homepage</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> All Courses</h5>
+        <span class="table-count-tag">{{ courses.count }} record{{ courses.count|pluralize }}</span>
+    </div>
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="table table-admin course-manage-table mb-0">
+            <thead>
                 <tr>
-                    <th>Course Name</th><th>Status</th><th>Featured</th><th>Modules</th><th>Enrollments</th><th>Created By</th><th class="text-end">Actions</th>
+                    <th class="col-status"></th>
+                    <th style="min-width: 240px;">Course</th>
+                    <th style="min-width: 160px;">Domains</th>
+                    <th class="text-center">Modules</th>
+                    <th class="text-center">Lessons</th>
+                    <th class="text-center">Duration</th>
+                    <th class="text-center">Enrollments</th>
+                    <th class="text-center">Active</th>
+                    <th class="text-center">Featured</th>
+                    <th class="text-end" style="min-width: 320px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for course in courses %}
-                <tr>
-                    <td class="fw-semibold">{{ course.course_name }}</td>
-                    <td>
-                        {% if course.status == 'active' %}<span class="badge bg-success">Active</span>
-                        {% else %}<span class="badge bg-secondary">Draft / Inactive</span>{% endif %}
+                <tr class="course-row {% if course.status == 'active' %}row-active{% else %}row-inactive{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail {% if course.status == 'active' %}rail-active{% else %}rail-inactive{% endif %}"></span>
                     </td>
-                    <td>{% if course.is_featured %}<i class="bi bi-star-fill text-warning"></i>{% else %}—{% endif %}</td>
-                    <td>{{ course.modules.count }}</td>
-                    <td>{{ course.enrollments.count }}</td>
-                    <td>{{ course.created_by.email|default:"—" }}</td>
+                    <td>
+                        <div class="course-cell">
+                            {% if course.course_banner %}
+                                <img src="{{ course.course_banner.url }}" class="course-thumb" alt="">
+                            {% else %}
+                                <div class="course-thumb course-thumb-placeholder"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                            <div class="course-cell-text">
+                                <div class="course-name">{{ course.course_name }}</div>
+                                <div class="course-meta"><i class="bi bi-person-circle"></i> {{ course.created_by.email|default:"Unknown creator" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="domain-badge-row">
+                            {% for domain in course.domains.all|slice:":2" %}
+                                <span class="badge domain-mini-badge" style="background:{{ domain.color_hex|default:'#172281' }}1A; color:{{ domain.color_hex|default:'#172281' }};">{{ domain.name }}</span>
+                            {% endfor %}
+                            {% if course.domains.count > 2 %}
+                                <span class="badge domain-more-badge">+{{ course.domains.count|add:"-2" }}</span>
+                            {% endif %}
+                            {% if not course.domains.all %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="text-center stat-cell">{{ course.module_count }}</td>
+                    <td class="text-center stat-cell">{{ course.lesson_count }}</td>
+                    <td class="text-center stat-cell-sm">{{ course.total_duration|format_duration }}</td>
+                    <td class="text-center">
+                        <span class="enrollment-badge"><i class="bi bi-people-fill"></i> {{ course.enrollment_count }}</span>
+                    </td>
+                    <td class="text-center">
+                        <form method="post" action="{% url 'course:toggle_active' course.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="toggle-switch-btn {% if course.status == 'active' %}on{% endif %}" title="Toggle active status">
+                                <span class="toggle-knob"></span>
+                            </button>
+                        </form>
+                    </td>
+                    <td class="text-center">
+                        <form method="post" action="{% url 'course:toggle_featured' course.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-icon-only" title="{% if course.is_featured %}Remove from featured{% else %}Feature on homepage{% endif %}">
+                                {% if course.is_featured %}
+                                    <i class="bi bi-star-fill" style="color:#f59e0b;"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-muted"></i>
+                                {% endif %}
+                            </button>
+                        </form>
+                    </td>
                     <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'course:edit' course.id %}" class="btn btn-outline-secondary" title="Edit Info"><i class="bi bi-pencil-square"></i></a>
-                            <a href="{% url 'course:modules' course.id %}" class="btn btn-outline-secondary" title="Manage Modules"><i class="bi bi-collection-play"></i></a>
-                            <a href="{% url 'course:publish' course.id %}" class="btn btn-outline-secondary" title="Publish Settings"><i class="bi bi-rocket-takeoff"></i></a>
+                        <div class="row-actions">
+                            <a href="{% url 'course:overview' course.id %}" class="btn-admin-labeled btn-label-view" title="View Course Overview">
+                                <i class="bi bi-eye"></i><span class="btn-label-text">View</span>
+                            </a>
+                            <a href="{% url 'course:edit' course.id %}" class="btn-admin-labeled btn-label-edit" title="Edit Details">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+                            </a>
+                            <form method="post" action="{% url 'course:delete' course.id %}" class="d-inline"
+                                  onsubmit="return confirm('Permanently delete \'{{ course.course_name }}\'? This will remove all its modules, lessons, videos and enrollment records. This cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete">
+                                    <i class="bi bi-trash3"></i><span class="btn-label-text">Delete</span>
+                                </button>
+                            </form>
+                            <button type="button" class="btn-more-toggle" data-bs-toggle="collapse" data-bs-target="#more-{{ forloop.counter }}" title="More">
+                                <span class="btn-label-text">More</span> <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="collapse-row">
+                    <td colspan="10" class="p-0 border-0">
+                        <div class="collapse" id="more-{{ forloop.counter }}">
+                            <div class="more-panel">
+                                <a href="{% url 'course:edit' course.id %}" class="more-panel-item">
+                                    <div class="more-panel-icon more-icon-blue"><i class="bi bi-sliders"></i></div>
+                                    <div>
+                                        <div class="more-panel-title">Manage Details</div>
+                                        <div class="more-panel-sub">Name, description, banner, domains, docs</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right more-panel-arrow"></i>
+                                </a>
+                                <a href="{% url 'course:modules' course.id %}" class="more-panel-item">
+                                    <div class="more-panel-icon more-icon-green"><i class="bi bi-collection-play"></i></div>
+                                    <div>
+                                        <div class="more-panel-title">Modules &amp; Lessons</div>
+                                        <div class="more-panel-sub">{{ course.module_count }} module{{ course.module_count|pluralize }}, {{ course.lesson_count }} lesson{{ course.lesson_count|pluralize }} &middot; {{ course.total_duration|format_duration }} total</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right more-panel-arrow"></i>
+                                </a>
+                                <a href="{% url 'course:students' course.id %}" class="more-panel-item">
+                                    <div class="more-panel-icon more-icon-cyan"><i class="bi bi-people"></i></div>
+                                    <div>
+                                        <div class="more-panel-title">Enrolled Students</div>
+                                        <div class="more-panel-sub">{{ course.enrollment_count }} learner{{ course.enrollment_count|pluralize }} enrolled</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right more-panel-arrow"></i>
+                                </a>
+                                <div class="more-panel-item more-panel-static">
+                                    <div class="more-panel-icon {% if course.status == 'active' %}more-icon-green{% else %}more-icon-gray{% endif %}">
+                                        <i class="bi bi-toggle-on"></i>
+                                    </div>
+                                    <div>
+                                        <div class="more-panel-title">Status: {{ course.get_status_display }}</div>
+                                        <div class="more-panel-sub">
+                                            {% if course.published_date %}Published {{ course.published_date|date:"d M Y" }}{% else %}Not yet published{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No courses created yet.</td></tr>
+                <tr>
+                    <td colspan="10" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+                            <div class="empty-state-title">No courses created yet</div>
+                            <div class="empty-state-sub">Get started by creating your first course offering.</div>
+                            <a href="{% url 'course:create' %}" class="btn-admin-primary mt-3">
+                                <i class="bi bi-plus-lg me-1"></i> Create Course
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Legend ───────────────────────────────────────── */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-active { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+    .dot-inactive { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+
+    /* ── Panel header extras ─────────────────────────── */
+    .table-count-tag {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 3px 10px;
+        border-radius: 999px;
+    }
+
+    /* ── Table structure: visible boundaries ─────────── */
+    .course-manage-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .course-manage-table thead th {
+        border-bottom: 2px solid #dbe2ea !important;
+        border-right: 1px solid #eef1f6;
+    }
+    .course-manage-table thead th:last-child { border-right: none; }
+    .course-manage-table thead th.col-status { border-right: none; padding: 0; }
+
+    .course-manage-table tbody td {
+        border-bottom: 1px solid #eef1f6;
+        border-right: 1px solid #f3f5f8;
+        vertical-align: middle;
+    }
+    .course-manage-table tbody td:last-child { border-right: none; }
+    .course-manage-table tbody td.col-status { border-right: none; padding: 0; }
+
+    /* zebra striping */
+    .course-manage-table tbody tr.course-row:nth-of-type(4n+1) { background: #fbfcfe; }
+    .course-manage-table tbody tr.course-row:hover { background: #eef4ff !important; }
+    .course-manage-table tbody tr.course-row { transition: background 0.12s ease; }
+
+    /* color-coded left status rail per row */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 64px; }
+    .rail-active { background: #10b981; }
+    .rail-inactive { background: #cbd5e1; }
+
+    /* subtle tint on inactive rows so disabled courses read as "dimmed" */
+    tr.row-inactive td:not(.col-status) { color: #94a3b8; }
+    tr.row-inactive .course-name { color: #64748b; }
+    tr.row-inactive .course-thumb { opacity: 0.6; filter: grayscale(0.4); }
+
+    /* ── Course cell ──────────────────────────────────── */
+    .course-cell { display: flex; align-items: center; gap: 12px; }
+    .course-thumb { width: 46px; height: 46px; border-radius: 9px; object-fit: cover; flex-shrink: 0; border: 1px solid #eef1f6; }
+    .course-thumb-placeholder { background: #eff6ff; color: #172281; display: flex; align-items: center; justify-content: center; opacity: 0.55; font-size: 1.1rem; }
+    .course-cell-text { min-width: 0; }
+    .course-name {
+        font-weight: 600; font-size: 0.89rem; color: #0f172a;
+        max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .course-meta {
+        font-size: 0.74rem; color: #94a3b8; margin-top: 2px;
+        display: flex; align-items: center; gap: 5px;
+        max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .course-meta i { font-size: 0.78rem; }
+
+    .domain-badge-row { display: flex; flex-wrap: wrap; gap: 4px; max-width: 190px; }
+    .domain-mini-badge { font-weight: 700; font-size: 0.66rem; padding: 4px 9px; border-radius: 6px; }
+    .domain-more-badge { font-weight: 700; font-size: 0.66rem; padding: 4px 9px; border-radius: 6px; background: #f1f5f9; color: #64748b; }
+
+    .stat-cell { font-size: 0.88rem; font-weight: 600; color: #334155; }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+
+    .enrollment-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #eff6ff; color: #2563eb;
+        font-size: 0.76rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 999px;
+        border: 1px solid #dbeafe;
+    }
+    .enrollment-badge i { font-size: 0.72rem; }
+
+    /* ── Toggle switch ────────────────────────────────── */
+    .toggle-switch-btn {
+        width: 42px; height: 23px; border-radius: 20px;
+        background: #cbd5e1; border: none; position: relative;
+        padding: 0; cursor: pointer; transition: background 0.2s ease;
+    }
+    .toggle-switch-btn.on { background: #10b981; }
+    .toggle-switch-btn:hover { filter: brightness(0.95); }
+    .toggle-switch-btn .toggle-knob {
+        position: absolute; top: 2.5px; left: 2.5px;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease;
+        display: block;
+    }
+    .toggle-switch-btn.on .toggle-knob { transform: translateX(19px); }
+
+    .btn-icon-only {
+        border: none; background: none; padding: 4px 8px;
+        font-size: 1.1rem; border-radius: 6px; transition: background 0.15s ease;
+    }
+    .btn-icon-only:hover { background: #f1f5f9; }
+
+    /* ── Row action buttons: text + icon, color-coded ─── */
+    .row-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: nowrap;
+    }
+
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px;
+        border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600;
+        white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+
+    .btn-label-view {
+        background: #f0f9ff; border-color: #bae6fd; color: #0369a1;
+    }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+
+    .btn-label-edit {
+        background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;
+    }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+
+    .btn-label-delete {
+        background: #fef2f2; border-color: #fecaca; color: #b91c1c;
+    }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    .btn-more-toggle {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px;
+        border: 1px solid #dbe2ea;
+        background: #fff;
+        color: #374151;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-more-toggle:hover { background: #f8fafc; border-color: #c7d0dc; }
+    .btn-more-toggle i { font-size: 0.68rem; transition: transform 0.2s ease; }
+    .btn-more-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+
+    /* Collapse button labels to icon-only under 1200px so the actions
+       column doesn't crowd out the rest of the table on laptop widths */
+    @media (max-width: 1200px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled, .btn-more-toggle { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ── Expandable "more" row ────────────────────────── */
+    .collapse-row td { padding: 0 !important; border: none !important; }
+    .more-panel {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1px; background: #e2e8f0;
+        border-top: 2px solid #dbe2ea; border-bottom: 1px solid #e2e8f0;
+    }
+    .more-panel-item {
+        background: #f8fafc; padding: 16px 18px;
+        display: flex; align-items: center; gap: 12px;
+        text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .more-panel-item:not(.more-panel-static):hover { background: #eef2f9; }
+    .more-panel-static { cursor: default; }
+    .more-panel-icon {
+        width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+    }
+    .more-icon-blue  { background: #dbeafe; color: #2563eb; }
+    .more-icon-green { background: #dcfce7; color: #16a34a; }
+    .more-icon-cyan  { background: #cffafe; color: #0891b2; }
+    .more-icon-gray  { background: #f1f5f9; color: #64748b; }
+    .more-panel-title { font-weight: 600; font-size: 0.83rem; color: #1e293b; }
+    .more-panel-sub { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+    .more-panel-arrow { margin-left: auto; color: #cbd5e1; font-size: 0.85rem; flex-shrink: 0; }
+
+    /* ── Empty state ──────────────────────────────────── */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state {
+        display: flex; flex-direction: column; align-items: center;
+        padding: 3.5rem 1rem;
+        text-align: center;
+    }
+    .empty-state-icon {
+        width: 60px; height: 60px; border-radius: 16px;
+        background: #f1f5f9; color: #94a3b8;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; margin-bottom: 1rem;
+    }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

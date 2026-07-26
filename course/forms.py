@@ -23,23 +23,50 @@ class CourseForm(forms.ModelForm):
         required=True,
         help_text="Select at least one subject area this course belongs to.",
     )
+    is_active = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}),
+        label="Course is Active",
+        help_text="Active courses are visible to learners on the public catalog. Toggle off to keep this as a draft.",
+    )
 
     class Meta:
         model = Course
-        fields = ['course_name', 'course_description', 'course_banner', 'domains', 'learning_outcomes', 'pre_requisites']
+        fields = [
+            'course_name', 'course_description', 'course_banner', 'domains',
+            'learning_outcomes', 'pre_requisites', 'info_doc', 'assignment_doc',
+        ]
         widgets = {
             'course_name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Python for Beginners'}),
             'course_description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4}),
             'course_banner': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'learning_outcomes': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4}),
             'pre_requisites': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3}),
+            'info_doc': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'assignment_doc': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['domains'].queryset = Domain.objects.filter(is_active=True)
+        if self.instance.pk:
+            self.fields['is_active'].initial = (self.instance.status == Course.Status.ACTIVE)
+        else:
+            self.fields['is_active'].initial = True   # default to active for brand-new courses
 
     def clean_domains(self):
         domains = self.cleaned_data.get('domains')
         if not domains or domains.count() == 0:
             raise ValidationError("Select at least one domain for this course.")
         return domains
+
+    def save(self, commit=True):
+        course = super().save(commit=False)
+        course.status = Course.Status.ACTIVE if self.cleaned_data.get('is_active') else Course.Status.INACTIVE
+        if commit:
+            course.save()
+            self.save_m2m()
+        return course
 
 
 class ModuleForm(forms.ModelForm):

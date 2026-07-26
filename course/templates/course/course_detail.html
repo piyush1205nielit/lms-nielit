@@ -22,6 +22,11 @@
     .detail-hero .meta-row { display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap; }
     .detail-hero .meta-item { font-size: 0.84rem; color: rgba(255,255,255,0.85); }
     .detail-hero .meta-item i { margin-right: 6px; color: var(--accent); }
+    .detail-hero .domain-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .detail-hero .domain-tag-pill {
+        font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+        background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25);
+    }
 
     .detail-body { padding: 40px 0 60px; }
     .detail-card {
@@ -45,7 +50,55 @@
     }
     .lesson-row .lesson-name { display: flex; align-items: center; gap: 10px; }
     .lesson-row i.lesson-icon { color: var(--primary2); font-size: 0.9rem; width: 16px; }
-    .lesson-row i.lock-icon { color: #cbd5e1; font-size: 0.85rem; }
+    .lesson-row i.lock-icon { color: #cbd5e1; font-size: 0.85rem; width: 16px; }
+    .lesson-row .lesson-access-note { font-size: 0.74rem; color: #94a3b8; white-space: nowrap; }
+
+    /* ── Access banner shown above gated content (curriculum still visible below it) ── */
+    .access-banner {
+        display: flex; align-items: center; gap: 14px;
+        background: #fffbeb; border: 1px solid #fde68a;
+        border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
+    }
+    .access-banner i.banner-icon { font-size: 1.3rem; color: #d97706; flex-shrink: 0; }
+    .access-banner .banner-text { flex: 1; }
+    .access-banner .banner-text strong { display: block; font-size: 0.9rem; color: #92400e; margin-bottom: 2px; }
+    .access-banner .banner-text span { font-size: 0.82rem; color: #92400e; opacity: 0.85; }
+    .access-banner .banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-banner-primary {
+        background: #172281; color: white; font-weight: 600;
+        padding: 8px 18px; border-radius: 8px; font-size: 0.82rem;
+        text-decoration: none; white-space: nowrap; border: none;
+    }
+    .btn-banner-primary:hover { background: #0f2b6d; color: white; }
+    .btn-banner-secondary {
+        background: white; border: 1.5px solid #d97706; color: #92400e;
+        font-weight: 600; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem;
+        text-decoration: none; white-space: nowrap;
+    }
+
+    /* ── Resource / doc list ── */
+    .resource-item {
+        display: flex; align-items: center; gap: 14px;
+        padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px;
+        margin-bottom: 10px; color: #374151;
+    }
+    .resource-item .resource-icon {
+        width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+        background: #eaf1fb; color: var(--primary2);
+        display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+    }
+    .resource-item.locked .resource-icon { background: #f1f5f9; color: #94a3b8; }
+    .resource-item .resource-name { font-weight: 600; font-size: 0.88rem; color: #0e1b2e; }
+    .resource-item .resource-sub { font-size: 0.76rem; color: var(--text-muted); }
+    .resource-item .resource-action { margin-left: auto; }
+    .resource-item .resource-action a {
+        color: var(--primary2); font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .resource-item .resource-action a:hover { text-decoration: underline; }
+    .resource-item .resource-locked-note {
+        font-size: 0.76rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 6px;
+    }
 
     .enroll-sidebar {
         background: white; border: 1px solid var(--border); border-radius: 14px;
@@ -74,6 +127,11 @@
     .sidebar-stat i { color: var(--primary2); margin-right: 6px; }
 
     @media (max-width: 991px) { .enroll-sidebar { position: static; margin-top: 20px; } }
+    @media (max-width: 576px) {
+        .access-banner { flex-direction: column; align-items: flex-start; }
+        .access-banner .banner-actions { width: 100%; }
+        .btn-banner-primary, .btn-banner-secondary { flex: 1; text-align: center; }
+    }
 </style>
 {% endblock %}
 
@@ -88,6 +146,13 @@
             <span class="meta-item"><i class="fas fa-play-circle"></i>{{ total_lessons }} Lesson{{ total_lessons|pluralize }}</span>
             {% if course.published_date %}<span class="meta-item"><i class="fas fa-calendar"></i>Published {{ course.published_date|date:"M Y" }}</span>{% endif %}
         </div>
+        {% if course.domains.all %}
+        <div class="domain-tags">
+            {% for domain in course.domains.all %}
+                <span class="domain-tag-pill">{% if domain.icon_class %}<i class="fas {{ domain.icon_class }} me-1"></i>{% endif %}{{ domain.name }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 </section>
 
@@ -109,6 +174,36 @@
                 </div>
                 {% endif %}
 
+                {# ── Access banner: only shown when something is actually locked ── #}
+                {% if not is_enrolled %}
+                <div class="access-banner">
+                    <i class="fas fa-lock banner-icon"></i>
+                    <div class="banner-text">
+                        {% if request.user.is_authenticated %}
+                            <strong>Enroll to unlock videos and course resources</strong>
+                            <span>You can browse the full curriculum below — enroll to start watching lessons and download materials.</span>
+                        {% else %}
+                            <strong>Login and enroll to access lesson videos and resources</strong>
+                            <span>Browse the full curriculum below — sign in and enroll (free) to unlock everything.</span>
+                        {% endif %}
+                    </div>
+                    <div class="banner-actions">
+                        {% if request.user.is_authenticated %}
+                            <form method="post" action="{% url 'course:enroll' course.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-banner-primary border-0">
+                                    <i class="fas fa-plus-circle me-1"></i> Enroll Now
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'user:login' %}?next={{ request.path }}" class="btn-banner-secondary">Login</a>
+                            <a href="{% url 'user:signup' %}?next={{ request.path }}" class="btn-banner-primary">Sign Up Free</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# ── Curriculum: titles always visible to everyone; only the video link is gated ── #}
                 <div class="detail-card">
                     <h5><i class="fas fa-list-ul me-2" style="color: var(--primary2);"></i>Course Content</h5>
 
@@ -118,29 +213,82 @@
                                 <span>{{ module.title }}</span>
                                 <span class="module-lesson-count">{{ module.lessons.count }} lesson{{ module.lessons.count|pluralize }}</span>
                             </div>
-                       {% for lesson in module.lessons.all %}
-                            <div class="lesson-row">
-                                {% if is_enrolled %}
-                                    <a href="{% url 'stream:player' course.slug lesson.id %}" class="lesson-name text-decoration-none">
-                                        <i class="fas fa-play-circle lesson-icon"></i>
-                                        <span class="text-dark">{{ lesson.title }}</span>
-                                    </a>
-                                {% else %}
-                                    <span class="lesson-name">
-                                        <i class="fas fa-lock lock-icon"></i>
-                                        {{ lesson.title }}
-                                    </span>
-                                    <span class="text-muted" style="font-size: 0.76rem;">Enroll to access</span>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <div class="lesson-row text-muted">No lessons added yet.</div>
-                        {% endfor %}
+                            {% for lesson in module.lessons.all %}
+                                <div class="lesson-row">
+                                    {% if is_enrolled %}
+                                        <a href="{% url 'stream:player' course.slug lesson.id %}" class="lesson-name text-decoration-none">
+                                            <i class="fas fa-play-circle lesson-icon"></i>
+                                            <span class="text-dark">{{ lesson.title }}</span>
+                                        </a>
+                                    {% else %}
+                                        <span class="lesson-name">
+                                            <i class="fas fa-lock lock-icon"></i>
+                                            <span>{{ lesson.title }}</span>
+                                        </span>
+                                        {% if request.user.is_authenticated %}
+                                            <span class="lesson-access-note">Enroll to access</span>
+                                        {% else %}
+                                            <span class="lesson-access-note">Login &amp; enroll to access</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                                <div class="lesson-row text-muted">No lessons added yet.</div>
+                            {% endfor %}
                         </div>
                     {% empty %}
                         <p class="text-muted small">Course content is being prepared.</p>
                     {% endfor %}
                 </div>
+
+                {# ── Resources: names/icons always visible; download link only for enrolled users ── #}
+                {% if course.info_doc or course.assignment_doc %}
+                <div class="detail-card">
+                    <h5><i class="fas fa-folder-open me-2" style="color: var(--primary2);"></i>Course Resources</h5>
+
+                    {% if course.info_doc %}
+                    <div class="resource-item {% if not is_enrolled %}locked{% endif %}">
+                        <div class="resource-icon"><i class="fas fa-file-alt"></i></div>
+                        <div>
+                            <div class="resource-name">Course Notes / Info Document</div>
+                            <div class="resource-sub">Reference material for this course</div>
+                        </div>
+                        <div class="resource-action">
+                            {% if is_enrolled %}
+                                <a href="{{ course.info_doc.url }}" target="_blank" rel="noopener">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            {% else %}
+                                <span class="resource-locked-note"><i class="fas fa-lock"></i>
+                                    {% if request.user.is_authenticated %}Enroll to access{% else %}Login &amp; enroll{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if course.assignment_doc %}
+                    <div class="resource-item {% if not is_enrolled %}locked{% endif %}">
+                        <div class="resource-icon"><i class="fas fa-file-signature"></i></div>
+                        <div>
+                            <div class="resource-name">Assignment</div>
+                            <div class="resource-sub">Practice work for this course</div>
+                        </div>
+                        <div class="resource-action">
+                            {% if is_enrolled %}
+                                <a href="{{ course.assignment_doc.url }}" target="_blank" rel="noopener">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            {% else %}
+                                <span class="resource-locked-note"><i class="fas fa-lock"></i>
+                                    {% if request.user.is_authenticated %}Enroll to access{% else %}Login &amp; enroll{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
 
             <div class="col-lg-4">
@@ -169,6 +317,14 @@
                         <div class="sidebar-stat"><span><i class="fas fa-layer-group"></i>Modules</span><span>{{ modules|length }}</span></div>
                         <div class="sidebar-stat"><span><i class="fas fa-play-circle"></i>Lessons</span><span>{{ total_lessons }}</span></div>
                         <div class="sidebar-stat"><span><i class="fas fa-certificate"></i>Certificate</span><span>On Completion</span></div>
+                        {% if course.domains.all %}
+                        <div class="sidebar-stat align-items-start">
+                            <span><i class="fas fa-tags"></i>Domains</span>
+                            <span class="text-end" style="max-width: 60%;">
+                                {% for domain in course.domains.all %}{{ domain.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

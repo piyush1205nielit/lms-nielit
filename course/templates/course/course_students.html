@@ -1,0 +1,246 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Enrolled Students — {{ course.course_name }}{% endblock %}
+{% block page_title %}Enrolled Students — {{ course.course_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-people-fill"></i> Enrolled Students</h2>
+        <p>{{ course.course_name }} &mdash; {{ enrollment_data|length }} student{{ enrollment_data|length|pluralize }} enrolled</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'course:overview' course.id %}" class="btn-admin-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Course Overview
+        </a>
+    </div>
+</div>
+
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-4">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ enrollment_data|length }}</div><div class="stat-mini-label">Total Enrolled</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-trophy-fill"></i></div>
+        <div><div class="stat-mini-value">{{ completed_count|default:0 }}</div><div class="stat-mini-label">Completed</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div><div class="stat-mini-value">{{ in_progress_count|default:0 }}</div><div class="stat-mini-label">In Progress</div></div>
+    </div>
+    <div class="stat-mini-card stat-red">
+        <div class="stat-mini-icon"><i class="bi bi-person-dash-fill"></i></div>
+        <div><div class="stat-mini-value">{{ dropped_count|default:0 }}</div><div class="stat-mini-label">Dropped</div></div>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-green"></span> Completed</span>
+    <span class="legend-item"><span class="legend-dot dot-blue"></span> In Progress</span>
+    <span class="legend-item"><span class="legend-dot dot-gray"></span> Dropped</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> Student Roster</h5>
+        <span class="table-count-tag">{{ enrollment_data|length }} record{{ enrollment_data|length|pluralize }}</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-admin student-roster-table mb-0">
+            <thead>
+                <tr>
+                    <th class="col-status"></th>
+                    <th style="min-width: 220px;">Student</th>
+                    <th>Enrollment No.</th>
+                    <th>Date Joined</th>
+                    <th>Enrolled On</th>
+                    <th style="min-width: 170px;">Progress</th>
+                    <th>Last Activity</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in enrollment_data %}
+                <tr class="student-row
+                    {% if item.enrollment.status == 'completed' %}row-completed
+                    {% elif item.enrollment.status == 'dropped' %}row-dropped
+                    {% else %}row-inprogress{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail
+                            {% if item.enrollment.status == 'completed' %}rail-completed
+                            {% elif item.enrollment.status == 'dropped' %}rail-dropped
+                            {% else %}rail-inprogress{% endif %}"></span>
+                    </td>
+                    <td>
+                        <div class="student-cell">
+                            {% if item.enrollment.user.learner_profile.profile_image %}
+                                <img src="{{ item.enrollment.user.learner_profile.profile_image.url }}" class="student-avatar" alt="">
+                            {% else %}
+                                <span class="student-avatar student-avatar-placeholder">
+                                    {{ item.enrollment.user.email|slice:":1"|upper }}
+                                </span>
+                            {% endif %}
+                            <div class="student-cell-text">
+                                <div class="student-name">{{ item.enrollment.user.learner_profile.full_name|default:item.enrollment.user.email }}</div>
+                                <div class="student-email">{{ item.enrollment.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="enrollment-no-tag">{{ item.enrollment.user.learner_profile.enrollment_number|default:"—" }}</span></td>
+                    <td class="stat-cell-sm">{{ item.enrollment.user.learner_profile.created_at|date:"d M Y" }}</td>
+                    <td class="stat-cell-sm">{{ item.enrollment.enrolled_at|date:"d M Y" }}</td>
+                    <td>
+                        <div class="progress-label-row">
+                            <span>{{ item.completed_lessons }}/{{ item.total_lessons }} lessons</span>
+                            <span class="progress-pct">{{ item.percent }}%</span>
+                        </div>
+                        <div class="progress-track-custom">
+                            <div class="progress-fill-custom {% if item.percent == 100 %}fill-complete{% elif item.percent > 0 %}fill-active{% else %}fill-empty{% endif %}" style="width: {{ item.percent }}%;"></div>
+                        </div>
+                    </td>
+                    <td class="stat-cell-sm">
+                        {% if item.last_activity %}
+                            <div>{{ item.last_activity|date:"d M Y" }}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">{{ item.last_activity|date:"g:i A" }}</div>
+                        {% else %}
+                            <span class="text-muted">Not started</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if item.enrollment.status == 'completed' %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Completed</span>
+                        {% elif item.enrollment.status == 'dropped' %}
+                            <span class="status-pill pill-pending"><i class="bi bi-x-circle-fill"></i> Dropped</span>
+                        {% else %}
+                            <span class="status-pill pill-processing"><i class="bi bi-hourglass-split"></i> In Progress</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-person-x"></i></div>
+                            <div class="empty-state-title">No students enrolled yet</div>
+                            <div class="empty-state-sub">Once learners enroll in this course, their progress will appear here.</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-red    { border-left-color: #dc2626; } .stat-red    .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-blue  { background: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure ═══ */
+    .student-roster-table { border-collapse: separate; border-spacing: 0; }
+    .student-roster-table thead th { border-bottom: 2px solid #dbe2ea !important; border-right: 1px solid #eef1f6; }
+    .student-roster-table thead th:last-child { border-right: none; }
+    .student-roster-table thead th.col-status { border-right: none; padding: 0; }
+    .student-roster-table tbody td { border-bottom: 1px solid #eef1f6; border-right: 1px solid #f3f5f8; vertical-align: middle; }
+    .student-roster-table tbody td:last-child { border-right: none; }
+    .student-roster-table tbody td.col-status { border-right: none; padding: 0; }
+
+    .student-roster-table tbody tr.student-row:nth-of-type(4n+1) { background: #fbfcfe; }
+    .student-roster-table tbody tr.student-row:hover { background: #eef4ff !important; }
+    .student-row { transition: background 0.12s ease; }
+
+    /* status rail */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 62px; }
+    .rail-completed  { background: #16a34a; }
+    .rail-inprogress { background: #2563eb; }
+    .rail-dropped    { background: #94a3b8; }
+
+    tr.row-dropped td:not(.col-status) { color: #94a3b8; }
+    tr.row-dropped .student-name { color: #64748b; }
+    tr.row-dropped .student-avatar { opacity: 0.6; filter: grayscale(0.5); }
+
+    /* ═══ Student cell ═══ */
+    .student-cell { display: flex; align-items: center; gap: 12px; }
+    .student-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #eef1f6; }
+    .student-avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #2563eb, #172281); color: white; font-weight: 700; font-size: 0.85rem;
+    }
+    .student-cell-text { min-width: 0; }
+    .student-name { font-weight: 600; font-size: 0.87rem; color: #0f172a; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .student-email { font-size: 0.74rem; color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+
+    .enrollment-no-tag {
+        font-size: 0.76rem; font-weight: 700; color: #1d4ed8;
+        background: #eff6ff; border: 1px solid #dbeafe;
+        padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    }
+
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+
+    /* ═══ Progress bar ═══ */
+    .progress-label-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-bottom: 5px; }
+    .progress-pct { font-weight: 700; color: #334155; }
+    .progress-track-custom { height: 7px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+    .progress-fill-custom { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+    .fill-complete { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .fill-active   { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .fill-empty    { background: #cbd5e1; }
+
+    /* ═══ Status pills (shared language) ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready      { background: #dcfce7; color: #15803d; }
+    .pill-processing { background: #dbeafe; color: #1d4ed8; }
+    .pill-pending    { background: #f1f5f9; color: #64748b; }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
+{% endblock %}

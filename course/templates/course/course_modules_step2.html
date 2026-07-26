@@ -1,91 +1,339 @@
 {% extends "admin_dashboard/base_admin.html" %}
+{% load course_extras %}
 {% block title %}Modules — {{ course.course_name }}{% endblock %}
+{% block page_title %}Modules — {{ course.course_name }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-collection-play me-2"></i>{{ course.course_name }}</h2>
-    <p>Step 2 of 3 — Add modules and lessons</p>
-</div>
-
-<div class="d-flex align-items-center mb-4" style="max-width: 520px;">
-    <div class="d-flex align-items-center flex-grow-1">
-        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white" style="width:32px;height:32px;font-size:0.85rem;flex-shrink:0;"><i class="bi bi-check-lg"></i></div>
-        <span class="ms-2 small text-muted">Basic Info</span>
+    <div>
+        <h2><i class="bi bi-collection-play"></i> {{ course.course_name }}</h2>
+        <p>Manage modules and lessons for this course.</p>
     </div>
-    <div class="flex-grow-1 mx-2" style="height:2px;background:#198754;"></div>
-    <div class="d-flex align-items-center flex-grow-1">
-        <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">2</div>
-        <span class="ms-2 small fw-semibold text-dark">Modules &amp; Lessons</span>
-    </div>
-    <div class="flex-grow-1 mx-2" style="height:2px;background:#e2e6ea;"></div>
-    <div class="d-flex align-items-center">
-        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted" style="width:32px;height:32px;font-size:0.85rem;font-weight:600;flex-shrink:0;">3</div>
-        <span class="ms-2 small text-muted">Publish</span>
+    <div class="page-header-actions">
+        <span class="course-status-badge {% if course.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+            <span class="status-dot"></span> {{ course.get_status_display }}
+        </span>
+        <a href="{% url 'course:edit' course.id %}" class="btn-admin-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Course Details
+        </a>
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{% url 'course:module_add' course.id %}" class="btn btn-primary btn-sm">
+<!-- ═══ Stat cards ═══ -->
+<div class="stat-grid">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-collection-fill"></i></div>
+        <div>
+            <div class="stat-mini-value">{{ modules|length }}</div>
+            <div class="stat-mini-label">Modules</div>
+        </div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-play-btn-fill"></i></div>
+        <div>
+            <div class="stat-mini-value">{{ total_lessons }}</div>
+            <div class="stat-mini-label">Lessons</div>
+        </div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-clock-fill"></i></div>
+        <div>
+            <div class="stat-mini-value">{{ total_duration|format_duration }}</div>
+            <div class="stat-mini-label">Total Duration</div>
+        </div>
+    </div>
+    <div class="stat-mini-card {% if ready_lessons == total_lessons and total_lessons > 0 %}stat-green{% else %}stat-red{% endif %}">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div>
+            <div class="stat-mini-value">{{ ready_lessons }}/{{ total_lessons }}</div>
+            <div class="stat-mini-label">Videos Ready</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Add module bar ═══ -->
+<div class="add-module-bar">
+    <a href="{% url 'course:module_add' course.id %}" class="btn-admin-primary">
         <i class="bi bi-plus-lg me-1"></i> Add Module
     </a>
-    <a href="{% url 'course:publish' course.id %}" class="btn btn-success btn-sm">
-        Continue to Publish Settings <i class="bi bi-arrow-right ms-1"></i>
-    </a>
+    <span class="module-count-tag">{{ modules|length }} module{{ modules|length|pluralize }} in this course</span>
 </div>
 
+<!-- ═══ Modules ═══ -->
 {% for module in modules %}
-<div class="card-panel p-3 mb-3">
-    <div class="d-flex justify-content-between align-items-start">
-        <div>
-            <span class="badge bg-secondary me-1">#{{ module.order }}</span>
-            <strong>{{ module.title }}</strong>
-            {% if module.description %}<p class="text-muted small mb-0 mt-1">{{ module.description }}</p>{% endif %}
+<div class="card-panel module-card">
+    <div class="module-card-header">
+        <div class="module-card-title">
+            <span class="module-order-badge">#{{ module.order }}</span>
+            <div>
+                <strong>{{ module.title }}</strong>
+                {% if module.description %}<p class="module-desc">{{ module.description }}</p>{% endif %}
+            </div>
         </div>
-        <div class="btn-group btn-group-sm">
-            <a href="{% url 'course:lesson_add' module.id %}" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> Lesson</a>
-            <a href="{% url 'course:module_edit' module.id %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+        <div class="row-actions">
+            <a href="{% url 'course:lesson_add' module.id %}" class="btn-admin-labeled btn-label-view">
+                <i class="bi bi-plus-lg"></i><span class="btn-label-text">Add Lesson</span>
+            </a>
+            <a href="{% url 'course:module_edit' module.id %}" class="btn-admin-labeled btn-label-edit">
+                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+            </a>
             <form method="post" action="{% url 'course:module_delete' module.id %}" class="d-inline" onsubmit="return confirm('Delete this module and all its lessons?');">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash3"></i></button>
+                <button type="submit" class="btn-admin-labeled btn-label-delete">
+                    <i class="bi bi-trash3"></i><span class="btn-label-text">Delete</span>
+                </button>
             </form>
         </div>
     </div>
 
     {% if module.lessons.all %}
-    <table class="table table-sm mt-3 mb-0">
-        <thead class="table-light">
-            <tr><th>#</th><th>Lesson</th><th>Video Status</th><th class="text-end">Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for lesson in module.lessons.all %}
-            <tr>
-                <td>{{ lesson.order }}</td>
-                <td>{{ lesson.title }}</td>
-                <td>
-                    {% if lesson.video_status == 'ready' %}<span class="badge bg-success">Ready</span>
-                    {% elif lesson.video_status == 'processing' %}<span class="badge bg-primary">Processing</span>
-                    {% elif lesson.video_status == 'failed' %}<span class="badge bg-danger">Failed</span>
-                    {% else %}<span class="badge bg-warning text-dark">No Video Yet</span>{% endif %}
-                </td>
-                <td class="text-end">
-                    <a href="{% url 'course:lesson_edit' lesson.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
-                    <form method="post" action="{% url 'course:lesson_delete' lesson.id %}" class="d-inline" onsubmit="return confirm('Delete this lesson?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash3"></i></button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-admin lesson-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Lesson</th>
+                    <th class="text-center" style="width:120px;">Duration</th>
+                    <th class="text-center" style="width:150px;">Video Status</th>
+                    <th class="text-end" style="width:180px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in module.lessons.all %}
+                <tr class="lesson-row {% if lesson.video_status == 'ready' %}lrow-ready{% elif lesson.video_status == 'failed' %}lrow-failed{% endif %}">
+                    <td class="text-muted">{{ lesson.order }}</td>
+                    <td class="lesson-title-cell">{{ lesson.title }}</td>
+                    <td class="text-center stat-cell-sm">{{ lesson.duration_seconds|format_duration }}</td>
+                    <td class="text-center">
+                        {% if lesson.video_status == 'ready' %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Ready</span>
+                        {% elif lesson.video_status == 'processing' %}
+                            <span class="status-pill pill-processing"><i class="bi bi-arrow-repeat"></i> Processing</span>
+                        {% elif lesson.video_status == 'failed' %}
+                            <span class="status-pill pill-failed"><i class="bi bi-x-circle-fill"></i> Failed</span>
+                        {% else %}
+                            <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> No Video</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="row-actions row-actions-sm">
+                            <a href="{% url 'course:lesson_edit' lesson.id %}" class="btn-admin-icon" title="Edit Lesson">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <form method="post" action="{% url 'course:lesson_delete' lesson.id %}" class="d-inline" onsubmit="return confirm('Delete this lesson?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-admin-icon btn-icon-danger" title="Delete Lesson">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-        <p class="text-muted small mt-3 mb-0">No lessons added yet.</p>
+        <div class="no-lessons-note">
+            <i class="bi bi-inbox"></i> No lessons added yet in this module.
+        </div>
     {% endif %}
 </div>
 {% empty %}
-<div class="card-panel p-5 text-center text-muted">
-    <i class="bi bi-collection" style="font-size: 2rem; color: #cbd5e0;"></i>
-    <p class="mt-2 mb-0">No modules yet. Add your first module to get started.</p>
+<div class="card-panel">
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-collection"></i></div>
+        <div class="empty-state-title">No modules yet</div>
+        <div class="empty-state-sub">Add your first module to start building this course's curriculum.</div>
+        <a href="{% url 'course:module_add' course.id %}" class="btn-admin-primary mt-3">
+            <i class="bi bi-plus-lg me-1"></i> Add Module
+        </a>
+    </div>
 </div>
 {% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Course status badge ═══ */
+    .course-status-badge {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 0.78rem; font-weight: 700;
+        padding: 7px 14px; border-radius: 999px;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .status-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-active .status-dot { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .status-inactive { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .status-inactive .status-dot { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+
+    /* ═══ Stat grid — color-coded ═══ */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white;
+        border: 1.5px solid #cbd5e1;
+        border-left: 4px solid transparent;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; flex-shrink: 0;
+    }
+    .stat-mini-value { font-size: 1.35rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; }
+    .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-purple { border-left-color: #7c3aed; }
+    .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-amber  { border-left-color: #d97706; }
+    .stat-amber  .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-green  { border-left-color: #16a34a; }
+    .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-red    { border-left-color: #dc2626; }
+    .stat-red    .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ Add module bar ═══ */
+    .add-module-bar {
+        display: flex; align-items: center; gap: 14px;
+        margin-bottom: 1.25rem;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+    }
+    .module-count-tag { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
+    /* ═══ Module cards ═══ */
+    .module-card {
+        margin-bottom: 1.1rem;
+        overflow: hidden;
+        border: 1.5px solid #cbd5e1 !important;
+    }
+    .module-card-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        gap: 14px;
+        padding: 1rem 1.2rem;
+        background: #f1f5f9;
+        border-bottom: 2px solid #cbd5e1;
+        flex-wrap: wrap;
+    }
+    .module-card-title { display: flex; align-items: flex-start; gap: 12px; }
+    .module-order-badge {
+        background: #172281; color: white;
+        font-size: 0.72rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 6px;
+        flex-shrink: 0; margin-top: 2px;
+    }
+    .module-card-title strong { font-size: 0.95rem; color: #0f172a; }
+    .module-desc { font-size: 0.8rem; color: #64748b; margin: 4px 0 0; max-width: 480px; }
+
+    /* ═══ Lesson table ═══ */
+    .lesson-table thead th {
+        background: #fafbfd;
+        border-bottom: 1.5px solid #e2e8f0 !important;
+    }
+    .lesson-table tbody td { border-bottom: 1px solid #eef1f6; vertical-align: middle; }
+    .lesson-table tbody tr:last-child td { border-bottom: none; }
+    .lesson-table tbody tr:hover { background: #f8fafc; }
+    .lesson-title-cell { font-weight: 600; font-size: 0.87rem; color: #1e293b; }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
+    /* left accent per lesson row status */
+    .lrow-ready { box-shadow: inset 3px 0 0 #16a34a; }
+    .lrow-failed { box-shadow: inset 3px 0 0 #dc2626; }
+
+    /* ═══ Status pills ═══ */
+    .status-pill {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.72rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 999px;
+        white-space: nowrap;
+    }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready      { background: #dcfce7; color: #15803d; }
+    .pill-processing { background: #dbeafe; color: #1d4ed8; }
+    .pill-processing i { animation: spin 1.2s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pill-failed     { background: #fee2e2; color: #b91c1c; }
+    .pill-pending    { background: #f1f5f9; color: #64748b; }
+
+    .no-lessons-note {
+        padding: 1.5rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    /* ═══ Row action buttons (shared language with course table) ═══ */
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+    .row-actions-sm { gap: 5px; }
+
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px;
+        border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600;
+        white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+
+    .btn-label-view { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+    .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    .btn-admin-icon {
+        width: 32px; height: 32px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: 1px solid #dbe2ea;
+        background: #fff; color: #64748b; font-size: 0.9rem;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-admin-icon:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+    .btn-icon-danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+    @media (max-width: 1200px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state {
+        display: flex; flex-direction: column; align-items: center;
+        padding: 3.5rem 1rem; text-align: center;
+    }
+    .empty-state-icon {
+        width: 60px; height: 60px; border-radius: 16px;
+        background: #f1f5f9; color: #94a3b8;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; margin-bottom: 1rem;
+    }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

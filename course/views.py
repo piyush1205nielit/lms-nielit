@@ -2,12 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from accounts.decorators import admin_required
-from .models import Course, Module, Lesson, Domain
 from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm, DomainForm
+from .models import Course, Module, Lesson, Enrollment, Domain
 from django.contrib.auth.decorators import login_required
-from .models import Course, Module, Lesson, Enrollment
 from django.conf import settings as django_settings
 from django.core.paginator import Paginator
+from django.db.models import Count, Sum
+from django.views.decorators.http import require_POST
+
 
 
 # ... (all the admin-side views from before stay exactly as they are) ...
@@ -64,8 +66,17 @@ def domain_delete_view(request, domain_id):
 
 @admin_required
 def manage_list_view(request):
-    courses = Course.objects.all().select_related('created_by').prefetch_related('modules')
-    return render(request, 'course/manage_list.html', {'courses': courses,'active_page': 'courses',})
+    courses = Course.objects.annotate(
+        module_count=Count('modules', distinct=True),
+        lesson_count=Count('modules__lessons', distinct=True),
+        enrollment_count=Count('enrollments', distinct=True),
+        total_duration=Sum('modules__lessons__duration_seconds'),
+    ).select_related('created_by').prefetch_related('domains').order_by('-created_at')
+
+    return render(request, 'course/manage_list.html', {
+        'courses': courses,
+        'active_page': 'courses',
+    })
 
 
 # ── Step 1: Basic Info ──────────────────────────────────────
@@ -98,42 +109,99 @@ def course_create_view(request):
     if request.method == 'POST' and form.is_valid():
         course = form.save(commit=False)
         course.created_by = request.user
-        course.status = Course.Status.INACTIVE
+        if course.status == Course.Status.ACTIVE:
+            course.published_date = timezone.now()
         course.save()
-        form.save_m2m()   # <-- required: persists the selected domains, since we used commit=False above
-        messages.success(request, "Course created. Now add modules and lessons.")
+        form.save_m2m()
+        messages.success(request, f"'{course.course_name}' created. Now add modules and lessons.")
         return redirect('course:modules', course_id=course.id)
-    return render(request, 'course/course_form_step1.html', {'form': form, 'active_page': 'courses'})
+
+    return render(request, 'course/course_form.html', {
+        'form': form,
+        'active_page': 'courses',
+    })
 
 
 @admin_required
 def course_edit_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
+    was_active_before = course.status == Course.Status.ACTIVE
+
     form = CourseForm(request.POST or None, request.FILES or None, instance=course)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        updated_course = form.save(commit=False)
+        if updated_course.status == Course.Status.ACTIVE and not was_active_before:
+            updated_course.published_date = timezone.now()   # first-time activation only
+        updated_course.save()
+        form.save_m2m()
         messages.success(request, "Course details updated.")
-        return redirect('course:modules', course_id=course.id)
+        return redirect('course:manage_list')
 
-    return render(request, 'course/course_form_step1.html', {
+    return render(request, 'course/course_form.html', {
         'form': form,
         'course': course,
         'active_page': 'courses',
     })
 
+# ── Quick actions, used directly from the manage-list row ──────────────
 
-# ── Step 2: Modules & Lessons ───────────────────────────────
+@admin_required
+@require_POST
+def course_toggle_active_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    if course.status == Course.Status.ACTIVE:
+        course.status = Course.Status.INACTIVE
+    else:
+        course.status = Course.Status.ACTIVE
+        if not course.published_date:
+            course.published_date = timezone.now()
+    course.save(update_fields=['status', 'published_date'])
+    messages.success(request, f"'{course.course_name}' is now {course.get_status_display()}.")
+    return redirect('course:manage_list')
+
+
+@admin_required
+@require_POST
+def course_toggle_featured_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    course.is_featured = not course.is_featured
+    course.save(update_fields=['is_featured'])
+    state = "featured on the homepage" if course.is_featured else "removed from featured"
+    messages.success(request, f"'{course.course_name}' is now {state}.")
+    return redirect('course:manage_list')
+
+
+@admin_required
+@require_POST
+def course_delete_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    name = course.course_name
+    course.delete()
+    messages.success(request, f"'{name}' has been permanently deleted.")
+    return redirect('course:manage_list')
+
+
+# ── Step 2: Modules & Lessons (enhanced with duration + status) ──────────
 
 @admin_required
 def course_modules_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     modules = course.modules.prefetch_related('lessons').order_by('order')
+
+    total_lessons = Lesson.objects.filter(module__course=course).count()
+    total_duration = Lesson.objects.filter(module__course=course).aggregate(
+        total=Sum('duration_seconds')
+    )['total']
+    ready_lessons = Lesson.objects.filter(module__course=course, video_status=Lesson.VideoStatus.READY).count()
+
     return render(request, 'course/course_modules_step2.html', {
         'course': course,
         'modules': modules,
+        'total_lessons': total_lessons,
+        'total_duration': total_duration,
+        'ready_lessons': ready_lessons,
         'active_page': 'courses',
     })
-
 
 @admin_required
 def module_create_view(request, course_id):
@@ -350,4 +418,71 @@ def my_courses_view(request):
     return render(request, 'course/my_courses.html', {
         'enrollment_data': enrollment_data,
         'active_page': 'my_courses',
+    })
+
+from django.db.models import Count, Sum, Q
+from course.models import Progress
+
+
+@admin_required
+def course_students_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    total_lessons = Lesson.objects.filter(module__course=course).count()
+
+    enrollments = Enrollment.objects.filter(course=course).select_related(
+        'user', 'user__learner_profile'
+    ).order_by('-enrolled_at')
+
+    enrollment_data = []
+    for enrollment in enrollments:
+        completed_lessons = Progress.objects.filter(
+            user=enrollment.user, lesson__module__course=course, completed=True
+        ).count()
+        percent = int((completed_lessons / total_lessons) * 100) if total_lessons else 0
+
+        last_activity = Progress.objects.filter(
+            user=enrollment.user, lesson__module__course=course
+        ).order_by('-last_watched_at').first()
+
+        enrollment_data.append({
+            'enrollment': enrollment,
+            'completed_lessons': completed_lessons,
+            'total_lessons': total_lessons,
+            'percent': percent,
+            'last_activity': last_activity.last_watched_at if last_activity else None,
+        })
+
+    return render(request, 'course/course_students.html', {
+        'course': course,
+        'enrollment_data': enrollment_data,
+        'active_page': 'courses',
+    })
+
+
+@admin_required
+def course_overview_view(request, course_id):
+    course = get_object_or_404(
+        Course.objects.prefetch_related('domains', 'modules__lessons'),
+        id=course_id
+    )
+    modules = course.modules.prefetch_related('lessons').order_by('order')
+
+    total_lessons = Lesson.objects.filter(module__course=course).count()
+    total_duration = Lesson.objects.filter(module__course=course).aggregate(total=Sum('duration_seconds'))['total']
+    ready_lessons = Lesson.objects.filter(module__course=course, video_status=Lesson.VideoStatus.READY).count()
+    failed_lessons = Lesson.objects.filter(module__course=course, video_status=Lesson.VideoStatus.FAILED).count()
+
+    enrollment_count = Enrollment.objects.filter(course=course).count()
+    completed_count = Enrollment.objects.filter(course=course, status=Enrollment.Status.COMPLETED).count()
+
+    return render(request, 'course/course_overview.html', {
+        'course': course,
+        'modules': modules,
+        'total_lessons': total_lessons,
+        'total_duration': total_duration,
+        'ready_lessons': ready_lessons,
+        'failed_lessons': failed_lessons,
+        'enrollment_count': enrollment_count,
+        'completed_count': completed_count,
+        'active_page': 'courses',
     })
