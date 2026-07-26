@@ -1,0 +1,57 @@
+<div class="modal-header">
+    <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i>Student Details</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        {% if profile.profile_image %}
+            <img src="{{ profile.profile_image.url }}" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+        {% else %}
+            <span class="rounded-circle d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:#172281;color:white;font-size:1.4rem;font-weight:700;">
+                {{ student.email|slice:":1"|upper }}
+            </span>
+        {% endif %}
+        <div>
+            <h5 class="mb-0">{{ profile.full_name|default:"—" }}</h5>
+            <span class="text-primary small fw-semibold">{{ profile.enrollment_number }}</span>
+        </div>
+    </div>
+
+    <h6 class="text-muted small text-uppercase mb-2">Account Credentials <span class="badge bg-secondary">Read-only</span></h6>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Email</label><div>{{ student.email }}</div></div>
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Contact</label><div>{{ student.contact|default:"—" }}</div></div>
+    </div>
+
+    <hr>
+    <h6 class="text-muted small text-uppercase mb-2">Personal Details</h6>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Date of Birth</label><div>{{ profile.date_of_birth|default:"—" }}</div></div>
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Gender</label><div>{{ profile.get_gender_display|default:"—" }}</div></div>
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Aadhar Number</label><div>{{ profile.aadhar_number|default:"—" }}</div></div>
+        <div class="col-md-6"><label class="form-label small text-muted mb-0">Highest Qualification</label><div>{{ profile.highest_qualification|default:"—" }}</div></div>
+        <div class="col-12"><label class="form-label small text-muted mb-0">Address</label><div>{{ profile.address|default:"—" }}</div></div>
+        <div class="col-md-4"><label class="form-label small text-muted mb-0">City</label><div>{{ profile.city|default:"—" }}</div></div>
+        <div class="col-md-4"><label class="form-label small text-muted mb-0">State</label><div>{{ profile.state|default:"—" }}</div></div>
+        <div class="col-md-4"><label class="form-label small text-muted mb-0">PIN Code</label><div>{{ profile.pin_code|default:"—" }}</div></div>
+    </div>
+
+    <hr>
+    <h6 class="text-muted small text-uppercase mb-2">Enrolled Courses ({{ enrollment_data|length }})</h6>
+    {% for item in enrollment_data %}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold">{{ item.enrollment.course.course_name }}</span>
+                <span class="text-muted">{{ item.completed }}/{{ item.total }} lessons ({{ item.percent }}%)</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar {% if item.percent == 100 %}bg-success{% endif %}" style="width: {{ item.percent }}%;"></div>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted small">Not enrolled in any courses.</p>
+    {% endfor %}
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+</div>

@@ -1,92 +1,292 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}Manage Announcements{% endblock %}
+{% block page_title %}Manage Announcements{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-megaphone-fill me-2"></i>Manage Announcements</h2>
+        <h2><i class="bi bi-megaphone-fill"></i> Manage Announcements</h2>
         <p>{{ announcements.count }} total announcement{{ announcements.count|pluralize }}</p>
     </div>
-    <a href="{% url 'announcement:create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> New Announcement
-    </a>
+    <div class="page-header-actions">
+        <a href="{% url 'announcement:create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Announcement
+        </a>
+    </div>
 </div>
 
-<div class="card-panel p-3">
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-4">
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-broadcast"></i></div>
+        <div><div class="stat-mini-value">{{ live_count|default:0 }}</div><div class="stat-mini-label">Live Now</div></div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-clock-history"></i></div>
+        <div><div class="stat-mini-value">{{ scheduled_count|default:0 }}</div><div class="stat-mini-label">Scheduled</div></div>
+    </div>
+    <div class="stat-mini-card stat-gray">
+        <div class="stat-mini-icon"><i class="bi bi-slash-circle"></i></div>
+        <div><div class="stat-mini-value">{{ disabled_count|default:0 }}</div><div class="stat-mini-label">Disabled</div></div>
+    </div>
+    <div class="stat-mini-card stat-red">
+        <div class="stat-mini-icon"><i class="bi bi-calendar-x"></i></div>
+        <div><div class="stat-mini-value">{{ expired_count|default:0 }}</div><div class="stat-mini-label">Expired</div></div>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-green"></span> Live</span>
+    <span class="legend-item"><span class="legend-dot dot-amber"></span> Scheduled</span>
+    <span class="legend-item"><span class="legend-dot dot-gray"></span> Disabled</span>
+    <span class="legend-item"><span class="legend-dot dot-red"></span> Expired</span>
+    <span class="legend-item"><i class="bi bi-pin-angle-fill" style="color:#d97706;"></i> Pinned to top</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> All Announcements</h5>
+        <span class="table-count-tag">{{ announcements.count }} record{{ announcements.count|pluralize }}</span>
+    </div>
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="table table-admin announcement-manage-table mb-0">
+            <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Audience</th>
+                    <th class="col-status"></th>
+                    <th style="min-width: 220px;">Title</th>
+                    <th class="text-center">Type</th>
+                    <th style="min-width: 150px;">Audience</th>
                     <th>Publish Date</th>
-                    <th>Status</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end" style="min-width: 260px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for a in announcements %}
-                <tr>
-                    <td>
-                        {% if a.is_pinned %}<i class="bi bi-pin-angle-fill text-warning me-1" title="Pinned"></i>{% endif %}
-                        <strong>{{ a.title }}</strong>
+                {% if a.is_currently_visible %}{% with row_state='live' %}{% endwith %}
+                {% elif not a.is_active %}{% with row_state='disabled' %}{% endwith %}
+                {% elif a.publish_at > now %}{% with row_state='scheduled' %}{% endwith %}
+                {% else %}{% with row_state='expired' %}{% endwith %}
+                {% endif %}
+                <tr class="announcement-row
+                    {% if a.is_currently_visible %}row-live
+                    {% elif not a.is_active %}row-disabled
+                    {% elif a.publish_at > now %}row-scheduled
+                    {% else %}row-expired{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail
+                            {% if a.is_currently_visible %}rail-live
+                            {% elif not a.is_active %}rail-disabled
+                            {% elif a.publish_at > now %}rail-scheduled
+                            {% else %}rail-expired{% endif %}"></span>
                     </td>
                     <td>
+                        <div class="title-cell">
+                            {% if a.is_pinned %}<i class="bi bi-pin-angle-fill pin-icon" title="Pinned"></i>{% endif %}
+                            <strong class="announcement-title-text">{{ a.title }}</strong>
+                        </div>
+                    </td>
+                    <td class="text-center">
                         {% if a.announcement_type == 'public' %}
-                            <span class="badge bg-info text-dark">Public</span>
+                            <span class="type-badge type-public"><i class="bi bi-globe2"></i> Public</span>
                         {% else %}
-                            <span class="badge bg-primary">Internal</span>
+                            <span class="type-badge type-internal"><i class="bi bi-people-fill"></i> Internal</span>
                         {% endif %}
                     </td>
-                    <td class="small text-muted">
+                    <td class="audience-cell">
                         {% if a.announcement_type == 'internal' %}
-                            {% if a.target_type == 'all_users' %}All Users
-                            {% elif a.target_type == 'specific_course' %}{{ a.target_course.course_name|default:"—" }}
-                            {% elif a.target_type == 'specific_users' %}{{ a.target_users.count }} student{{ a.target_users.count|pluralize }}
+                            {% if a.target_type == 'all_users' %}
+                                <i class="bi bi-people"></i> All Users
+                            {% elif a.target_type == 'specific_course' %}
+                                <i class="bi bi-journal-bookmark"></i> {{ a.target_course.course_name|default:"—" }}
+                            {% elif a.target_type == 'specific_users' %}
+                                <i class="bi bi-person-check"></i> {{ a.target_users.count }} student{{ a.target_users.count|pluralize }}
                             {% endif %}
                         {% else %}
-                            Homepage visitors
+                            <i class="bi bi-house-door"></i> Homepage visitors
                         {% endif %}
                     </td>
-                    <td class="small">{{ a.publish_at|date:"d M Y, g:i A" }}</td>
-                    <td>
+                    <td class="stat-cell-sm">
+                        <div>{{ a.publish_at|date:"d M Y" }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">{{ a.publish_at|date:"g:i A" }}</div>
+                    </td>
+                    <td class="text-center">
                         {% if a.is_currently_visible %}
-                            <span class="badge bg-success">Live</span>
+                            <span class="status-pill pill-ready"><i class="bi bi-broadcast"></i> Live</span>
                         {% elif not a.is_active %}
-                            <span class="badge bg-secondary">Disabled</span>
+                            <span class="status-pill pill-pending"><i class="bi bi-slash-circle-fill"></i> Disabled</span>
                         {% elif a.publish_at > now %}
-                            <span class="badge bg-warning text-dark">Scheduled</span>
+                            <span class="status-pill pill-scheduled"><i class="bi bi-clock-history"></i> Scheduled</span>
                         {% else %}
-                            <span class="badge bg-secondary">Expired</span>
+                            <span class="status-pill pill-failed"><i class="bi bi-calendar-x"></i> Expired</span>
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'announcement:edit' a.id %}" class="btn btn-outline-secondary" title="Edit">
-                                <i class="bi bi-pencil-square"></i>
+                        <div class="row-actions">
+                            <a href="{% url 'announcement:edit' a.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
                             </a>
                             <form method="post" action="{% url 'announcement:toggle_active' a.id %}" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-warning" title="{% if a.is_active %}Disable{% else %}Enable{% endif %}">
-                                    <i class="bi bi-slash-circle"></i>
+                                <button type="submit" class="btn-admin-labeled btn-label-toggle" title="{% if a.is_active %}Disable{% else %}Enable{% endif %}">
+                                    <i class="bi bi-slash-circle"></i><span class="btn-label-text">{% if a.is_active %}Disable{% else %}Enable{% endif %}</span>
                                 </button>
                             </form>
                             <form method="post" action="{% url 'announcement:delete' a.id %}" class="d-inline"
                                   onsubmit="return confirm('Delete this announcement?');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger" title="Delete">
-                                    <i class="bi bi-trash3-fill"></i>
+                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete">
+                                    <i class="bi bi-trash3-fill"></i><span class="btn-label-text">Delete</span>
                                 </button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-4">No announcements yet.</td></tr>
+                <tr>
+                    <td colspan="7" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-megaphone"></i></div>
+                            <div class="empty-state-title">No announcements yet</div>
+                            <div class="empty-state-sub">Create your first announcement to broadcast updates to learners.</div>
+                            <a href="{% url 'announcement:create' %}" class="btn-admin-primary mt-3">
+                                <i class="bi bi-plus-lg me-1"></i> New Announcement
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-gray  { border-left-color: #64748b; } .stat-gray  .stat-mini-icon { background: #f1f5f9; color: #64748b; }
+    .stat-red   { border-left-color: #dc2626; } .stat-red   .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-amber { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
+    .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+    .dot-red   { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .announcement-manage-table { border-collapse: separate; border-spacing: 0; }
+    .announcement-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .announcement-manage-table thead th:last-child { border-right: none; }
+    .announcement-manage-table thead th.col-status { border-right: none; padding: 0; }
+    .announcement-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .announcement-manage-table tbody td:last-child { border-right: none; }
+    .announcement-manage-table tbody td.col-status { border-right: none; padding: 0; }
+    .announcement-manage-table tbody tr:last-child td { border-bottom: none; }
+
+    .announcement-manage-table tbody tr.announcement-row:nth-of-type(even) { background: #fafbfd; }
+    .announcement-manage-table tbody tr.announcement-row:hover { background: #eef4ff !important; }
+    .announcement-row { transition: background 0.12s ease; }
+
+    /* status rail — 4 states */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 60px; }
+    .rail-live      { background: #16a34a; }
+    .rail-scheduled { background: #d97706; }
+    .rail-disabled  { background: #94a3b8; }
+    .rail-expired   { background: #dc2626; }
+
+    tr.row-disabled td:not(.col-status),
+    tr.row-expired td:not(.col-status) { color: #94a3b8; }
+    tr.row-disabled .announcement-title-text,
+    tr.row-expired .announcement-title-text { color: #64748b; }
+
+    /* ═══ Title cell ═══ */
+    .title-cell { display: flex; align-items: center; gap: 7px; }
+    .pin-icon { color: #d97706; font-size: 0.9rem; flex-shrink: 0; }
+    .announcement-title-text { font-size: 0.88rem; color: #0f172a; }
+
+    /* ═══ Type badge ═══ */
+    .type-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .type-public   { background: #dbeafe; color: #1d4ed8; }
+    .type-internal { background: #ede9fe; color: #6d28d9; }
+
+    .audience-cell { font-size: 0.82rem; color: #64748b; }
+    .audience-cell i { font-size: 0.78rem; margin-right: 4px; color: #94a3b8; }
+
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+
+    /* ═══ Status pills (extended: scheduled added) ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready     { background: #dcfce7; color: #15803d; }
+    .pill-scheduled { background: #fef3c7; color: #b45309; }
+    .pill-pending   { background: #f1f5f9; color: #64748b; }
+    .pill-failed    { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Row action buttons ═══ */
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+
+    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-label-toggle:hover { background: #fef3c7; color: #92400e; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 1250px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

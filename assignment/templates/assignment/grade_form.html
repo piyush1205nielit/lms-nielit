@@ -1,0 +1,52 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Grade Submission{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-check2-square me-2"></i>Grade Submission</h2>
+    <p>{{ submission.assignment.title }} &mdash; {{ submission.student.email }}</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card-panel p-4">
+            <h6 class="fw-bold mb-3">Student's Submission</h6>
+            {% if submission.submission_text %}
+                <p class="text-muted small" style="white-space: pre-line;">{{ submission.submission_text }}</p>
+            {% endif %}
+            {% if submission.submission_file %}
+                <a href="{{ submission.submission_file.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Submitted File
+                </a>
+            {% endif %}
+            <div class="text-muted small mt-3">
+                Submitted {{ submission.submitted_at|date:"d M Y, g:i A" }}
+                {% if submission.is_late %}<span class="badge bg-warning text-dark ms-1">Late Submission</span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card-panel p-4">
+            <h6 class="fw-bold mb-3">Assign Marks</h6>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Marks Obtained <span class="text-muted fw-normal">(out of {{ submission.assignment.max_marks }})</span></label>
+                    {{ form.marks_obtained }}
+                    {% if form.marks_obtained.errors %}<div class="text-danger small mt-1">{{ form.marks_obtained.errors|join:", " }}</div>{% endif %}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Feedback <span class="text-muted fw-normal">(optional)</span></label>
+                    {{ form.feedback }}
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Grade</button>
+                <a href="{% url 'assignment:submissions_list' submission.assignment.id %}" class="btn btn-outline-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

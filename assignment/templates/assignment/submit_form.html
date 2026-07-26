@@ -1,0 +1,54 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}Submit Assignment{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>{{ assignment.title }}</h2>
+    <p>{{ assignment.course.course_name }} &middot; Max Marks: {{ assignment.max_marks }} &middot; Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card-glow p-4">
+            <h6 class="fw-bold mb-2">Instructions</h6>
+            <p class="text-muted small" style="white-space: pre-line;">{{ assignment.instructions|default:assignment.description }}</p>
+            {% if assignment.attachment %}
+                <a href="{{ assignment.attachment.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-paperclip me-1"></i> Download Reference File
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card-glow p-4">
+            <h6 class="fw-bold mb-3">{% if existing_submission %}Update Your Submission{% else %}Submit Your Work{% endif %}</h6>
+
+            {% if assignment.is_past_deadline %}
+                <div class="alert alert-warning py-2 small">The deadline has passed. You're editing a previously submitted response.</div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Written Response</label>
+                    {{ form.submission_text }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Attach File</label>
+                    {{ form.submission_file }}
+                    {% if existing_submission.submission_file %}
+                        <div class="form-text">Current: <a href="{{ existing_submission.submission_file.url }}" target="_blank">view file</a></div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn text-white w-100" style="background: linear-gradient(90deg, #4facfe, #00f2fe); font-weight: 600;">
+                    {% if existing_submission %}Update Submission{% else %}Submit Assignment{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

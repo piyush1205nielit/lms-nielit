@@ -1,0 +1,65 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Submissions — {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h2><i class="bi bi-people-fill me-2"></i>{{ assignment.title }}</h2>
+        <p>{{ assignment.course.course_name }} &middot; Max Marks: {{ assignment.max_marks }} &middot; Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}</p>
+    </div>
+    <a href="{% url 'assignment:manage_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
+</div>
+
+<div class="card-panel p-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>Student</th><th>Submitted On</th><th>Status</th><th>Marks</th><th class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for item in roster %}
+                <tr>
+                    <td>
+                        <div class="fw-semibold small">{{ item.student.learner_profile.full_name|default:item.student.email }}</div>
+                        <div class="text-muted small">{{ item.student.email }}</div>
+                    </td>
+                    <td class="small">
+                        {% if item.submission %}
+                            {{ item.submission.submitted_at|date:"d M Y, g:i A" }}
+                            {% if item.submission.is_late %}<span class="badge bg-warning text-dark ms-1">Late</span>{% endif %}
+                        {% else %}
+                            <span class="text-muted">Not submitted</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not item.submission %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% elif item.submission.status == 'graded' %}
+                            <span class="badge bg-success">Graded</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark">Awaiting Grading</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.submission.status == 'graded' %}
+                            <strong>{{ item.submission.marks_obtained }}</strong> / {{ assignment.max_marks }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if item.submission %}
+                            <a href="{% url 'assignment:grade_submission' item.submission.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-check2-square me-1"></i> {% if item.submission.status == 'graded' %}Update Grade{% else %}Grade{% endif %}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">No students enrolled in this course.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

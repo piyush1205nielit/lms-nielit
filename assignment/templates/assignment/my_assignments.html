@@ -1,0 +1,107 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}My Assignments{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>My Assignments</h2>
+    <p>Track pending, submitted, and graded assignments across your enrolled courses.</p>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="assignmentTabs">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pendingTab">
+            Pending <span class="badge bg-warning text-dark ms-1">{{ pending|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#submittedTab">
+            Submitted <span class="badge bg-info text-dark ms-1">{{ submitted|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#gradedTab">
+            Graded <span class="badge bg-success ms-1">{{ graded|length }}</span>
+        </button>
+    </li>
+    {% if missed %}
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#missedTab">
+            Missed <span class="badge bg-danger ms-1">{{ missed|length }}</span>
+        </button>
+    </li>
+    {% endif %}
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="pendingTab">
+        {% for item in pending %}
+            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
+                    <div class="text-muted small">{{ item.assignment.course.course_name }} &middot; Max Marks: {{ item.assignment.max_marks }}</div>
+                    <div class="text-muted small">Due {{ item.assignment.deadline|date:"d M Y, g:i A" }}</div>
+                </div>
+                <a href="{% url 'assignment:submit' item.assignment.id %}" class="btn btn-sm text-white" style="background: linear-gradient(90deg, #4facfe, #00f2fe);">
+                    Submit Assignment
+                </a>
+            </div>
+        {% empty %}
+            <div class="card-glow p-5 text-center text-muted"><i class="bi bi-check2-circle" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Nothing pending — you're all caught up.</p></div>
+        {% endfor %}
+    </div>
+
+    <div class="tab-pane fade" id="submittedTab">
+        {% for item in submitted %}
+            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
+                    <div class="text-muted small">{{ item.assignment.course.course_name }}</div>
+                    <div class="text-muted small">
+                        Submitted {{ item.submission.submitted_at|date:"d M Y, g:i A" }}
+                        {% if item.submission.is_late %}<span class="badge bg-warning text-dark ms-1">Late</span>{% endif %}
+                    </div>
+                </div>
+                <span class="badge bg-info text-dark">Awaiting Grading</span>
+            </div>
+        {% empty %}
+            <div class="card-glow p-5 text-center text-muted"><p class="mb-0">No submissions awaiting grading.</p></div>
+        {% endfor %}
+    </div>
+
+    <div class="tab-pane fade" id="gradedTab">
+        {% for item in graded %}
+            <div class="card-glow p-4 mb-3">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
+                        <div class="text-muted small">{{ item.assignment.course.course_name }}</div>
+                    </div>
+                    <span class="badge bg-success fs-6">{{ item.submission.marks_obtained }} / {{ item.assignment.max_marks }}</span>
+                </div>
+                {% if item.submission.feedback %}
+                    <div class="mt-2 p-3 rounded" style="background:#f8fafc;">
+                        <div class="small fw-semibold text-muted mb-1">Feedback</div>
+                        <div class="small">{{ item.submission.feedback }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="card-glow p-5 text-center text-muted"><p class="mb-0">No graded assignments yet.</p></div>
+        {% endfor %}
+    </div>
+
+    {% if missed %}
+    <div class="tab-pane fade" id="missedTab">
+        {% for item in missed %}
+            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
+                    <div class="text-muted small">{{ item.assignment.course.course_name }} &middot; Deadline was {{ item.assignment.deadline|date:"d M Y, g:i A" }}</div>
+                </div>
+                <span class="badge bg-danger">Missed</span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

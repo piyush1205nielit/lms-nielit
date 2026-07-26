@@ -1,105 +1,358 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}{% endblock %}
+{% block page_title %}{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-megaphone-fill me-2"></i>{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}</h2>
+    <div>
+        <h2><i class="bi bi-megaphone-fill"></i> {% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}</h2>
+        <p>Broadcast updates to the public homepage or targeted learners.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'announcement:manage_list' %}" class="btn-admin-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Cancel
+        </a>
+    </div>
 </div>
 
-<div class="card-panel p-4" style="max-width: 680px;">
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
+<form method="post" novalidate id="announcementForm">
+    {% csrf_token %}
 
-        <div class="mb-3">
-            <label class="form-label">Title</label>
-            {{ form.title }}
-            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+    {% if form.non_field_errors %}
+        <div class="alert-banner alert-banner-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ form.non_field_errors }}</span>
         </div>
+    {% endif %}
 
-        <div class="mb-3">
-            <label class="form-label">Message</label>
-            {{ form.message }}
-            {% if form.message.errors %}<div class="text-danger small mt-1">{{ form.message.errors|join:", " }}</div>{% endif %}
-        </div>
+    <div class="announcement-form-grid">
 
-        <div class="mb-3">
-            <label class="form-label">Announcement Type</label>
-            {{ form.announcement_type }}
-            <div class="form-text">Public shows on the homepage to everyone. Internal shows only to logged-in users you target below.</div>
-        </div>
+        <!-- ═══════════ LEFT: main content ═══════════ -->
+        <div class="announcement-form-main">
 
-        <div id="internalTargetingFields">
-            <div class="mb-3">
-                <label class="form-label">Audience</label>
-                {{ form.target_type }}
+            <!-- Content -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-blue"><i class="bi bi-chat-square-text-fill"></i></div>
+                    <div><h6>Content</h6><p>The title and message learners will see.</p></div>
+                </div>
+                <div class="form-section-body">
+                    <div class="field-block">
+                        <label class="form-label">Title <span class="required-star">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field-block field-block-last">
+                        <label class="form-label">Message <span class="required-star">*</span></label>
+                        {{ form.message }}
+                        {% if form.message.errors %}<div class="text-danger small mt-1">{{ form.message.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3" id="targetCourseField">
-                <label class="form-label">Course</label>
-                {{ form.target_course }}
-                {% if form.target_course.errors %}<div class="text-danger small mt-1">{{ form.target_course.errors|join:", " }}</div>{% endif %}
+            <!-- Audience & Targeting -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-purple"><i class="bi bi-broadcast-pin"></i></div>
+                    <div><h6>Audience</h6><p>Who will see this announcement, and where.</p></div>
+                </div>
+                <div class="form-section-body">
+                    <div class="field-block">
+                        <label class="form-label">Announcement Type</label>
+                        {{ form.announcement_type }}
+                        <div class="field-hint"><i class="bi bi-info-circle"></i> Public shows on the homepage to everyone. Internal shows only to logged-in users you target below.</div>
+                    </div>
+
+                    <div id="typeIndicator" class="type-indicator">
+                        <i class="bi bi-globe2"></i>
+                        <span id="typeIndicatorText">This announcement will be shown publicly on the homepage.</span>
+                    </div>
+
+                    <div id="internalTargetingFields" class="internal-targeting-box">
+                        <div class="field-block">
+                            <label class="form-label">Target Audience</label>
+                            {{ form.target_type }}
+                        </div>
+
+                        <div class="field-block" id="targetCourseField">
+                            <label class="form-label">Course</label>
+                            {{ form.target_course }}
+                            {% if form.target_course.errors %}<div class="text-danger small mt-1">{{ form.target_course.errors|join:", " }}</div>{% endif %}
+                        </div>
+
+                        <div class="field-block field-block-last" id="targetUsersField">
+                            <label class="form-label">Students</label>
+                            {{ form.target_users }}
+                            <div class="field-hint"><i class="bi bi-info-circle"></i> Hold Ctrl/Cmd to select multiple students.</div>
+                            {% if form.target_users.errors %}<div class="text-danger small mt-1">{{ form.target_users.errors|join:", " }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3" id="targetUsersField">
-                <label class="form-label">Students</label>
-                {{ form.target_users }}
-                <div class="form-text">Hold Ctrl/Cmd to select multiple students.</div>
-                {% if form.target_users.errors %}<div class="text-danger small mt-1">{{ form.target_users.errors|join:", " }}</div>{% endif %}
+            <!-- Scheduling -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-amber"><i class="bi bi-calendar-week-fill"></i></div>
+                    <div><h6>Scheduling</h6><p>Control when this announcement appears and disappears.</p></div>
+                </div>
+                <div class="form-section-body">
+                    <div class="row-2col">
+                        <div class="field-block field-block-last">
+                            <label class="form-label">Publish At</label>
+                            {{ form.publish_at }}
+                        </div>
+                        <div class="field-block field-block-last">
+                            <label class="form-label">Expires At <span class="optional-tag">Optional</span></label>
+                            {{ form.expires_at }}
+                            {% if form.expires_at.errors %}<div class="text-danger small mt-1">{{ form.expires_at.errors|join:", " }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Options -->
+            <div class="card-panel form-section-card">
+                <div class="form-section-header">
+                    <div class="form-section-icon icon-green"><i class="bi bi-sliders"></i></div>
+                    <div><h6>Display Options</h6><p>Pinning and visibility controls.</p></div>
+                </div>
+                <div class="form-section-body">
+                    <label class="toggle-row" for="{{ form.is_pinned.id_for_label }}">
+                        <div>
+                            <div class="toggle-row-title"><i class="bi bi-pin-angle-fill"></i> Pin to Top</div>
+                            <div class="toggle-row-sub">Keeps this announcement above others regardless of publish date.</div>
+                        </div>
+                        <div class="form-check form-switch fs-4 mb-0">{{ form.is_pinned }}</div>
+                    </label>
+                    <label class="toggle-row" for="{{ form.is_active.id_for_label }}">
+                        <div>
+                            <div class="toggle-row-title"><i class="bi bi-toggle-on"></i> Active</div>
+                            <div class="toggle-row-sub">Inactive announcements are saved as drafts and stay hidden.</div>
+                        </div>
+                        <div class="form-check form-switch fs-4 mb-0">{{ form.is_active }}</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions-bar">
+                <a href="{% url 'announcement:manage_list' %}" class="btn-admin-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn-admin-primary btn-form-submit">
+                    <i class="bi bi-check-lg me-1"></i> Save Announcement
+                </button>
             </div>
         </div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label class="form-label">Publish At</label>
-                {{ form.publish_at }}
+        <!-- ═══════════ RIGHT: preview + tips sidebar ═══════════ -->
+        <aside class="announcement-form-sidebar">
+            <div class="card-panel sidebar-panel preview-panel">
+                <div class="sidebar-panel-title"><i class="bi bi-eye-fill"></i> Live Preview</div>
+                <div class="announcement-preview-card">
+                    <div class="preview-card-head">
+                        <i class="bi bi-megaphone-fill"></i>
+                        <span id="previewTitle">Announcement Title</span>
+                        <span id="previewPinBadge" class="preview-pin-badge" style="display:none;"><i class="bi bi-pin-angle-fill"></i></span>
+                    </div>
+                    <p id="previewMessage" class="preview-card-message">Your announcement message will appear here as you type.</p>
+                    <div class="preview-card-footer">
+                        <span id="previewTypeBadge" class="preview-type-badge preview-type-public"><i class="bi bi-globe2"></i> Public</span>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Expires At <span class="text-muted fw-normal">(optional)</span></label>
-                {{ form.expires_at }}
-                {% if form.expires_at.errors %}<div class="text-danger small mt-1">{{ form.expires_at.errors|join:", " }}</div>{% endif %}
+
+            <div class="card-panel sidebar-panel tips-panel">
+                <div class="sidebar-panel-title"><i class="bi bi-lightbulb-fill"></i> Tips</div>
+                <ul class="checklist">
+                    <li><i class="bi bi-check-circle-fill"></i> Keep titles short — they're often shown in a compact list</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Use Internal + targeting to reach only relevant learners</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Pinned announcements should be reserved for urgent updates</li>
+                </ul>
             </div>
-        </div>
+        </aside>
 
-        <div class="form-check mb-2">
-            {{ form.is_pinned }}
-            <label class="form-check-label">Pin to top</label>
-        </div>
-        <div class="form-check mb-4">
-            {{ form.is_active }}
-            <label class="form-check-label">Active</label>
-        </div>
+    </div>
+</form>
+{% endblock %}
 
-        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Announcement</button>
-        <a href="{% url 'announcement:manage_list' %}" class="btn btn-outline-secondary">Cancel</a>
-    </form>
-</div>
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Alert banner ═══ */
+    .alert-banner { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 10px; font-size: 0.87rem; margin-bottom: 1.25rem; }
+    .alert-banner-danger { background: #fef2f2; border: 1.5px solid #fecaca; color: #b91c1c; }
+    .alert-banner-danger i { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ═══ Grid layout ═══ */
+    .announcement-form-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 1050px) { .announcement-form-grid { grid-template-columns: 1fr; } }
+    .announcement-form-sidebar { position: sticky; top: calc(var(--topbar-height) + 1.25rem); display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ═══ Section cards (shared language) ═══ */
+    .form-section-card { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .form-section-card:last-child { margin-bottom: 0; }
+    .form-section-header { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .form-section-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .icon-blue   { background: #dbeafe; color: #2563eb; }
+    .icon-purple { background: #ede9fe; color: #7c3aed; }
+    .icon-amber  { background: #fef3c7; color: #d97706; }
+    .icon-green  { background: #dcfce7; color: #16a34a; }
+    .form-section-header h6 { font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+    .form-section-header p { font-size: 0.77rem; color: #64748b; margin: 0; }
+    .form-section-body { padding: 1.25rem 1.2rem; }
+
+    .field-block { padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; }
+    .field-block-last, .field-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .required-star { color: #ef4444; font-weight: 700; }
+    .optional-tag { font-size: 0.66rem; font-weight: 600; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
+    .field-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 6px; display: flex; align-items: center; gap: 5px; }
+
+    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+    .row-2col .field-block { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+    @media (max-width: 560px) { .row-2col { grid-template-columns: 1fr; gap: 1rem; } }
+
+    /* ═══ Type indicator (dynamic banner) ═══ */
+    .type-indicator {
+        display: flex; align-items: center; gap: 9px;
+        font-size: 0.8rem; font-weight: 500;
+        padding: 10px 14px; border-radius: 9px;
+        margin-bottom: 1rem;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .type-indicator i { font-size: 0.95rem; }
+    .type-indicator.indicator-public { background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; }
+    .type-indicator.indicator-internal { background: #f5f3ff; border: 1.5px solid #ddd6fe; color: #6d28d9; }
+
+    /* ═══ Internal targeting box ═══ */
+    .internal-targeting-box {
+        background: #fafbfd;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+    }
+    .internal-targeting-box.hidden-box { display: none; }
+
+    /* ═══ Toggle rows ═══ */
+    .toggle-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        padding: 12px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        cursor: pointer; margin: 0 0 10px;
+    }
+    .toggle-row:last-child { margin-bottom: 0; }
+    .toggle-row-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 7px; }
+    .toggle-row-title i { color: #2563eb; font-size: 0.9rem; }
+    .toggle-row-sub { font-size: 0.77rem; color: #64748b; margin-top: 3px; max-width: 400px; }
+    .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+
+    /* ═══ Actions bar ═══ */
+    .form-actions-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 0.5rem; }
+    .btn-form-submit { padding: 0.62rem 1.5rem; font-size: 0.9rem; }
+
+    /* ═══ Sidebar ═══ */
+    .sidebar-panel { padding: 1.1rem 1.15rem; border: 1.5px solid #cbd5e1 !important; }
+    .sidebar-panel-title { font-size: 0.82rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 0.9rem; padding-bottom: 0.7rem; border-bottom: 2px solid #e2e8f0; }
+    .sidebar-panel-title i { color: #2563eb; }
+
+    /* ═══ Live preview card ═══ */
+    .preview-panel { background: #fafbfd; }
+    .announcement-preview-card {
+        background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        padding: 14px 16px;
+    }
+    .preview-card-head {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.88rem; font-weight: 700; color: #0f172a;
+        margin-bottom: 6px;
+    }
+    .preview-card-head i { color: #7c3aed; }
+    #previewTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+    .preview-pin-badge { color: #d97706; font-size: 0.8rem; flex-shrink: 0; }
+    .preview-card-message {
+        font-size: 0.8rem; color: #64748b; line-height: 1.55;
+        margin: 0 0 12px;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .preview-card-footer { display: flex; }
+    .preview-type-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.7rem; font-weight: 700;
+        padding: 3px 10px; border-radius: 999px;
+    }
+    .preview-type-public { background: #dbeafe; color: #1d4ed8; }
+    .preview-type-internal { background: #ede9fe; color: #6d28d9; }
+
+    /* ═══ Tips panel ═══ */
+    .tips-panel { background: #fffbeb; border-color: #fde68a !important; }
+    .tips-panel .sidebar-panel-title { border-bottom-color: #fde68a; }
+    .tips-panel .sidebar-panel-title i { color: #d97706; }
+    .checklist { list-style: none; padding: 0; margin: 0; }
+    .checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; color: #92400e; line-height: 1.55; margin-bottom: 10px; }
+    .checklist li:last-child { margin-bottom: 0; }
+    .checklist li i { color: #d97706; font-size: 0.85rem; margin-top: 2px; flex-shrink: 0; }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Show/hide targeting fields based on announcement_type and target_type,
-    // so the admin only sees relevant fields for the option they've picked.
     document.addEventListener('DOMContentLoaded', function () {
         const typeSelect = document.getElementById('id_announcement_type');
         const targetTypeSelect = document.getElementById('id_target_type');
         const internalFields = document.getElementById('internalTargetingFields');
         const courseField = document.getElementById('targetCourseField');
         const usersField = document.getElementById('targetUsersField');
+        const typeIndicator = document.getElementById('typeIndicator');
+        const typeIndicatorText = document.getElementById('typeIndicatorText');
+
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const messageInput = document.getElementById('{{ form.message.id_for_label }}');
+        const pinnedInput = document.getElementById('{{ form.is_pinned.id_for_label }}');
+
+        const previewTitle = document.getElementById('previewTitle');
+        const previewMessage = document.getElementById('previewMessage');
+        const previewPinBadge = document.getElementById('previewPinBadge');
+        const previewTypeBadge = document.getElementById('previewTypeBadge');
 
         function updateVisibility() {
             const isInternal = typeSelect.value === 'internal';
-            internalFields.style.display = isInternal ? 'block' : 'none';
+
+            internalFields.classList.toggle('hidden-box', !isInternal);
+            typeIndicator.classList.toggle('indicator-public', !isInternal);
+            typeIndicator.classList.toggle('indicator-internal', isInternal);
+            typeIndicator.querySelector('i').className = isInternal ? 'bi bi-people-fill' : 'bi bi-globe2';
+            typeIndicatorText.textContent = isInternal
+                ? 'This announcement will only be shown to the targeted learners below.'
+                : 'This announcement will be shown publicly on the homepage.';
 
             if (isInternal) {
                 courseField.style.display = targetTypeSelect.value === 'specific_course' ? 'block' : 'none';
                 usersField.style.display = targetTypeSelect.value === 'specific_users' ? 'block' : 'none';
             }
+
+            // sync preview badge
+            previewTypeBadge.className = 'preview-type-badge ' + (isInternal ? 'preview-type-internal' : 'preview-type-public');
+            previewTypeBadge.innerHTML = isInternal
+                ? '<i class="bi bi-people-fill"></i> Internal'
+                : '<i class="bi bi-globe2"></i> Public';
+        }
+
+        function updatePreview() {
+            previewTitle.textContent = (titleInput && titleInput.value.trim()) || 'Announcement Title';
+            previewMessage.textContent = (messageInput && messageInput.value.trim()) || 'Your announcement message will appear here as you type.';
+            previewPinBadge.style.display = (pinnedInput && pinnedInput.checked) ? 'inline-flex' : 'none';
         }
 
         typeSelect.addEventListener('change', updateVisibility);
         targetTypeSelect.addEventListener('change', updateVisibility);
+        if (titleInput) titleInput.addEventListener('input', updatePreview);
+        if (messageInput) messageInput.addEventListener('input', updatePreview);
+        if (pinnedInput) pinnedInput.addEventListener('change', updatePreview);
+
         updateVisibility();
+        updatePreview();
     });
 </script>
 {% endblock %}

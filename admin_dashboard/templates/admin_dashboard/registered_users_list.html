@@ -1,12 +1,59 @@
 {% extends "admin_dashboard/base_admin.html" %}
-{% block title %}Registered Users{% endblock %}
+{% block title %}Manage Students{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
     <div>
-        <h2><i class="bi bi-people-fill me-2"></i>Registered Users</h2>
-        <p>{{ users.count }} total registered learners</p>
+        <h2><i class="bi bi-people-fill me-2"></i>Manage Students</h2>
+        <p>{{ profiles.paginator.count }} registered student{{ profiles.paginator.count|pluralize }}</p>
     </div>
+</div>
+
+<!-- ── Search + filters ── -->
+<div class="card-panel p-3 mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Search</label>
+            <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm"
+                   placeholder="Name, email, contact, or enrollment no.">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Course</label>
+            <select name="course" class="form-select form-select-sm">
+                <option value="">All Courses</option>
+                {% for course in all_courses %}
+                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.course_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Domain</label>
+            <select name="domain" class="form-select form-select-sm">
+                <option value="">All Domains</option>
+                {% for domain in all_domains %}
+                    <option value="{{ domain.id }}" {% if selected_domain == domain.id|stringformat:"s" %}selected{% endif %}>{{ domain.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Profile Status</label>
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All</option>
+                <option value="complete" {% if selected_status == 'complete' %}selected{% endif %}>Complete</option>
+                <option value="incomplete" {% if selected_status == 'incomplete' %}selected{% endif %}>Incomplete</option>
+            </select>
+        </div>
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+        </div>
+    </form>
+    {% if query or selected_course or selected_domain or selected_status %}
+        <div class="mt-2">
+            <a href="{% url 'admin_dashboard:registered_users' %}" class="small text-muted">
+                <i class="bi bi-x-circle"></i> Clear all filters
+            </a>
+        </div>
+    {% endif %}
 </div>
 
 <div class="card-panel p-3">
@@ -14,26 +61,45 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
+                    <th>Student</th>
                     <th>Enrollment No.</th>
-                    <th>Full Name</th>
-                    <th>Email</th>
                     <th>Contact</th>
-                    <th>City / State</th>
-                    <th>Courses Enrolled</th>
-                    <th>Profile Status</th>
-                    <th>Joined On</th>
+                    <th>Enrolled Courses</th>
+                    <th>Profile</th>
+                    <th>Joined</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for profile in users %}
+                {% for profile in profiles %}
                 <tr>
-                    <td><span class="fw-semibold text-primary">{{ profile.enrollment_number }}</span></td>
-                    <td>{{ profile.full_name|default:"—" }}</td>
-                    <td>{{ profile.user.email }}</td>
-                    <td>{{ profile.user.contact|default:"—" }}</td>
-                    <td>{{ profile.city|default:"—" }}{% if profile.state %}, {{ profile.state }}{% endif %}</td>
-                    <td><span class="badge bg-secondary">{{ profile.user.enrollments.count }}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if profile.profile_image %}
+                                <img src="{{ profile.profile_image.url }}" class="student-avatar" alt="">
+                            {% else %}
+                                <span class="student-avatar student-avatar-placeholder">{{ profile.user.email|slice:":1"|upper }}</span>
+                            {% endif %}
+                            <div>
+                                <div class="fw-semibold small">{{ profile.full_name|default:"—" }}</div>
+                                <div class="text-muted small">{{ profile.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="small text-primary fw-semibold">{{ profile.enrollment_number }}</span></td>
+                    <td class="small">{{ profile.user.contact|default:"—" }}</td>
+                    <td style="max-width: 240px;">
+                        {% for enrollment in profile.user.enrollments.all|slice:":3" %}
+                            <span class="badge bg-light text-dark border mb-1 d-inline-block text-truncate" style="max-width: 100%;">
+                                {{ enrollment.course.course_name }}
+                            </span><br>
+                        {% empty %}
+                            <span class="text-muted small">Not enrolled</span>
+                        {% endfor %}
+                        {% if profile.enrollment_count > 3 %}
+                            <span class="small text-muted">+{{ profile.enrollment_count|add:"-3" }} more</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if profile.profile_completed %}
                             <span class="badge bg-success">Complete</span>
@@ -41,25 +107,149 @@
                             <span class="badge bg-warning text-dark">Incomplete</span>
                         {% endif %}
                     </td>
-                    <td>{{ profile.created_at|date:"d M Y" }}</td>
+                    <td class="small">{{ profile.created_at|date:"d M Y" }}</td>
                     <td class="text-end">
                         <div class="btn-group btn-group-sm">
-                            <a href="{% url 'admin_dashboard:user_profile_edit' profile.user.id %}" class="btn btn-outline-secondary" title="Edit Profile">
+                            <button type="button" class="btn btn-outline-secondary btn-view-student" data-user-id="{{ profile.user.id }}" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-edit-student" data-user-id="{{ profile.user.id }}" title="Edit Details">
                                 <i class="bi bi-pencil-square"></i>
-                            </a>
+                            </button>
                             {% if request.user.role == 'superadmin' %}
-                            <a href="{% url 'admin_dashboard:user_credentials_edit' profile.user.id %}" class="btn btn-outline-warning" title="Edit Login Credentials">
-                                <i class="bi bi-shield-lock"></i>
-                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-delete-student"
+                                    data-user-id="{{ profile.user.id }}" data-student-name="{{ profile.full_name|default:profile.user.email }}" title="Delete">
+                                <i class="bi bi-trash3"></i>
+                            </button>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No registered users yet.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">No students match your search/filters.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    {% if profiles.paginator.num_pages > 1 %}
+    <div class="d-flex justify-content-center gap-2 mt-3">
+        {% if profiles.has_previous %}
+            <a href="?page={{ profiles.previous_page_number }}&q={{ query }}&course={{ selected_course }}&domain={{ selected_domain }}&status={{ selected_status }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+        {% endif %}
+        <span class="small text-muted align-self-center">Page {{ profiles.number }} of {{ profiles.paginator.num_pages }}</span>
+        {% if profiles.has_next %}
+            <a href="?page={{ profiles.next_page_number }}&q={{ query }}&course={{ selected_course }}&domain={{ selected_domain }}&status={{ selected_status }}" class="btn btn-sm btn-outline-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
+
+<!-- ── Shared modal shell — content injected via AJAX ── -->
+<div class="modal fade" id="studentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" id="studentModalContent">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .student-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .student-avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: #172281; color: white; font-weight: 700; font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('studentModal');
+    const modalContent = document.getElementById('studentModalContent');
+    const modal = new bootstrap.Modal(modalEl);
+    const csrfToken = "{{ csrf_token }}";
+    const loadingHtml = '<div class="modal-body text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+
+    function openModalWithUrl(url) {
+        modalContent.innerHTML = loadingHtml;
+        modal.show();
+        fetch(url)
+            .then(res => res.json())
+            .then(data => { modalContent.innerHTML = data.html; })
+            .catch(() => {
+                modalContent.innerHTML = '<div class="modal-body text-center py-5 text-danger">Failed to load. Please try again.</div>';
+            });
+    }
+
+    document.querySelectorAll('.btn-view-student').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openModalWithUrl(`/management/users/${btn.dataset.userId}/detail-modal/`);
+        });
+    });
+
+    document.querySelectorAll('.btn-edit-student').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openModalWithUrl(`/management/users/${btn.dataset.userId}/edit-modal/`);
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-student').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.studentName;
+            const userId = btn.dataset.userId;
+            if (!confirm(`Permanently delete the account for ${name}? This cannot be undone.`)) return;
+
+            fetch(`/dashboard/users/${userId}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete student.');
+                }
+            });
+        });
+    });
+
+    // Delegate form submission for the edit modal (content is injected dynamically)
+    modalContent.addEventListener('submit', function (e) {
+        if (!e.target.matches('#studentEditForm')) return;
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Saving...';
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData,
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                modal.hide();
+                location.reload();
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Save Changes';
+                const errorBox = form.querySelector('#editFormErrors');
+                errorBox.innerHTML = Object.values(data.errors).flat().map(e => `<div>${e}</div>`).join('');
+                errorBox.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -511,6 +511,14 @@
             <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
             <span class="nav-label">Registered Users</span>
         </a>
+
+        <a href="{% url 'assignment:manage_list' %}"
+           class="nav-link {% if active_page == 'assignments' %}active{% endif %}" title="Assignments">
+            <span class="nav-icon"> <i class="bi bi-clipboard-check-fill"></i>  </span>
+            <span class="nav-label">Assignments</span>
+        </a>
+
+      
         <a href="{% url 'accounts:admin_list' %}"
            class="nav-link {% if active_page == 'admins' %}active{% endif %}" title="Admin Management">
             <span class="nav-icon"><i class="bi bi-person-badge-fill"></i></span>
