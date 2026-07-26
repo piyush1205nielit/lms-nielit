@@ -43,4 +43,26 @@
         </div>
     </div>
 </div>
+
+{% if my_announcements %}
+<div class="card-glow p-4 mt-4">
+    <h5 class="fw-bold mb-3"><i class="bi bi-megaphone-fill me-2"></i>Announcements</h5>
+    {% for a in my_announcements %}
+        <div class="dashboard-announcement {% if a.is_pinned %}pinned{% endif %}">
+            {% if a.is_pinned %}<span class="badge bg-warning text-dark mb-1">Pinned</span>{% endif %}
+            <strong>{{ a.title }}</strong>
+            <p class="mb-1">{{ a.message|truncatewords:30 }}</p>
+            <span class="text-muted small">{{ a.publish_at|date:"d M Y, g:i A" }}</span>
+        </div>
+    {% endfor %}
+    <a href="{% url 'announcement:my_announcements' %}" class="small">View all announcements &rarr;</a>
+</div>
+
+<style>
+    .dashboard-announcement { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+    .dashboard-announcement:last-of-type { border-bottom: none; }
+    .dashboard-announcement.pinned { background: #eaf1fb; padding: 12px; border-radius: 8px; border-bottom: none; margin-bottom: 8px; }
+</style>
+{% endif %}
+
 {% endblock %}

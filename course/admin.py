@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Course, Module, Lesson, Enrollment, Progress, Certificate
+from .models import Course, Module, Lesson, Enrollment, Progress, Certificate, Domain
 
+@admin.register(Domain)
+class DomainAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'is_active', 'course_count', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+
+    def course_count(self, obj):
+        return obj.courses.count()
+    course_count.short_description = 'Courses'
 
 class LessonInline(admin.TabularInline):
     model = Lesson

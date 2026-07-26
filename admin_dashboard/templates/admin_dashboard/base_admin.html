@@ -186,6 +186,10 @@
            class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
+        <a href="{% url 'course:domain_list' %}"
+        class="nav-link {% if active_page == 'domains' %}active{% endif %}">
+            <i class="bi bi-tags-fill"></i> Manage Domains
+        </a>
         <a href="{% url 'course:manage_list' %}"
           class="nav-link {% if active_page == 'courses' %}active{% endif %}">
             <i class="bi bi-journal-bookmark-fill"></i> Manage Courses
@@ -193,6 +197,9 @@
         <a href="{% url 'admin_dashboard:registered_users' %}"
            class="nav-link {% if active_page == 'users' %}active{% endif %}">
             <i class="bi bi-people-fill"></i> Registered Users List
+        </a>
+        <a href="{% url 'announcement:manage_list' %}" class="nav-link {% if active_page == 'announcements' %}active{% endif %}">
+            <i class="bi bi-megaphone-fill"></i> Announcements
         </a>
         <a href="{% url 'accounts:admin_list' %}"
            class="nav-link {% if active_page == 'admins' %}active{% endif %}">

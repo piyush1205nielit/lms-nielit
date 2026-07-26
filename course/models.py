@@ -20,8 +20,40 @@ def certificate_upload_path(instance, filename):
     return f"certificates/{instance.user_id}/{filename}"
 
 
+class Domain(models.Model):
+    """
+    Admin-managed subject/category tags — e.g. IT, Cyber Security, AI/ML,
+    Data Science, Cloud, DevOps, Basic Computer Knowledge. A course can
+    belong to one or more domains, letting learners browse/filter/search
+    by subject area instead of needing to know a course's exact name.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)  # lets admins retire a tag without deleting historical data
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'course_domain'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['slug']),
+            models.Index(fields=['is_active']),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)[:120]
+        super().save(*args, **kwargs)
+
+
 class Course(models.Model):
-    # ... unchanged, exactly as you have it ...
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         INACTIVE = 'inactive', 'Inactive'
@@ -31,6 +63,12 @@ class Course(models.Model):
     slug = models.SlugField(max_length=280, unique=True, blank=True)
     course_description = models.TextField()
     course_banner = models.ImageField(upload_to=course_banner_upload_path, null=True, blank=True)
+
+    # A course can belong to more than one domain (e.g. a course could be
+    # tagged both "Cloud" and "DevOps"). blank=True at the model level since
+    # the "at least one required" rule is enforced in the admin form instead —
+    # see course/forms.py's CourseForm.clean_domains().
+    domains = models.ManyToManyField(Domain, related_name='courses', blank=True)
 
     learning_outcomes = models.TextField(blank=True)
     pre_requisites = models.TextField(blank=True)
@@ -68,7 +106,6 @@ class Course(models.Model):
 
 
 class Module(models.Model):
-    # ... unchanged ...
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='modules')
     title = models.CharField(max_length=255)
@@ -104,16 +141,12 @@ class Lesson(models.Model):
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
 
-    # Local dev only (USE_S3=False) — direct-to-disk upload via the ordinary form field.
-    # In production this field stays empty; raw_upload_key is used instead.
     video_file = models.FileField(
         upload_to=lesson_video_upload_path,
         null=True, blank=True,
     )
 
-    # Production (USE_S3=True) — set once the browser's direct-to-S3 upload completes.
     raw_upload_key = models.CharField(max_length=500, blank=True)
-    # Filled in later by the MediaConvert pipeline (Phase 2) once transcoding completes.
     hls_manifest_key = models.CharField(max_length=500, blank=True)
 
     video_status = models.CharField(max_length=15, choices=VideoStatus.choices, default=VideoStatus.UPLOADING)
@@ -132,21 +165,10 @@ class Lesson(models.Model):
         return f"{self.module.title} - {self.title}"
 
     def get_video_url(self):
-        """
-        Returns the correct playable video URL regardless of environment,
-        so templates/views never need to branch on USE_S3 themselves.
-
-        Local dev: served straight from Django's media storage.
-        Production: currently a direct S3 URL to the raw upload (temporary —
-        Phase 3 will replace this branch with a signed CloudFront URL once
-        the MediaConvert + CDN pipeline is wired up).
-        """
         if settings.USE_S3:
             if self.hls_manifest_key:
-                # Will be replaced by a CloudFront signed URL in Phase 3
                 return f"https://{settings.AWS_PROCESSED_VIDEO_BUCKET}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.hls_manifest_key}"
             if self.raw_upload_key:
-                # Temporary — raw bucket has no public/CDN access configured yet
                 return f"https://{settings.AWS_RAW_VIDEO_BUCKET}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.raw_upload_key}"
             return None
         else:
@@ -154,7 +176,6 @@ class Lesson(models.Model):
 
 
 class Enrollment(models.Model):
-    # ... unchanged, exactly as you have it ...
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         COMPLETED = 'completed', 'Completed'
@@ -179,7 +200,6 @@ class Enrollment(models.Model):
 
 
 class Progress(models.Model):
-    # ... unchanged ...
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_progress')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='progress_records')
@@ -200,7 +220,6 @@ class Progress(models.Model):
 
 
 class Certificate(models.Model):
-    # ... unchanged ...
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='certificates')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='certificates')

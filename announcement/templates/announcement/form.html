@@ -1,0 +1,105 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-megaphone-fill me-2"></i>{% if announcement %}Edit Announcement{% else %}New Announcement{% endif %}</h2>
+</div>
+
+<div class="card-panel p-4" style="max-width: 680px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="mb-3">
+            <label class="form-label">Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Message</label>
+            {{ form.message }}
+            {% if form.message.errors %}<div class="text-danger small mt-1">{{ form.message.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Announcement Type</label>
+            {{ form.announcement_type }}
+            <div class="form-text">Public shows on the homepage to everyone. Internal shows only to logged-in users you target below.</div>
+        </div>
+
+        <div id="internalTargetingFields">
+            <div class="mb-3">
+                <label class="form-label">Audience</label>
+                {{ form.target_type }}
+            </div>
+
+            <div class="mb-3" id="targetCourseField">
+                <label class="form-label">Course</label>
+                {{ form.target_course }}
+                {% if form.target_course.errors %}<div class="text-danger small mt-1">{{ form.target_course.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3" id="targetUsersField">
+                <label class="form-label">Students</label>
+                {{ form.target_users }}
+                <div class="form-text">Hold Ctrl/Cmd to select multiple students.</div>
+                {% if form.target_users.errors %}<div class="text-danger small mt-1">{{ form.target_users.errors|join:", " }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Publish At</label>
+                {{ form.publish_at }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Expires At <span class="text-muted fw-normal">(optional)</span></label>
+                {{ form.expires_at }}
+                {% if form.expires_at.errors %}<div class="text-danger small mt-1">{{ form.expires_at.errors|join:", " }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="form-check mb-2">
+            {{ form.is_pinned }}
+            <label class="form-check-label">Pin to top</label>
+        </div>
+        <div class="form-check mb-4">
+            {{ form.is_active }}
+            <label class="form-check-label">Active</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Announcement</button>
+        <a href="{% url 'announcement:manage_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show/hide targeting fields based on announcement_type and target_type,
+    // so the admin only sees relevant fields for the option they've picked.
+    document.addEventListener('DOMContentLoaded', function () {
+        const typeSelect = document.getElementById('id_announcement_type');
+        const targetTypeSelect = document.getElementById('id_target_type');
+        const internalFields = document.getElementById('internalTargetingFields');
+        const courseField = document.getElementById('targetCourseField');
+        const usersField = document.getElementById('targetUsersField');
+
+        function updateVisibility() {
+            const isInternal = typeSelect.value === 'internal';
+            internalFields.style.display = isInternal ? 'block' : 'none';
+
+            if (isInternal) {
+                courseField.style.display = targetTypeSelect.value === 'specific_course' ? 'block' : 'none';
+                usersField.style.display = targetTypeSelect.value === 'specific_users' ? 'block' : 'none';
+            }
+        }
+
+        typeSelect.addEventListener('change', updateVisibility);
+        targetTypeSelect.addEventListener('change', updateVisibility);
+        updateVisibility();
+    });
+</script>
+{% endblock %}

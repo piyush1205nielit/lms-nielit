@@ -48,6 +48,28 @@
             {% endif %}
         </div>
 
+        <div class="mb-4">
+            <label class="form-label">Domains <span class="text-danger">*</span></label>
+            <div class="form-text mb-2">Select at least one subject area — this is what powers search and filtering on the public catalog.</div>
+
+            {% if form.domains.field.queryset %}
+            <div class="domain-checkbox-grid">
+                {% for checkbox in form.domains %}
+                    <label class="domain-checkbox-chip">
+                        {{ checkbox.tag }}
+                        <span>{{ checkbox.choice_label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            {% else %}
+                <div class="alert alert-warning py-2 small mb-0">
+                    No active domains exist yet. <a href="{% url 'course:domain_create' %}">Create one first</a>.
+                </div>
+            {% endif %}
+
+            {% if form.domains.errors %}<div class="text-danger small mt-2">{{ form.domains.errors|join:", " }}</div>{% endif %}
+        </div>
+
         <div class="mb-3">
             <label class="form-label">Learning Outcomes</label>
             {{ form.learning_outcomes }}
@@ -64,4 +86,37 @@
         <a href="{% url 'course:manage_list' %}" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .domain-checkbox-grid {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .domain-checkbox-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 14px;
+        border: 1.5px solid #e2e6ea;
+        border-radius: 20px;
+        font-size: 0.84rem;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        margin: 0;
+    }
+    .domain-checkbox-chip:hover { background: #f0f4ff; border-color: #172281; }
+    .domain-checkbox-chip input[type="checkbox"] {
+        margin: 0;
+        accent-color: #172281;
+    }
+    .domain-checkbox-chip input[type="checkbox"]:checked ~ span {
+        font-weight: 700;
+        color: #172281;
+    }
+    .domain-checkbox-chip:has(input:checked) {
+        background: #eaf1fb;
+        border-color: #172281;
+    }
+</style>
 {% endblock %}

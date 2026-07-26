@@ -1,15 +1,63 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
-
 from accounts.decorators import admin_required
-from .models import Course, Module, Lesson
-from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm
+from .models import Course, Module, Lesson, Domain
+from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm, DomainForm
 from django.contrib.auth.decorators import login_required
 from .models import Course, Module, Lesson, Enrollment
 from django.conf import settings as django_settings
+from django.core.paginator import Paginator
+
 
 # ... (all the admin-side views from before stay exactly as they are) ...
+
+# admin_dashboard/views.py (or course/views.py, your call — fits either)
+
+from .models import Course, Module, Lesson, Enrollment, Domain
+from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm, DomainForm
+
+
+# ── Admin: domain management ──────────────────────────────
+
+@admin_required
+def domain_list_view(request):
+    domains = Domain.objects.all().prefetch_related('courses')
+    return render(request, 'course/domain_list.html', {
+        'domains': domains,
+        'active_page': 'domains',
+    })
+
+
+@admin_required
+def domain_create_view(request):
+    form = DomainForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Domain created.")
+        return redirect('course:domain_list')
+    return render(request, 'course/domain_form.html', {'form': form, 'active_page': 'domains'})
+
+
+@admin_required
+def domain_edit_view(request, domain_id):
+    domain = get_object_or_404(Domain, id=domain_id)
+    form = DomainForm(request.POST or None, instance=domain)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Domain updated.")
+        return redirect('course:domain_list')
+    return render(request, 'course/domain_form.html', {'form': form, 'domain': domain, 'active_page': 'domains'})
+
+
+@admin_required
+def domain_delete_view(request, domain_id):
+    domain = get_object_or_404(Domain, id=domain_id)
+    if request.method == 'POST':
+        name = domain.name
+        domain.delete()
+        messages.success(request, f"Domain '{name}' deleted.")
+    return redirect('course:domain_list')
 
 
 # ── Admin: course management list ──────────────────────────
@@ -21,6 +69,28 @@ def manage_list_view(request):
 
 
 # ── Step 1: Basic Info ──────────────────────────────────────
+def courses_view(request):
+    course_list = Course.objects.filter(status=Course.Status.ACTIVE).prefetch_related('domains').order_by('-published_date')
+
+    domain_slug = request.GET.get('domain')
+    if domain_slug:
+        course_list = course_list.filter(domains__slug=domain_slug)
+
+    search_query = request.GET.get('q')
+    if search_query:
+        course_list = course_list.filter(course_name__icontains=search_query)
+
+    all_domains = Domain.objects.filter(is_active=True).order_by('name')
+
+    paginator = Paginator(course_list.distinct(), 12)
+    page_number = request.GET.get('page')
+    courses = paginator.get_page(page_number)
+
+    return render(request, 'public/courses.html', {
+        'courses': courses,
+        'all_domains': all_domains,
+        'selected_domain': domain_slug,
+    })
 
 @admin_required
 def course_create_view(request):
@@ -28,15 +98,12 @@ def course_create_view(request):
     if request.method == 'POST' and form.is_valid():
         course = form.save(commit=False)
         course.created_by = request.user
-        course.status = Course.Status.INACTIVE   # always starts as a draft
+        course.status = Course.Status.INACTIVE
         course.save()
+        form.save_m2m()   # <-- required: persists the selected domains, since we used commit=False above
         messages.success(request, "Course created. Now add modules and lessons.")
         return redirect('course:modules', course_id=course.id)
-
-    return render(request, 'course/course_form_step1.html', {
-        'form': form,
-        'active_page': 'courses',
-    })
+    return render(request, 'course/course_form_step1.html', {'form': form, 'active_page': 'courses'})
 
 
 @admin_required

@@ -1,0 +1,30 @@
+<section class="home-section-alt">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-eyebrow">Explore Learning</span>
+            <h2 class="section-title">Popular Courses</h2>
+            <p class="section-desc">A quick look at courses across our most in-demand subject areas.</p>
+        </div>
+
+        {% if featured_courses %}
+        <div class="row g-3">
+            {% for course in featured_courses %}
+            <div class="col-md-4 col-lg-2">
+                {% include 'course/course_card.html' with course=course %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'public:courses' %}" class="btn-view-all">
+                View All Courses <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="fas fa-book-open fa-2x mb-2 d-block"></i>
+            <p class="mb-0">Course listings will appear here shortly.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>

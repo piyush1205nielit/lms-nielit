@@ -13,6 +13,7 @@ urlpatterns = [
     path('management/', include('admin_dashboard.urls')),
     path('courses/', include('course.urls')),
     path('stream/', include('stream.urls')),
+    path('announcements/', include('announcement.urls')),
 ]
 
 # Media is served by S3 in production (USE_S3=True) and never touches local

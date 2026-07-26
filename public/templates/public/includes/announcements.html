@@ -1,0 +1,129 @@
+{% if public_announcements %}
+<section class="announcement-band">
+    <div class="container">
+        <div class="announcement-band-inner">
+            <div class="announcement-label">
+                <i class="fas fa-bullhorn"></i> <span>Announcements</span>
+            </div>
+
+            <!-- Desktop: continuous marquee -->
+            <div class="announcement-marquee-wrap d-none d-md-block">
+                <div class="announcement-marquee-track">
+                    <!-- render the list twice back-to-back so the scroll loops seamlessly -->
+                    {% for a in public_announcements %}
+                        <a href="{% url 'public:announcements' %}" class="marquee-item {% if a.is_pinned %}pinned{% endif %}">
+                            {% if a.is_pinned %}<i class="fas fa-thumbtack me-1"></i>{% endif %}
+                            <strong>{{ a.title }}:</strong> {{ a.message|truncatewords:18 }}
+                        </a>
+                        <span class="marquee-divider">&bull;</span>
+                    {% endfor %}
+                    {% for a in public_announcements %}
+                        <a href="{% url 'public:announcements' %}" class="marquee-item {% if a.is_pinned %}pinned{% endif %}" aria-hidden="true">
+                            {% if a.is_pinned %}<i class="fas fa-thumbtack me-1"></i>{% endif %}
+                            <strong>{{ a.title }}:</strong> {{ a.message|truncatewords:18 }}
+                        </a>
+                        <span class="marquee-divider">&bull;</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Mobile: stacked top-to-bottom list -->
+            <div class="announcement-mobile-list d-md-none">
+                {% for a in public_announcements|slice:":4" %}
+                    <a href="{% url 'public:announcements' %}" class="mobile-announcement-item {% if a.is_pinned %}pinned{% endif %}">
+                        {% if a.is_pinned %}<i class="fas fa-thumbtack"></i>{% endif %}
+                        <span><strong>{{ a.title }}</strong> — {{ a.message|truncatewords:14 }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+
+            <a href="{% url 'public:announcements' %}" class="announcement-view-all d-none d-md-inline-flex">
+                View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .announcement-band {
+        background: #0a1f4f;
+        border-bottom: 3px solid #f59e0b;
+        overflow: hidden;
+    }
+    .announcement-band-inner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 0;
+    }
+    .announcement-label {
+        display: flex; align-items: center; gap: 6px;
+        background: #f59e0b; color: #0a1f4f;
+        font-size: 0.76rem; font-weight: 700;
+        padding: 6px 14px; border-radius: 20px;
+        flex-shrink: 0; white-space: nowrap;
+    }
+
+    /* ── Desktop marquee ── */
+    .announcement-marquee-wrap {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        mask-image: linear-gradient(90deg, transparent, black 24px, black calc(100% - 24px), transparent);
+        -webkit-mask-image: linear-gradient(90deg, transparent, black 24px, black calc(100% - 24px), transparent);
+    }
+    .announcement-marquee-track {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        width: max-content;
+        animation: marquee-scroll 35s linear infinite;
+    }
+    .announcement-marquee-wrap:hover .announcement-marquee-track {
+        animation-play-state: paused;
+    }
+    @keyframes marquee-scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+    }
+    .marquee-item {
+        color: rgba(255,255,255,0.88);
+        font-size: 0.84rem;
+        text-decoration: none;
+        padding: 0 6px;
+    }
+    .marquee-item:hover { color: white; text-decoration: underline; }
+    .marquee-item strong { color: #f59e0b; font-weight: 700; }
+    .marquee-item.pinned strong { color: #fde68a; }
+    .marquee-divider { color: rgba(255,255,255,0.3); padding: 0 14px; }
+
+    .announcement-view-all {
+        display: inline-flex; align-items: center;
+        color: white; font-size: 0.8rem; font-weight: 600;
+        text-decoration: none; white-space: nowrap; flex-shrink: 0;
+        border-left: 1px solid rgba(255,255,255,0.2);
+        padding-left: 16px;
+    }
+    .announcement-view-all:hover { color: #f59e0b; }
+
+    /* ── Mobile stacked list ── */
+    .announcement-mobile-list {
+        display: flex; flex-direction: column; gap: 8px;
+        flex: 1; padding: 2px 0;
+    }
+    .mobile-announcement-item {
+        display: flex; align-items: flex-start; gap: 8px;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.8rem; line-height: 1.5;
+        text-decoration: none;
+    }
+    .mobile-announcement-item:hover { color: white; }
+    .mobile-announcement-item strong { color: #f59e0b; }
+    .mobile-announcement-item.pinned strong { color: #fde68a; }
+    .mobile-announcement-item i { margin-top: 3px; flex-shrink: 0; font-size: 0.7rem; color: #fde68a; }
+
+    @media (max-width: 767px) {
+        .announcement-band-inner { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+</style>
+{% endif %}

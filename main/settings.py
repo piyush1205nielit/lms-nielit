@@ -120,6 +120,7 @@ INSTALLED_APPS = [
     # Created apps
     'accounts',
     'admin_dashboard',
+    'announcement',
     'user',
     'user_dashboard',
     'course',

@@ -12,14 +12,57 @@
     }
     .catalog-header {
         background: linear-gradient(135deg, #0a1f4f, #172281);
-        padding: 48px 0 40px;
+        padding: 44px 0 36px;
         color: white;
     }
     .catalog-header h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 8px; }
-    .catalog-header p { color: rgba(255,255,255,0.75); font-size: 0.92rem; margin: 0; }
+    .catalog-header p { color: rgba(255,255,255,0.75); font-size: 0.92rem; margin: 0 0 20px; }
 
-    .catalog-body { padding: 40px 0 60px; }
-    .course-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .catalog-search-form { display: flex; gap: 10px; max-width: 560px; }
+    .catalog-search-form input {
+        flex: 1; border: none; border-radius: 10px;
+        padding: 12px 16px; font-size: 0.9rem;
+    }
+    .catalog-search-form button {
+        background: var(--accent); border: none; color: #0a1f4f;
+        font-weight: 700; padding: 12px 22px; border-radius: 10px;
+        font-size: 0.9rem;
+    }
+
+    .catalog-body { padding: 32px 0 60px; }
+    .catalog-layout { display: flex; gap: 28px; align-items: flex-start; }
+
+    .filter-sidebar {
+        width: 240px; flex-shrink: 0;
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        padding: 20px; position: sticky; top: 100px;
+    }
+    .filter-sidebar h6 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 14px; }
+    .filter-domain-link {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 10px; border-radius: 8px;
+        font-size: 0.86rem; color: #374151; text-decoration: none;
+        margin-bottom: 2px;
+    }
+    .filter-domain-link:hover { background: #f0f4ff; color: var(--primary2); }
+    .filter-domain-link.active { background: #eaf1fb; color: var(--primary2); font-weight: 700; }
+    .filter-domain-link .count { font-size: 0.72rem; color: #94a3b8; }
+    .filter-domain-link.active .count { color: var(--primary2); }
+
+    .catalog-results { flex: 1; }
+    .catalog-results-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+    }
+    .catalog-results-header p { font-size: 0.86rem; color: var(--text-muted); margin: 0; }
+    .active-filter-chip {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #eaf1fb; color: var(--primary2);
+        padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+    }
+    .active-filter-chip a { color: var(--primary2); text-decoration: none; font-weight: 700; }
+
+    .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
     .empty-state i { font-size: 2.5rem; color: #cbd5e1; margin-bottom: 12px; display: block; }
@@ -38,7 +81,11 @@
     .catalog-pagination .active { background: var(--primary2); color: white; border-color: var(--primary2); }
     .catalog-pagination .disabled { color: #cbd5e1; pointer-events: none; }
 
-    @media (max-width: 991px) { .course-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 991px) {
+        .catalog-layout { flex-direction: column; }
+        .filter-sidebar { width: 100%; position: static; }
+        .course-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 576px) { .course-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
@@ -48,47 +95,86 @@
     <div class="container">
         <h1><i class="fas fa-book me-2"></i>All Courses</h1>
         <p>Browse NSQF-aligned courses offered by NIELIT Delhi. Sign in to enroll and access video content.</p>
+
+        <form method="get" action="{% url 'public:courses' %}" class="catalog-search-form">
+            {% if selected_domain_slug %}<input type="hidden" name="domain" value="{{ selected_domain_slug }}">{% endif %}
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by course name or domain (e.g. 'Cyber Security')">
+            <button type="submit"><i class="fas fa-search"></i></button>
+        </form>
     </div>
 </section>
 
 <section class="catalog-body">
     <div class="container">
-        {% if courses %}
-            <div class="course-grid">
-                {% for course in courses %}
-                    {% include 'course/course_card.html' with course=course %}
+        <div class="catalog-layout">
+            <aside class="filter-sidebar">
+                <h6>Filter by Domain</h6>
+                <a href="{% url 'public:courses' %}{% if query %}?q={{ query }}{% endif %}"
+                   class="filter-domain-link {% if not selected_domain_slug %}active{% endif %}">
+                    All Domains
+                </a>
+                {% for domain in all_domains %}
+                    <a href="?domain={{ domain.slug }}{% if query %}&q={{ query }}{% endif %}"
+                       class="filter-domain-link {% if selected_domain_slug == domain.slug %}active{% endif %}">
+                        <span>{% if domain.icon_class %}<i class="fas {{ domain.icon_class }} me-1"></i>{% endif %}{{ domain.name }}</span>
+                        <span class="count">{{ domain.courses.count }}</span>
+                    </a>
                 {% endfor %}
-            </div>
+            </aside>
 
-            {% if courses.paginator.num_pages > 1 %}
-            <div class="catalog-pagination">
-                {% if courses.has_previous %}
-                    <a href="?page={{ courses.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
-                {% else %}
-                    <span class="disabled"><i class="fas fa-chevron-left"></i></span>
-                {% endif %}
+            <div class="catalog-results">
+                <div class="catalog-results-header">
+                    <p>{{ courses.paginator.count }} course{{ courses.paginator.count|pluralize }} found</p>
 
-                {% for num in courses.paginator.page_range %}
-                    {% if num == courses.number %}
-                        <span class="active">{{ num }}</span>
-                    {% else %}
-                        <a href="?page={{ num }}">{{ num }}</a>
+                    {% if selected_domain_slug or query %}
+                        <span class="active-filter-chip">
+                            {% if query %}"{{ query }}"{% endif %}
+                            {% if selected_domain_slug and query %} in {% endif %}
+                            {% if selected_domain_slug %}{{ selected_domain_slug }}{% endif %}
+                            <a href="{% url 'public:courses' %}" title="Clear filters">&times;</a>
+                        </span>
                     {% endif %}
-                {% endfor %}
+                </div>
 
-                {% if courses.has_next %}
-                    <a href="?page={{ courses.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+                {% if courses %}
+                    <div class="course-grid">
+                        {% for course in courses %}
+                            {% include 'course/course_card.html' with course=course %}
+                        {% endfor %}
+                    </div>
+
+                    {% if courses.paginator.num_pages > 1 %}
+                    <div class="catalog-pagination">
+                        {% if courses.has_previous %}
+                            <a href="?page={{ courses.previous_page_number }}{% if selected_domain_slug %}&domain={{ selected_domain_slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}"><i class="fas fa-chevron-left"></i></a>
+                        {% else %}
+                            <span class="disabled"><i class="fas fa-chevron-left"></i></span>
+                        {% endif %}
+
+                        {% for num in courses.paginator.page_range %}
+                            {% if num == courses.number %}
+                                <span class="active">{{ num }}</span>
+                            {% else %}
+                                <a href="?page={{ num }}{% if selected_domain_slug %}&domain={{ selected_domain_slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if courses.has_next %}
+                            <a href="?page={{ courses.next_page_number }}{% if selected_domain_slug %}&domain={{ selected_domain_slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}"><i class="fas fa-chevron-right"></i></a>
+                        {% else %}
+                            <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 {% else %}
-                    <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <p>No courses found{% if query %} for "{{ query }}"{% endif %}{% if selected_domain_slug %} in this domain{% endif %}.</p>
+                        <a href="{% url 'public:courses' %}" class="btn btn-sm btn-outline-primary mt-2">Clear filters</a>
+                    </div>
                 {% endif %}
             </div>
-            {% endif %}
-        {% else %}
-            <div class="empty-state">
-                <i class="fas fa-book-open"></i>
-                <p>No courses are available right now. Please check back soon.</p>
-            </div>
-        {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

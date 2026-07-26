@@ -1,0 +1,81 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}{% if domain %}Edit Domain{% else %}Add Domain{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-tag-fill me-2"></i>{% if domain %}Edit Domain{% else %}Add Domain{% endif %}</h2>
+    <p>Domains let learners filter and search courses by subject area (e.g. IT, Cyber Security, AI/ML, Cloud, DevOps).</p>
+</div>
+
+<div class="card-panel p-4" style="max-width: 560px;">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label">Domain Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|join:", " }}</div>{% endif %}
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Icon Class <span class="text-muted fw-normal">(optional)</span></label>
+                {{ form.icon_class }}
+                <div class="form-text">Font Awesome class name, e.g. <code>fa-shield-halved</code></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Badge Color</label>
+                <div class="d-flex align-items-center gap-2">
+                    {{ form.color_hex }}
+                    <span id="colorPreviewLabel" class="badge" style="background: {{ form.color_hex.value|default:'#172281' }};">
+                        {{ domain.name|default:"Preview" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-check mb-4">
+            {{ form.is_active }}
+            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                Active (visible as a filter option to learners)
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i> {% if domain %}Save Changes{% else %}Create Domain{% endif %}
+        </button>
+        <a href="{% url 'course:domain_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // live-update the preview badge color/text as the admin picks a color
+    document.addEventListener('DOMContentLoaded', function () {
+        const colorInput = document.getElementById('{{ form.color_hex.id_for_label }}');
+        const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+        const preview = document.getElementById('colorPreviewLabel');
+
+        if (colorInput) {
+            colorInput.addEventListener('input', function () {
+                preview.style.background = colorInput.value;
+            });
+        }
+        if (nameInput) {
+            nameInput.addEventListener('input', function () {
+                preview.textContent = nameInput.value || 'Preview';
+            });
+        }
+    });
+</script>
+{% endblock %}

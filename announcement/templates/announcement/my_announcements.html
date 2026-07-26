@@ -1,0 +1,25 @@
+{% extends "user_dashboard/base_user.html" %}
+{% block title %}Announcements{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h2>Announcements</h2>
+    <p>Updates and notices from NIELIT LMS administrators.</p>
+</div>
+
+{% if announcements %}
+    {% for a in announcements %}
+        <div class="card-glow p-4 mb-3 {% if a.is_pinned %}border-warning{% endif %}">
+            {% if a.is_pinned %}<span class="badge bg-warning text-dark mb-2"><i class="bi bi-pin-angle-fill"></i> Pinned</span>{% endif %}
+            <h5 class="fw-bold">{{ a.title }}</h5>
+            <p>{{ a.message|linebreaks }}</p>
+            <span class="text-muted small">{{ a.publish_at|date:"d M Y, g:i A" }}</span>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card-glow p-5 text-center text-muted">
+        <i class="bi bi-megaphone" style="font-size: 2.5rem; color: #cbd5e0;"></i>
+        <p class="mt-3 mb-0">No announcements right now.</p>
+    </div>
+{% endif %}
+{% endblock %}

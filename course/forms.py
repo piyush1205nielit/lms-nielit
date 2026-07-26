@@ -1,22 +1,45 @@
 from django import forms
-from .models import Course, Module, Lesson
+from .models import Course, Module, Lesson, Domain
 from django.core.exceptions import ValidationError
-
 
 TEXT_INPUT_CLASS = 'form-control'
 
 
+class DomainForm(forms.ModelForm):
+    class Meta:
+        model = Domain
+        fields = ['name', 'description', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Cyber Security'}),
+            'description': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'Optional short description'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
 class CourseForm(forms.ModelForm):
+    domains = forms.ModelMultipleChoiceField(
+        queryset=Domain.objects.filter(is_active=True),
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text="Select at least one subject area this course belongs to.",
+    )
+
     class Meta:
         model = Course
-        fields = ['course_name', 'course_description', 'course_banner', 'learning_outcomes', 'pre_requisites']
+        fields = ['course_name', 'course_description', 'course_banner', 'domains', 'learning_outcomes', 'pre_requisites']
         widgets = {
             'course_name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Python for Beginners'}),
-            'course_description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4, 'placeholder': 'What is this course about?'}),
+            'course_description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4}),
             'course_banner': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'learning_outcomes': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4, 'placeholder': 'What will learners be able to do after this course?'}),
-            'pre_requisites': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3, 'placeholder': 'Any prior knowledge required? (optional)'}),
+            'learning_outcomes': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4}),
+            'pre_requisites': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3}),
         }
+
+    def clean_domains(self):
+        domains = self.cleaned_data.get('domains')
+        if not domains or domains.count() == 0:
+            raise ValidationError("Select at least one domain for this course.")
+        return domains
 
 
 class ModuleForm(forms.ModelForm):
@@ -34,27 +57,6 @@ ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov']
 MAX_VIDEO_SIZE_BYTES = 1024 * 1024 * 1024   # 1GB, matches the 500-800MB range you're targeting with headroom
 
 
-# class LessonForm(forms.ModelForm):
-#     class Meta:
-#         model = Lesson
-#         fields = ['title', 'description', 'order', 'thumbnail', 'video_file']
-#         widgets = {
-#             'title': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Introduction to Variables'}),
-#             'description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3, 'placeholder': 'Brief description of this lesson (optional)'}),
-#             'order': forms.NumberInput(attrs={'class': TEXT_INPUT_CLASS, 'min': 0}),
-#             'thumbnail': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-#             'video_file': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'video/mp4,video/webm,video/quicktime'}),
-#         }
-
-#     def clean_video_file(self):
-#         video = self.cleaned_data.get('video_file')
-#         if video and hasattr(video, 'size'):   # only validate on actual new upload, not on an unchanged existing file
-#             ext = '.' + video.name.rsplit('.', 1)[-1].lower()
-#             if ext not in ALLOWED_VIDEO_EXTENSIONS:
-#                 raise ValidationError(f"Unsupported video format. Allowed: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}")
-#             if video.size > MAX_VIDEO_SIZE_BYTES:
-#                 raise ValidationError(f"Video file is too large. Maximum size is {MAX_VIDEO_SIZE_BYTES // (1024*1024)}MB.")
-#         return video
 
 class LessonForm(forms.ModelForm):
     class Meta:

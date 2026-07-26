@@ -1,0 +1,85 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Manage Domains{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="bi bi-tags-fill me-2"></i>Manage Domains</h2>
+        <p>{{ domains.count }} total domain{{ domains.count|pluralize }} — used to tag and filter courses</p>
+    </div>
+    <a href="{% url 'course:domain_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> New Domain
+    </a>
+</div>
+
+<div class="card-panel p-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Domain</th>
+                    <th>Slug</th>
+                    <th>Description</th>
+                    <th>Courses</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for domain in domains %}
+                <tr>
+                    <td>
+                        <span class="d-inline-flex align-items-center gap-2">
+                            <span class="domain-swatch" style="background:{{ domain.color_hex|default:'#172281' }};"></span>
+                            {% if domain.icon_class %}<i class="fas {{ domain.icon_class }}" style="color:{{ domain.color_hex|default:'#172281' }};"></i>{% endif %}
+                            <strong>{{ domain.name }}</strong>
+                        </span>
+                    </td>
+                    <td><code class="small text-muted">{{ domain.slug }}</code></td>
+                    <td class="text-muted small">{{ domain.description|default:"—"|truncatechars:50 }}</td>
+                    <td><span class="badge bg-secondary">{{ domain.courses.count }}</span></td>
+                    <td>
+                        {% if domain.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'course:domain_edit' domain.id %}" class="btn btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <form method="post" action="{% url 'course:domain_delete' domain.id %}" class="d-inline"
+                                  onsubmit="return confirm('Delete \'{{ domain.name }}\'? This will remove it from {{ domain.courses.count }} course(s). This cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No domains created yet. Domains help learners filter and find courses without needing to know exact course names.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .domain-swatch {
+        display: inline-block;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
