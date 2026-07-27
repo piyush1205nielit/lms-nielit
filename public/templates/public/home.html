@@ -178,52 +178,13 @@
 
 {% block content %}
 
+{# EVENT CARD CAROUSELS #}
+{% if event_display_mode != "hidden" %}
+    {% include 'public/includes/event_cards_display.html' with events=events display_mode=event_display_mode %}
+{% endif %}
+
 <!-- ── Hero ──────────────────────────────────────── -->
-<section class="hero">
-    <div class="container">
-        <div class="hero-content">
-            <span class="hero-eyebrow"><i class="fas fa-bolt"></i> Government Certified Learning</span>
-            <h1>Build in-demand IT skills with <span>NIELIT Delhi HEAVY DEVELOPMENT</span>'s online learning platform</h1>
-            <p class="hero-desc">
-                Access recorded lectures, module-wise course content, and downloadable resources for
-                NSQF-aligned programmes — anytime, from anywhere. Enroll, learn at your pace, and earn
-                a certificate on completion.
-            </p>
-            <div class="hero-actions">
-                {% comment %} <a href="{% url 'public:courses' %}" class="btn-hero-primary"> {% endcomment %}
-                    <i class="fas fa-book-open"></i> Browse Courses
-                </a>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'user_dashboard:home' %}" class="btn-hero-secondary">
-                        <i class="fas fa-th-large"></i> Go to My Dashboard
-                    </a>
-                {% else %}
-                    <a href="{% url 'user:signup' %}" class="btn-hero-secondary">
-                        <i class="fas fa-user-plus"></i> Create Free Account
-                    </a>
-                {% endif %}
-            </div>
-            <div class="hero-stats">
-                <div>
-                    <div class="hero-stat-num">50+</div>
-                    <div class="hero-stat-label">Courses Offered</div>
-                </div>
-                <div>
-                    <div class="hero-stat-num">10K+</div>
-                    <div class="hero-stat-label">Students Trained</div>
-                </div>
-                <div>
-                    <div class="hero-stat-num">3</div>
-                    <div class="hero-stat-label">Centres in Delhi</div>
-                </div>
-                <div>
-                    <div class="hero-stat-num">NCVET</div>
-                    <div class="hero-stat-label">Recognised Certification</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+
 
 {% include 'public/includes/announcements.html' %}
 

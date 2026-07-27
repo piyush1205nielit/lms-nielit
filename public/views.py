@@ -1,21 +1,27 @@
 from django.shortcuts import render
 from django.core.paginator import Paginator
-from course.models import Course
+from course.models import *
 from announcement.models import Announcement
-from django.core.paginator import Paginator
+from django.db.models import Q
+from event.forms import EventForm
+from event.models import Event, EventDisplaySettings
 
 
 
 def home_view(request):
+    
     featured_courses = Course.objects.filter(status=Course.Status.ACTIVE).prefetch_related('domains').order_by('-published_date')[:6]
+    public_announcements = Announcement.objects.public_active()[:5]
+    display_settings = EventDisplaySettings.get_solo()
 
-    return render(request, 'public/home.html', {'featured_courses': featured_courses,})
+    context = {
+        'featured_courses': featured_courses,
+        'public_announcements': public_announcements,
+        "events": Event.objects.filter(is_active=True),
+        "event_display_mode": display_settings.display_mode,
+    }
+    return render(request, 'public/home.html', context)
 
-
-from django.shortcuts import render
-from django.core.paginator import Paginator
-from django.db.models import Q
-from course.models import Course, Domain
 
 
 def courses_view(request):
@@ -48,14 +54,6 @@ def courses_view(request):
         'query': query,
     })
 
-def home_view(request):
-    featured_courses = Course.objects.filter(status=Course.Status.ACTIVE).prefetch_related('domains').order_by('-published_date')[:6]
-    public_announcements = Announcement.objects.public_active()[:5]
-
-    return render(request, 'public/home.html', {
-        'featured_courses': featured_courses,
-        'public_announcements': public_announcements,
-    })
 
 
 def announcements_view(request):

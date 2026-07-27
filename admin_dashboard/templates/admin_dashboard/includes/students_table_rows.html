@@ -1,0 +1,66 @@
+{% for profile in profiles %}
+<tr class="student-data-row {% if profile.profile_completed %}row-complete{% else %}row-incomplete{% endif %}">
+    <td class="col-status">
+        <span class="status-rail {% if profile.profile_completed %}rail-complete{% else %}rail-incomplete{% endif %}"></span>
+    </td>
+    <td>
+        <div class="student-cell">
+            {% if profile.profile_image %}
+                <img src="{{ profile.profile_image.url }}" class="student-avatar" alt="">
+            {% else %}
+                <span class="student-avatar student-avatar-placeholder">{{ profile.user.email|slice:":1"|upper }}</span>
+            {% endif %}
+            <div class="student-cell-text">
+                <div class="student-name">{{ profile.full_name|default:"—" }}</div>
+                <div class="student-email">{{ profile.user.email }}</div>
+            </div>
+        </div>
+    </td>
+    <td><span class="enrollment-no-tag">{{ profile.enrollment_number }}</span></td>
+    <td class="stat-cell-sm">{{ profile.user.contact|default:"—" }}</td>
+    <td class="courses-cell">
+        {% for enrollment in profile.user.enrollments.all|slice:":3" %}
+            <span class="course-mini-badge" title="{{ enrollment.course.course_name }}">
+                <i class="bi bi-journal-bookmark"></i> {{ enrollment.course.course_name|truncatechars:22 }}
+            </span>
+        {% empty %}
+            <span class="text-muted small">Not enrolled</span>
+        {% endfor %}
+        {% if profile.enrollment_count > 3 %}
+            <span class="course-more-badge">+{{ profile.enrollment_count|add:"-3" }} more</span>
+        {% endif %}
+    </td>
+    <td class="text-center">
+        {% if profile.profile_completed %}
+            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Complete</span>
+        {% else %}
+            <span class="status-pill pill-pending"><i class="bi bi-exclamation-circle-fill"></i> Incomplete</span>
+        {% endif %}
+    </td>
+    <td class="stat-cell-sm">{{ profile.created_at|date:"d M Y" }}</td>
+    <td class="text-end">
+        <div class="row-actions">
+            <button type="button" class="btn-admin-labeled btn-label-view btn-view-student" data-user-id="{{ profile.user.id }}" title="View Details">
+                <i class="bi bi-eye"></i><span class="btn-label-text">View</span>
+            </button>
+            <button type="button" class="btn-admin-labeled btn-label-edit btn-edit-student" data-user-id="{{ profile.user.id }}" title="Edit Details">
+                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+            </button>
+            {% if request.user.role == 'superadmin' %}
+            <button type="button" class="btn-admin-labeled btn-label-delete btn-delete-student"
+                    data-user-id="{{ profile.user.id }}" data-student-name="{{ profile.full_name|default:profile.user.email }}" title="Delete">
+                <i class="bi bi-trash3"></i><span class="btn-label-text">Delete</span>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="8">
+    <div class="table-inline-state">
+        <div class="table-inline-state-icon"><i class="bi bi-person-x"></i></div>
+        <div class="table-inline-state-title">No students found</div>
+        <div class="table-inline-state-sub">Try adjusting your search or filters.</div>
+    </div>
+</td></tr>
+{% endfor %}

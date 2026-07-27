@@ -1,148 +1,115 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}Manage Students{% endblock %}
+{% block page_title %}Manage Students{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-people-fill me-2"></i>Manage Students</h2>
-        <p>{{ profiles.paginator.count }} registered student{{ profiles.paginator.count|pluralize }}</p>
+        <h2><i class="bi bi-people-fill"></i> Manage Students</h2>
+        <p id="resultCountLabel">Loading students...</p>
     </div>
 </div>
 
-<!-- ── Search + filters ── -->
-<div class="card-panel p-3 mb-3">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label small mb-1">Search</label>
-            <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm"
-                   placeholder="Name, email, contact, or enrollment no.">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small mb-1">Course</label>
-            <select name="course" class="form-select form-select-sm">
-                <option value="">All Courses</option>
-                {% for course in all_courses %}
-                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.course_name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label small mb-1">Domain</label>
-            <select name="domain" class="form-select form-select-sm">
-                <option value="">All Domains</option>
-                {% for domain in all_domains %}
-                    <option value="{{ domain.id }}" {% if selected_domain == domain.id|stringformat:"s" %}selected{% endif %}>{{ domain.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label small mb-1">Profile Status</label>
-            <select name="status" class="form-select form-select-sm">
-                <option value="">All</option>
-                <option value="complete" {% if selected_status == 'complete' %}selected{% endif %}>Complete</option>
-                <option value="incomplete" {% if selected_status == 'incomplete' %}selected{% endif %}>Incomplete</option>
-            </select>
-        </div>
-        <div class="col-md-1 d-grid">
-            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
-        </div>
-    </form>
-    {% if query or selected_course or selected_domain or selected_status %}
-        <div class="mt-2">
-            <a href="{% url 'admin_dashboard:registered_users' %}" class="small text-muted">
-                <i class="bi bi-x-circle"></i> Clear all filters
-            </a>
-        </div>
-    {% endif %}
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-3">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value" id="statTotal">—</div><div class="stat-mini-label">Total Students</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value" id="statComplete">—</div><div class="stat-mini-label">Profile Complete</div></div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-exclamation-circle-fill"></i></div>
+        <div><div class="stat-mini-value" id="statIncomplete">—</div><div class="stat-mini-label">Profile Incomplete</div></div>
+    </div>
 </div>
 
-<div class="card-panel p-3">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+<!-- ═══ Filter bar ═══ -->
+<div class="card-panel filter-panel">
+    <div class="filter-panel-header">
+        <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
+        <button type="button" id="clearFiltersBtn" class="btn-admin-secondary btn-clear-filters" title="Clear filters">
+            <i class="bi bi-x-circle me-1"></i> Clear
+        </button>
+    </div>
+    <div class="filter-panel-body">
+        <div class="filter-grid">
+            <div class="filter-field filter-field-search">
+                <label class="form-label">Search</label>
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Name, email, contact, or enrollment no.">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Course</label>
+                <select id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}">{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Domain</label>
+                <select id="domainFilter" class="form-select">
+                    <option value="">All Domains</option>
+                    {% for domain in all_domains %}
+                        <option value="{{ domain.id }}">{{ domain.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Profile Status</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">All</option>
+                    <option value="complete">Complete</option>
+                    <option value="incomplete">Incomplete</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Table ═══ -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> Student Roster</h5>
+        <span class="table-count-tag" id="resultCountTag">Loading…</span>
+    </div>
+
+    <div class="table-responsive position-relative" style="min-height: 220px;">
+        <div id="tableLoadingOverlay" class="table-loading-overlay show">
+            <div class="loading-spinner-box">
+                <div class="spinner-border text-primary" role="status"></div>
+                <span>Loading students...</span>
+            </div>
+        </div>
+        <table class="table table-admin student-manage-table mb-0">
+            <thead>
                 <tr>
-                    <th>Student</th>
+                    <th class="col-status"></th>
+                    <th style="min-width: 220px;">Student</th>
                     <th>Enrollment No.</th>
                     <th>Contact</th>
                     <th>Enrolled Courses</th>
-                    <th>Profile</th>
+                    <th class="text-center">Profile</th>
                     <th>Joined</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end" style="min-width: 220px;">Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for profile in profiles %}
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            {% if profile.profile_image %}
-                                <img src="{{ profile.profile_image.url }}" class="student-avatar" alt="">
-                            {% else %}
-                                <span class="student-avatar student-avatar-placeholder">{{ profile.user.email|slice:":1"|upper }}</span>
-                            {% endif %}
-                            <div>
-                                <div class="fw-semibold small">{{ profile.full_name|default:"—" }}</div>
-                                <div class="text-muted small">{{ profile.user.email }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="small text-primary fw-semibold">{{ profile.enrollment_number }}</span></td>
-                    <td class="small">{{ profile.user.contact|default:"—" }}</td>
-                    <td style="max-width: 240px;">
-                        {% for enrollment in profile.user.enrollments.all|slice:":3" %}
-                            <span class="badge bg-light text-dark border mb-1 d-inline-block text-truncate" style="max-width: 100%;">
-                                {{ enrollment.course.course_name }}
-                            </span><br>
-                        {% empty %}
-                            <span class="text-muted small">Not enrolled</span>
-                        {% endfor %}
-                        {% if profile.enrollment_count > 3 %}
-                            <span class="small text-muted">+{{ profile.enrollment_count|add:"-3" }} more</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if profile.profile_completed %}
-                            <span class="badge bg-success">Complete</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">Incomplete</span>
-                        {% endif %}
-                    </td>
-                    <td class="small">{{ profile.created_at|date:"d M Y" }}</td>
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-secondary btn-view-student" data-user-id="{{ profile.user.id }}" title="View Details">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-edit-student" data-user-id="{{ profile.user.id }}" title="Edit Details">
-                                <i class="bi bi-pencil-square"></i>
-                            </button>
-                            {% if request.user.role == 'superadmin' %}
-                            <button type="button" class="btn btn-outline-danger btn-delete-student"
-                                    data-user-id="{{ profile.user.id }}" data-student-name="{{ profile.full_name|default:profile.user.email }}" title="Delete">
-                                <i class="bi bi-trash3"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No students match your search/filters.</td></tr>
-                {% endfor %}
+            <tbody id="studentsTableBody">
+                <!-- rows injected via AJAX; see partial notes below -->
             </tbody>
         </table>
     </div>
 
-    {% if profiles.paginator.num_pages > 1 %}
-    <div class="d-flex justify-content-center gap-2 mt-3">
-        {% if profiles.has_previous %}
-            <a href="?page={{ profiles.previous_page_number }}&q={{ query }}&course={{ selected_course }}&domain={{ selected_domain }}&status={{ selected_status }}" class="btn btn-sm btn-outline-secondary">Previous</a>
-        {% endif %}
-        <span class="small text-muted align-self-center">Page {{ profiles.number }} of {{ profiles.paginator.num_pages }}</span>
-        {% if profiles.has_next %}
-            <a href="?page={{ profiles.next_page_number }}&q={{ query }}&course={{ selected_course }}&domain={{ selected_domain }}&status={{ selected_status }}" class="btn btn-sm btn-outline-secondary">Next</a>
-        {% endif %}
+    <div class="table-footer-bar" id="paginationWrap" style="display:none;">
+        <div class="pagination-controls" id="paginationControls"></div>
     </div>
-    {% endif %}
 </div>
 
 <!-- ── Shared modal shell — content injected via AJAX ── -->
@@ -159,68 +126,351 @@
 
 {% block extra_css %}
 <style>
-    .student-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .main-content { max-width: none; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 700px) { .stat-grid-3 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue  { border-left-color: #2563eb; } .stat-blue  .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
+
+    /* ═══ Filter panel ═══ */
+    .filter-panel { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .filter-panel-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.9rem 1.2rem;
+        background: #f1f5f9;
+        border-bottom: 2px solid #cbd5e1;
+    }
+    .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .filter-panel-header h5 i { color: #2563eb; }
+    .btn-clear-filters { height: 32px; padding: 0 12px; font-size: 0.78rem; }
+    .filter-panel-body { padding: 1.1rem 1.2rem; }
+
+    .filter-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 14px; }
+    @media (max-width: 950px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .filter-grid { grid-template-columns: 1fr; } }
+
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .filter-field .form-control, .filter-field .form-select {
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem;
+        padding: 0.45rem 0.7rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .filter-field .form-control:focus, .filter-field .form-select:focus {
+        border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none;
+    }
+    .search-input-wrap { position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }
+    .search-input-wrap input { padding-left: 34px !important; }
+
+    /* ═══ Panel header (results table) ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .student-manage-table { border-collapse: separate; border-spacing: 0; }
+    .student-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .student-manage-table thead th:last-child { border-right: none; }
+    .student-manage-table thead th.col-status { border-right: none; padding: 0; }
+    .student-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .student-manage-table tbody td:last-child { border-right: none; }
+    .student-manage-table tbody td.col-status { border-right: none; padding: 0; }
+    .student-manage-table tbody tr:last-child td { border-bottom: none; }
+
+    .student-manage-table tbody tr.student-data-row:nth-of-type(even) { background: #fafbfd; }
+    .student-manage-table tbody tr.student-data-row:hover { background: #eef4ff !important; }
+    .student-data-row { transition: background 0.12s ease; }
+
+    /* status rail (profile complete / incomplete) */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 58px; }
+    .rail-complete   { background: #16a34a; }
+    .rail-incomplete { background: #d97706; }
+
+    /* ═══ Cell components (for use inside the AJAX-rendered rows) ═══ */
+    .student-cell { display: flex; align-items: center; gap: 12px; }
+    .student-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #eef1f6; }
     .student-avatar-placeholder {
         display: flex; align-items: center; justify-content: center;
-        background: #172281; color: white; font-weight: 700; font-size: 0.85rem;
+        background: linear-gradient(135deg, #2563eb, #172281); color: white; font-weight: 700; font-size: 0.85rem;
     }
+    .student-cell-text { min-width: 0; }
+    .student-name { font-weight: 600; font-size: 0.87rem; color: #0f172a; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .student-email { font-size: 0.74rem; color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+
+    .enrollment-no-tag {
+        font-size: 0.76rem; font-weight: 700; color: #1d4ed8;
+        background: #eff6ff; border: 1px solid #dbeafe;
+        padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready   { background: #dcfce7; color: #15803d; }
+    .pill-pending { background: #fef3c7; color: #b45309; }
+
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-view   { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+    @media (max-width: 1250px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Loading overlay ═══ */
+    .table-loading-overlay {
+        position: absolute; inset: 0;
+        background: rgba(255,255,255,0.85);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 5;
+    }
+    .table-loading-overlay.show { display: flex; }
+    .loading-spinner-box { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .loading-spinner-box span { font-size: 0.82rem; color: #64748b; font-weight: 500; }
+
+    /* ═══ Empty / error states inside tbody ═══ */
+    .table-inline-state { display: flex; flex-direction: column; align-items: center; padding: 3rem 1rem; text-align: center; }
+    .table-inline-state-icon { width: 56px; height: 56px; border-radius: 14px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.9rem; }
+    .table-inline-state-title { font-weight: 700; font-size: 0.95rem; color: #1e293b; margin-bottom: 4px; }
+    .table-inline-state-sub { font-size: 0.83rem; color: #94a3b8; max-width: 320px; }
+    .table-inline-state-icon.state-error { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ Table footer / pagination ═══ */
+    .table-footer-bar {
+        padding: 1rem 1.2rem;
+        border-top: 2px solid #e2e8f0;
+        display: flex; justify-content: center;
+    }
+    .pagination-controls { display: flex; align-items: center; gap: 8px; }
+    .page-btn {
+        height: 34px; padding: 0 14px;
+        border: 1.5px solid #cbd5e1; background: white; color: #374151;
+        font-size: 0.82rem; font-weight: 600; border-radius: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .page-btn:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
+    .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .page-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+    .page-label { font-size: 0.82rem; color: #64748b; font-weight: 500; margin: 0 4px; }
+
+    .courses-cell { display: flex; flex-direction: column; gap: 4px; max-width: 240px; }
+    .course-mini-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.72rem; font-weight: 600; color: #374151;
+        background: #f8fafc; border: 1px solid #e2e8f0;
+        padding: 3px 9px; border-radius: 6px;
+        width: fit-content; max-width: 100%;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .course-mini-badge i { font-size: 0.66rem; color: #94a3b8; flex-shrink: 0; }
+    .course-more-badge { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-top: 1px; }
+    
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const modalEl = document.getElementById('studentModal');
-    const modalContent = document.getElementById('studentModalContent');
-    const modal = new bootstrap.Modal(modalEl);
+    const dataUrl = "{% url 'admin_dashboard:registered_users_data' %}";
     const csrfToken = "{{ csrf_token }}";
-    const loadingHtml = '<div class="modal-body text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
 
-    function openModalWithUrl(url) {
-        modalContent.innerHTML = loadingHtml;
-        modal.show();
-        fetch(url)
+    const searchInput = document.getElementById('searchInput');
+    const courseFilter = document.getElementById('courseFilter');
+    const domainFilter = document.getElementById('domainFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    const tableBody = document.getElementById('studentsTableBody');
+    const loadingOverlay = document.getElementById('tableLoadingOverlay');
+    const resultCountLabel = document.getElementById('resultCountLabel');
+    const resultCountTag = document.getElementById('resultCountTag');
+    const paginationControls = document.getElementById('paginationControls');
+    const paginationWrap = document.getElementById('paginationWrap');
+    const statTotal = document.getElementById('statTotal');
+    const statComplete = document.getElementById('statComplete');
+    const statIncomplete = document.getElementById('statIncomplete');
+
+    let currentPage = 1;
+    let debounceTimer = null;
+    let activeRequestController = null;   // cancels a stale in-flight request if a newer one starts
+
+    function buildQueryParams(page) {
+        const params = new URLSearchParams();
+        if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+        if (courseFilter.value) params.set('course', courseFilter.value);
+        if (domainFilter.value) params.set('domain', domainFilter.value);
+        if (statusFilter.value) params.set('status', statusFilter.value);
+        params.set('page', page);
+        return params;
+    }
+
+    function fetchStudents(page) {
+        currentPage = page;
+
+        if (activeRequestController) {
+            activeRequestController.abort();
+        }
+        activeRequestController = new AbortController();
+
+        loadingOverlay.classList.add('show');
+
+        const params = buildQueryParams(page);
+        fetch(`${dataUrl}?${params.toString()}`, { signal: activeRequestController.signal })
             .then(res => res.json())
-            .then(data => { modalContent.innerHTML = data.html; })
-            .catch(() => {
-                modalContent.innerHTML = '<div class="modal-body text-center py-5 text-danger">Failed to load. Please try again.</div>';
+            .then(data => {
+                tableBody.innerHTML = data.html;
+                const label = `${data.total_count} registered student${data.total_count === 1 ? '' : 's'}`;
+                resultCountLabel.textContent = label;
+                resultCountTag.textContent = `${data.total_count} record${data.total_count === 1 ? '' : 's'}`;
+
+                if (typeof data.complete_count !== 'undefined') statComplete.textContent = data.complete_count;
+                if (typeof data.incomplete_count !== 'undefined') statIncomplete.textContent = data.incomplete_count;
+                statTotal.textContent = data.total_count;
+
+                renderPagination(data);
+                attachRowActionListeners();
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                tableBody.innerHTML = `
+                    <tr><td colspan="8">
+                        <div class="table-inline-state">
+                            <div class="table-inline-state-icon state-error"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                            <div class="table-inline-state-title">Failed to load students</div>
+                            <div class="table-inline-state-sub">Something went wrong. Please try again.</div>
+                        </div>
+                    </td></tr>`;
+            })
+            .finally(() => {
+                loadingOverlay.classList.remove('show');
             });
     }
 
-    document.querySelectorAll('.btn-view-student').forEach(btn => {
-        btn.addEventListener('click', () => {
-            openModalWithUrl(`/management/users/${btn.dataset.userId}/detail-modal/`);
-        });
+    function renderPagination(data) {
+        paginationControls.innerHTML = '';
+        if (data.total_pages <= 1) {
+            paginationWrap.style.display = 'none';
+            return;
+        }
+        paginationWrap.style.display = 'flex';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i> Previous';
+        prevBtn.disabled = !data.has_previous;
+        prevBtn.addEventListener('click', () => fetchStudents(data.current_page - 1));
+        paginationControls.appendChild(prevBtn);
+
+        const label = document.createElement('span');
+        label.className = 'page-label';
+        label.textContent = `Page ${data.current_page} of ${data.total_pages}`;
+        paginationControls.appendChild(label);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.innerHTML = 'Next <i class="bi bi-chevron-right"></i>';
+        nextBtn.disabled = !data.has_next;
+        nextBtn.addEventListener('click', () => fetchStudents(data.current_page + 1));
+        paginationControls.appendChild(nextBtn);
+    }
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => fetchStudents(1), 350);
     });
 
-    document.querySelectorAll('.btn-edit-student').forEach(btn => {
-        btn.addEventListener('click', () => {
-            openModalWithUrl(`/management/users/${btn.dataset.userId}/edit-modal/`);
-        });
+    [courseFilter, domainFilter, statusFilter].forEach(el => {
+        el.addEventListener('change', () => fetchStudents(1));
     });
 
-    document.querySelectorAll('.btn-delete-student').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const name = btn.dataset.studentName;
-            const userId = btn.dataset.userId;
-            if (!confirm(`Permanently delete the account for ${name}? This cannot be undone.`)) return;
+    clearFiltersBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        courseFilter.value = '';
+        domainFilter.value = '';
+        statusFilter.value = '';
+        fetchStudents(1);
+    });
 
-            fetch(`/dashboard/users/${userId}/delete/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken },
+    const modalEl = document.getElementById('studentModal');
+    const modalContent = document.getElementById('studentModalContent');
+    const modal = new bootstrap.Modal(modalEl);
+    const modalLoadingHtml = '<div class="modal-body text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+
+    function openModalWithUrl(url) {
+        modalContent.innerHTML = modalLoadingHtml;
+        modal.show();
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+                return res.json();
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Failed to delete student.');
-                }
+            .then(data => { modalContent.innerHTML = data.html; })
+            .catch(() => {
+                modalContent.innerHTML = '<div class="modal-body text-center py-5 text-danger">Failed to load details. Please try again.</div>';
+            });
+    }
+
+    function attachRowActionListeners() {
+        document.querySelectorAll('.btn-view-student').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openModalWithUrl(`/management/users/${btn.dataset.userId}/detail-modal/`);
             });
         });
-    });
 
-    // Delegate form submission for the edit modal (content is injected dynamically)
+        document.querySelectorAll('.btn-edit-student').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openModalWithUrl(`/management/users/${btn.dataset.userId}/edit-modal/`);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete-student').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const name = btn.dataset.studentName;
+                const userId = btn.dataset.userId;
+                if (!confirm(`Permanently delete the account for ${name}? This cannot be undone.`)) return;
+
+                fetch(`/dashboard/users/${userId}/delete/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchStudents(currentPage);
+                    } else {
+                        alert('Failed to delete student.');
+                    }
+                });
+            });
+        });
+    }
+
     modalContent.addEventListener('submit', function (e) {
         if (!e.target.matches('#studentEditForm')) return;
         e.preventDefault();
@@ -240,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.success) {
                 modal.hide();
-                location.reload();
+                fetchStudents(currentPage);
             } else {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Save Changes';
@@ -250,6 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    fetchStudents(1);
 });
 </script>
 {% endblock %}

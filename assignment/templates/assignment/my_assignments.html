@@ -2,106 +2,300 @@
 {% block title %}My Assignments{% endblock %}
 
 {% block content %}
-<div class="page-header mb-4">
-    <h2>My Assignments</h2>
-    <p>Track pending, submitted, and graded assignments across your enrolled courses.</p>
+<div class="assign-page-header">
+    <div class="assign-header-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+    <div>
+        <h2>My Assignments</h2>
+        <p>Track pending, submitted, and graded assignments across your enrolled courses.</p>
+    </div>
 </div>
 
-<ul class="nav nav-tabs mb-4" id="assignmentTabs">
+<!-- ═══ Summary strip ═══ -->
+<div class="assign-summary-strip">
+    <div class="summary-chip chip-amber">
+        <i class="bi bi-hourglass-split"></i>
+        <div><span class="chip-value">{{ pending|length }}</span><span class="chip-label">Pending</span></div>
+    </div>
+    <div class="summary-chip chip-blue">
+        <i class="bi bi-inbox-fill"></i>
+        <div><span class="chip-value">{{ submitted|length }}</span><span class="chip-label">Submitted</span></div>
+    </div>
+    <div class="summary-chip chip-green">
+        <i class="bi bi-check-circle-fill"></i>
+        <div><span class="chip-value">{{ graded|length }}</span><span class="chip-label">Graded</span></div>
+    </div>
+    {% if missed %}
+    <div class="summary-chip chip-red">
+        <i class="bi bi-x-circle-fill"></i>
+        <div><span class="chip-value">{{ missed|length }}</span><span class="chip-label">Missed</span></div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══ Tabs ═══ -->
+<ul class="nav assign-tabs mb-4" id="assignmentTabs">
     <li class="nav-item">
         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pendingTab">
-            Pending <span class="badge bg-warning text-dark ms-1">{{ pending|length }}</span>
+            <i class="bi bi-hourglass-split"></i> Pending <span class="tab-count tab-count-amber">{{ pending|length }}</span>
         </button>
     </li>
     <li class="nav-item">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#submittedTab">
-            Submitted <span class="badge bg-info text-dark ms-1">{{ submitted|length }}</span>
+            <i class="bi bi-inbox-fill"></i> Submitted <span class="tab-count tab-count-blue">{{ submitted|length }}</span>
         </button>
     </li>
     <li class="nav-item">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#gradedTab">
-            Graded <span class="badge bg-success ms-1">{{ graded|length }}</span>
+            <i class="bi bi-check-circle-fill"></i> Graded <span class="tab-count tab-count-green">{{ graded|length }}</span>
         </button>
     </li>
     {% if missed %}
     <li class="nav-item">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#missedTab">
-            Missed <span class="badge bg-danger ms-1">{{ missed|length }}</span>
+            <i class="bi bi-x-circle-fill"></i> Missed <span class="tab-count tab-count-red">{{ missed|length }}</span>
         </button>
     </li>
     {% endif %}
 </ul>
 
 <div class="tab-content">
+
+    <!-- ═══ Pending ═══ -->
     <div class="tab-pane fade show active" id="pendingTab">
         {% for item in pending %}
-            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
-                    <div class="text-muted small">{{ item.assignment.course.course_name }} &middot; Max Marks: {{ item.assignment.max_marks }}</div>
-                    <div class="text-muted small">Due {{ item.assignment.deadline|date:"d M Y, g:i A" }}</div>
+            <div class="assign-card assign-card-pending">
+                <div class="assign-card-main">
+                    <h6 class="assign-title">{{ item.assignment.title }}</h6>
+                    <div class="assign-meta">
+                        <span><i class="bi bi-journal-bookmark"></i> {{ item.assignment.course.course_name }}</span>
+                        <span class="meta-sep">&middot;</span>
+                        <span><i class="bi bi-award"></i> Max Marks: {{ item.assignment.max_marks }}</span>
+                    </div>
+                    <div class="assign-deadline">
+                        <i class="bi bi-clock"></i> Due {{ item.assignment.deadline|date:"d M Y, g:i A" }}
+                    </div>
                 </div>
-                <a href="{% url 'assignment:submit' item.assignment.id %}" class="btn btn-sm text-white" style="background: linear-gradient(90deg, #4facfe, #00f2fe);">
-                    Submit Assignment
+                <a href="{% url 'assignment:submit' item.assignment.id %}" class="assign-submit-btn">
+                    <i class="bi bi-upload"></i> Submit Assignment
                 </a>
             </div>
         {% empty %}
-            <div class="card-glow p-5 text-center text-muted"><i class="bi bi-check2-circle" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Nothing pending — you're all caught up.</p></div>
+            <div class="assign-empty-state">
+                <div class="assign-empty-icon"><i class="bi bi-check2-circle"></i></div>
+                <div class="assign-empty-title">You're all caught up</div>
+                <div class="assign-empty-sub">Nothing pending right now.</div>
+            </div>
         {% endfor %}
     </div>
 
+    <!-- ═══ Submitted ═══ -->
     <div class="tab-pane fade" id="submittedTab">
         {% for item in submitted %}
-            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
-                    <div class="text-muted small">{{ item.assignment.course.course_name }}</div>
-                    <div class="text-muted small">
-                        Submitted {{ item.submission.submitted_at|date:"d M Y, g:i A" }}
-                        {% if item.submission.is_late %}<span class="badge bg-warning text-dark ms-1">Late</span>{% endif %}
+            <div class="assign-card">
+                <div class="assign-card-main">
+                    <h6 class="assign-title">{{ item.assignment.title }}</h6>
+                    <div class="assign-meta">
+                        <span><i class="bi bi-journal-bookmark"></i> {{ item.assignment.course.course_name }}</span>
+                    </div>
+                    <div class="assign-deadline">
+                        <i class="bi bi-clock"></i> Submitted {{ item.submission.submitted_at|date:"d M Y, g:i A" }}
+                        {% if item.submission.is_late %}<span class="late-tag"><i class="bi bi-exclamation-triangle-fill"></i> Late</span>{% endif %}
                     </div>
                 </div>
-                <span class="badge bg-info text-dark">Awaiting Grading</span>
+                <span class="assign-status-badge status-awaiting"><i class="bi bi-hourglass-split"></i> Awaiting Grading</span>
             </div>
         {% empty %}
-            <div class="card-glow p-5 text-center text-muted"><p class="mb-0">No submissions awaiting grading.</p></div>
+            <div class="assign-empty-state">
+                <div class="assign-empty-icon"><i class="bi bi-inbox"></i></div>
+                <div class="assign-empty-title">No submissions awaiting grading</div>
+            </div>
         {% endfor %}
     </div>
 
+    <!-- ═══ Graded ═══ -->
     <div class="tab-pane fade" id="gradedTab">
         {% for item in graded %}
-            <div class="card-glow p-4 mb-3">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            {% widthratio item.submission.marks_obtained item.assignment.max_marks 100 as grade_pct %}
+            <div class="assign-card assign-card-graded">
+                <div class="assign-card-top">
                     <div>
-                        <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
-                        <div class="text-muted small">{{ item.assignment.course.course_name }}</div>
+                        <h6 class="assign-title">{{ item.assignment.title }}</h6>
+                        <div class="assign-meta">
+                            <span><i class="bi bi-journal-bookmark"></i> {{ item.assignment.course.course_name }}</span>
+                        </div>
                     </div>
-                    <span class="badge bg-success fs-6">{{ item.submission.marks_obtained }} / {{ item.assignment.max_marks }}</span>
+                    <div class="grade-score-badge {% if grade_pct >= 75 %}score-high{% elif grade_pct >= 40 %}score-mid{% else %}score-low{% endif %}">
+                        {{ item.submission.marks_obtained }}<span class="score-max">/{{ item.assignment.max_marks }}</span>
+                    </div>
+                </div>
+                <div class="grade-progress-track">
+                    <div class="grade-progress-fill {% if grade_pct >= 75 %}fill-high{% elif grade_pct >= 40 %}fill-mid{% else %}fill-low{% endif %}" style="width: {{ grade_pct }}%;"></div>
                 </div>
                 {% if item.submission.feedback %}
-                    <div class="mt-2 p-3 rounded" style="background:#f8fafc;">
-                        <div class="small fw-semibold text-muted mb-1">Feedback</div>
-                        <div class="small">{{ item.submission.feedback }}</div>
+                    <div class="feedback-box">
+                        <div class="feedback-label"><i class="bi bi-chat-left-quote-fill"></i> Feedback</div>
+                        <div class="feedback-text">{{ item.submission.feedback }}</div>
                     </div>
                 {% endif %}
             </div>
         {% empty %}
-            <div class="card-glow p-5 text-center text-muted"><p class="mb-0">No graded assignments yet.</p></div>
+            <div class="assign-empty-state">
+                <div class="assign-empty-icon"><i class="bi bi-award"></i></div>
+                <div class="assign-empty-title">No graded assignments yet</div>
+            </div>
         {% endfor %}
     </div>
 
+    <!-- ═══ Missed ═══ -->
     {% if missed %}
     <div class="tab-pane fade" id="missedTab">
         {% for item in missed %}
-            <div class="card-glow p-4 mb-3 d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="fw-bold mb-1">{{ item.assignment.title }}</h6>
-                    <div class="text-muted small">{{ item.assignment.course.course_name }} &middot; Deadline was {{ item.assignment.deadline|date:"d M Y, g:i A" }}</div>
+            <div class="assign-card assign-card-missed">
+                <div class="assign-card-main">
+                    <h6 class="assign-title">{{ item.assignment.title }}</h6>
+                    <div class="assign-meta">
+                        <span><i class="bi bi-journal-bookmark"></i> {{ item.assignment.course.course_name }}</span>
+                    </div>
+                    <div class="assign-deadline deadline-missed">
+                        <i class="bi bi-clock-history"></i> Deadline was {{ item.assignment.deadline|date:"d M Y, g:i A" }}
+                    </div>
                 </div>
-                <span class="badge bg-danger">Missed</span>
+                <span class="assign-status-badge status-missed"><i class="bi bi-x-circle-fill"></i> Missed</span>
             </div>
         {% endfor %}
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ═══ Page header ═══ */
+    .assign-page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 1.5rem; }
+    .assign-header-icon {
+        width: 52px; height: 52px; border-radius: 14px;
+        background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #172281;
+        display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0;
+    }
+    .assign-page-header h2 { font-weight: 700; color: #0e1b2e; font-size: 1.4rem; margin: 0 0 3px; }
+    .assign-page-header p { color: #64748b; font-size: 0.88rem; margin: 0; }
+
+    /* ═══ Summary strip ═══ */
+    .assign-summary-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .summary-chip {
+        flex: 1; min-width: 140px;
+        display: flex; align-items: center; gap: 12px;
+        background: white; border: 1.5px solid #e2e8f0; border-radius: 14px;
+        padding: 14px 16px;
+    }
+    .summary-chip i { font-size: 1.3rem; flex-shrink: 0; }
+    .chip-value { display: block; font-size: 1.25rem; font-weight: 800; color: #0e1b2e; line-height: 1.1; }
+    .chip-label { display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+    .chip-amber i { color: #d97706; } .chip-blue i { color: #2563eb; } .chip-green i { color: #16a34a; } .chip-red i { color: #dc2626; }
+
+    /* ═══ Tabs ═══ */
+    .assign-tabs { border-bottom: 2px solid #e2e8f0; gap: 4px; }
+    .assign-tabs .nav-link {
+        border: none; border-bottom: 3px solid transparent;
+        color: #64748b; font-weight: 600; font-size: 0.87rem;
+        padding: 10px 16px; border-radius: 0;
+        display: flex; align-items: center; gap: 7px;
+        transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .assign-tabs .nav-link:hover { color: #172281; }
+    .assign-tabs .nav-link.active { color: #172281; border-bottom-color: #172281; background: transparent; }
+
+    .tab-count {
+        font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: 999px;
+    }
+    .tab-count-amber { background: #fef3c7; color: #b45309; }
+    .tab-count-blue  { background: #dbeafe; color: #1d4ed8; }
+    .tab-count-green { background: #dcfce7; color: #15803d; }
+    .tab-count-red   { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Assignment cards ═══ */
+    .assign-card {
+        background: white; border: 1.5px solid #e2e8f0; border-radius: 14px;
+        padding: 1.3rem 1.4rem; margin-bottom: 1rem;
+        display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .assign-card:hover { box-shadow: 0 8px 24px rgba(15,23,42,0.08); transform: translateY(-1px); }
+    .assign-card:last-child { margin-bottom: 0; }
+
+    .assign-card-pending { border-left: 4px solid #f59e0b; }
+    .assign-card-missed { border-left: 4px solid #ef4444; background: #fef8f8; }
+
+    .assign-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; width: 100%; margin-bottom: 12px; }
+    .assign-card-graded { flex-direction: column; align-items: stretch; }
+
+    .assign-card-main { flex: 1; min-width: 220px; }
+    .assign-title { font-weight: 700; font-size: 1rem; color: #0e1b2e; margin: 0 0 6px; }
+    .assign-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.8rem; color: #64748b; margin-bottom: 4px; }
+    .meta-sep { color: #cbd5e1; }
+    .assign-deadline { display: flex; align-items: center; gap: 6px; font-size: 0.79rem; color: #94a3b8; flex-wrap: wrap; }
+    .deadline-missed { color: #b91c1c; }
+
+    .late-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.68rem; font-weight: 700; color: #b45309;
+        background: #fef3c7; padding: 2px 8px; border-radius: 999px; margin-left: 4px;
+    }
+
+    /* ═══ Submit button ═══ */
+    .assign-submit-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: linear-gradient(90deg, #2563eb, #1d4ed8);
+        color: white; font-weight: 600; font-size: 0.85rem;
+        padding: 9px 18px; border-radius: 10px; text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        flex-shrink: 0;
+    }
+    .assign-submit-btn:hover { color: white; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37,99,235,0.3); }
+
+    /* ═══ Status badges ═══ */
+    .assign-status-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 999px;
+        flex-shrink: 0;
+    }
+    .status-awaiting { background: #dbeafe; color: #1d4ed8; }
+    .status-missed { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Grade card ═══ */
+    .grade-score-badge {
+        font-size: 1.15rem; font-weight: 800;
+        padding: 8px 16px; border-radius: 12px;
+        flex-shrink: 0;
+    }
+    .score-max { font-size: 0.85rem; font-weight: 600; opacity: 0.7; }
+    .score-high { background: #dcfce7; color: #15803d; }
+    .score-mid  { background: #fef3c7; color: #b45309; }
+    .score-low  { background: #fee2e2; color: #b91c1c; }
+
+    .grade-progress-track { height: 7px; background: #eef1f6; border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
+    .grade-progress-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+    .fill-high { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .fill-mid  { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .fill-low  { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+    .feedback-box { background: #f8fafc; border: 1px solid #eef1f6; border-radius: 10px; padding: 12px 14px; }
+    .feedback-label { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+    .feedback-text { font-size: 0.86rem; color: #374151; line-height: 1.6; }
+
+    /* ═══ Empty state ═══ */
+    .assign-empty-state {
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        padding: 3.5rem 1.5rem;
+        background: white; border: 1.5px dashed #e2e8f0; border-radius: 16px;
+    }
+    .assign-empty-icon {
+        width: 58px; height: 58px; border-radius: 16px;
+        background: #f1f5f9; color: #cbd5e1;
+        display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;
+    }
+    .assign-empty-title { font-weight: 700; font-size: 0.98rem; color: #1e293b; margin-bottom: 4px; }
+    .assign-empty-sub { font-size: 0.85rem; color: #94a3b8; }
+</style>
 {% endblock %}

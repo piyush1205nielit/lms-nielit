@@ -1,0 +1,301 @@
+{% comment %}
+Wraps multiple event cards. Expects: events, display_mode ("stacked" or "carousel").
+Carousel uses Bootstrap 5's native carousel component, styled to match the
+featuredCarousel image banner elsewhere on the site.
+Usage in home.html:
+  {% include 'public/includes/event_cards_display.html' with events=events display_mode="stacked" %}
+  {% include 'public/includes/event_cards_display.html' with events=events display_mode="carousel" %}
+{% endcomment %}
+
+{% if display_mode == "carousel" and events|length > 1 %}
+<style>
+    /* ============================================================
+       CAROUSEL WRAPPER - Cinema Ratio Optimized
+    ============================================================ */
+
+    .event-cards-carousel-section {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: var(--carousel-bg, #f5f7fa);
+    }
+
+    #eventCardsCarousel {
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    #eventCardsCarousel .carousel-item {
+        transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ---- Navigation Controls ---- */
+    .event-carousel-custom-control {
+        width: 5%;
+        min-width: 40px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 10;
+    }
+    #eventCardsCarousel:hover .event-carousel-custom-control {
+        opacity: 1;
+    }
+
+    .event-carousel-custom-control .carousel-control-prev-icon,
+    .event-carousel-custom-control .carousel-control-next-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: rgba(15, 23, 42, 0.65);
+        background-size: 35%;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .event-carousel-custom-control:hover .carousel-control-prev-icon,
+    .event-carousel-custom-control:hover .carousel-control-next-icon {
+        transform: scale(1.12);
+        background-color: rgba(15, 23, 42, 0.85);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+    }
+
+    /* ---- Indicators - Modern Pill Style ---- */
+    .event-carousel-custom-indicators {
+        bottom: clamp(10px, 2vh, 20px);
+        gap: clamp(6px, 0.8vw, 10px);
+        margin-bottom: 0;
+        z-index: 15;
+        padding: clamp(4px, 0.5vh, 8px) clamp(8px, 1vw, 16px);
+        background: rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(12px);
+        border-radius: 100px;
+        display: flex;
+        align-items: center;
+        gap: clamp(6px, 0.8vw, 10px);
+    }
+    .event-carousel-custom-indicators button {
+        width: clamp(20px, 2.5vw, 32px);
+        height: 3px;
+        border: none;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        padding: 0;
+        cursor: pointer;
+    }
+    .event-carousel-custom-indicators button.active {
+        width: clamp(36px, 4vw, 52px);
+        background: #ffffff;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+    }
+    .event-carousel-custom-indicators button:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ---- Slide Counter ---- */
+    .event-carousel-counter {
+        position: absolute;
+        top: clamp(12px, 2vh, 24px);
+        right: clamp(12px, 2vw, 28px);
+        z-index: 15;
+        background: rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(12px);
+        padding: clamp(2px, 0.3vh, 6px) clamp(8px, 1vw, 16px);
+        border-radius: 100px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: clamp(0.6rem, 0.7vw, 0.75rem);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ============================================================
+       RESPONSIVE BREAKPOINTS
+    ============================================================ */
+
+    @media (hover: none) {
+        .event-carousel-custom-control {
+            opacity: 1;
+            width: 8%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .event-carousel-custom-control {
+            opacity: 1;
+            width: 10%;
+        }
+        .event-carousel-custom-control .carousel-control-prev-icon,
+        .event-carousel-custom-control .carousel-control-next-icon {
+            width: 32px;
+            height: 32px;
+            background-size: 30%;
+        }
+        .event-carousel-custom-indicators {
+            bottom: clamp(8px, 1.5vh, 14px);
+            gap: 5px;
+            padding: 4px 10px;
+        }
+        .event-carousel-custom-indicators button {
+            width: 14px;
+            height: 3px;
+        }
+        .event-carousel-custom-indicators button.active {
+            width: 24px;
+        }
+        .event-carousel-counter {
+            top: 12px;
+            right: 12px;
+            font-size: 0.55rem;
+            padding: 2px 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .event-carousel-custom-control {
+            width: 12%;
+        }
+        .event-carousel-custom-control .carousel-control-prev-icon,
+        .event-carousel-custom-control .carousel-control-next-icon {
+            width: 26px;
+            height: 26px;
+            background-size: 25%;
+        }
+        .event-carousel-custom-indicators {
+            bottom: 6px;
+            gap: 4px;
+            padding: 3px 8px;
+        }
+        .event-carousel-custom-indicators button {
+            width: 10px;
+            height: 2px;
+        }
+        .event-carousel-custom-indicators button.active {
+            width: 18px;
+        }
+        .event-carousel-counter {
+            display: none;
+        }
+    }
+
+
+</style>
+
+<!-- ============================================================
+     CAROUSEL MARKUP
+  ============================================================ -->
+<div class="event-cards-carousel-section" style="--carousel-bg: {{ carousel_bg|default:'#f5f7fa' }};">
+    <div id="eventCardsCarousel" class="carousel slide"
+         data-bs-ride="carousel" data-bs-interval="4000"
+         data-bs-pause="hover" data-bs-wrap="true">
+
+        <!-- Indicators -->
+        <div class="carousel-indicators event-carousel-custom-indicators">
+            {% for event in events %}
+            <button type="button"
+                    data-bs-target="#eventCardsCarousel"
+                    data-bs-slide-to="{{ forloop.counter0 }}"
+                    {% if forloop.first %}class="active"{% endif %}
+                    aria-current="{% if forloop.first %}true{% endif %}"
+                    aria-label="Event {{ forloop.counter }}">
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Slide Counter -->
+        <div class="event-carousel-counter">
+            <span class="current-slide">1</span> / <span class="total-slides">{{ events|length }}</span>
+        </div>
+
+        <!-- Slides -->
+        <div class="carousel-inner">
+            {% for event in events %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                {% include 'public/includes/event_card.html' with event=event %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Controls -->
+        <button class="carousel-control-prev event-carousel-custom-control"
+                type="button" data-bs-target="#eventCardsCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next event-carousel-custom-control"
+                type="button" data-bs-target="#eventCardsCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     CAROUSEL JAVASCRIPT
+  ============================================================ -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const carouselEl = document.querySelector('#eventCardsCarousel');
+    if (!carouselEl) return;
+
+    // Initialize Bootstrap Carousel
+    let carousel = null;
+    if (typeof bootstrap !== 'undefined' && bootstrap.Carousel) {
+        carousel = new bootstrap.Carousel(carouselEl, {
+            interval: 4000,
+            ride: 'carousel',
+            pause: 'hover',
+            wrap: true,
+            touch: true,
+            keyboard: true
+        });
+    }
+
+    // Update counter on slide change
+    carouselEl.addEventListener('slid.bs.carousel', function (e) {
+        const counter = this.querySelector('.current-slide');
+        if (counter) {
+            const activeIndex = Array.from(this.querySelectorAll('.carousel-item')).indexOf(e.relatedTarget);
+            counter.textContent = activeIndex + 1;
+        }
+    });
+
+    // Keyboard navigation with arrow keys
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const carousel = document.querySelector('#eventCardsCarousel');
+            if (carousel && carousel.matches(':hover')) {
+                e.preventDefault();
+                if (e.key === 'ArrowLeft') {
+                    document.querySelector('#eventCardsCarousel .carousel-control-prev')?.click();
+                } else {
+                    document.querySelector('#eventCardsCarousel .carousel-control-next')?.click();
+                }
+            }
+        }
+    });
+
+    // Expose carousel instance for debugging
+    window.eventCarousel = carousel;
+});
+</script>
+
+{% else %}
+<!-- ============================================================
+     STACKED LAYOUT
+  ============================================================ -->
+<div class="event-stacked-list" style="
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 4vh, 48px);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg, #f5f7fa);
+">
+    {% for event in events %}
+        {% include 'public/includes/event_card.html' with event=event %}
+    {% endfor %}
+</div>
+{% endif %}

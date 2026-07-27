@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview - {{ event.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .preview-topbar {
+            max-width: 1000px;
+            margin: 0 auto 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-topbar a {
+            text-decoration: none;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        .preview-topbar a:hover { text-decoration: underline; }
+        .preview-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-topbar">
+        <a href="{% url 'event:event_list' %}"><i class="fas fa-arrow-left"></i> Back to Event Admin</a>
+        <span class="preview-badge"><i class="fas fa-eye me-1"></i>Preview Mode — this is how it renders on the homepage</span>
+    </div>
+
+    {% include 'event/partials/event_card.html' with event=event %}
+</body>
+</html>

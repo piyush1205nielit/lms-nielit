@@ -1,83 +1,270 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}Admin Management{% endblock %}
+{% block page_title %}Admin Management{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-person-badge-fill me-2"></i>Admin Management</h2>
+        <h2><i class="bi bi-person-badge-fill"></i> Admin Management</h2>
         <p>Manage base admin accounts created under this platform.</p>
     </div>
     {% if request.user.role == 'superadmin' %}
-    <a href="{% url 'accounts:admin_create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Add New Admin
-    </a>
+    <div class="page-header-actions">
+        <a href="{% url 'accounts:admin_create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add New Admin
+        </a>
+    </div>
     {% endif %}
 </div>
 
-<div class="card-panel p-3">
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-2">
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ active_count|default:0 }}</div><div class="stat-mini-label">Active Admins</div></div>
+    </div>
+    <div class="stat-mini-card stat-red">
+        <div class="stat-mini-icon"><i class="bi bi-slash-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ disabled_count|default:0 }}</div><div class="stat-mini-label">Disabled Admins</div></div>
+    </div>
+</div>
+
+{% if request.user.role != 'superadmin' %}
+<div class="view-only-notice">
+    <i class="bi bi-eye-fill"></i>
+    <span>You're viewing this list in read-only mode. Only superadmins can create, edit, or manage admin accounts.</span>
+</div>
+{% endif %}
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active account</span>
+    <span class="legend-item"><span class="legend-dot dot-disabled"></span> Disabled account</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> All Admins</h5>
+        <span class="table-count-tag">{{ admins.count }} record{{ admins.count|pluralize }}</span>
+    </div>
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="table table-admin admin-manage-table mb-0">
+            <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
+                    <th class="col-status"></th>
+                    <th style="min-width: 200px;">Admin</th>
                     <th>Contact</th>
                     <th>Designation</th>
-                    <th>Status</th>
+                    <th class="text-center">Status</th>
                     <th>Created By</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end" style="min-width: 240px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for admin in admins %}
-                <tr>
-                    <td class="fw-semibold">{{ admin.name }}</td>
-                    <td>{{ admin.user.email }}</td>
-                    <td>{{ admin.user.contact|default:"—" }}</td>
-                    <td>{{ admin.bio|default:"—" }}</td>
+                <tr class="admin-row {% if admin.user.is_active %}row-active{% else %}row-disabled{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail {% if admin.user.is_active %}rail-active{% else %}rail-disabled{% endif %}"></span>
+                    </td>
                     <td>
+                        <div class="admin-cell">
+                            <span class="admin-avatar">{{ admin.name|slice:":1"|upper }}</span>
+                            <div class="admin-cell-text">
+                                <div class="admin-name">{{ admin.name }}</div>
+                                <div class="admin-email">{{ admin.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="stat-cell-sm">{{ admin.user.contact|default:"—" }}</td>
+                    <td class="stat-cell-sm">{{ admin.bio|default:"—" }}</td>
+                    <td class="text-center">
                         {% if admin.user.is_active %}
-                            <span class="badge bg-success">Active</span>
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
                         {% else %}
-                            <span class="badge bg-danger">Disabled</span>
+                            <span class="status-pill pill-failed"><i class="bi bi-slash-circle-fill"></i> Disabled</span>
                         {% endif %}
                     </td>
-                    <td>{{ admin.created_by.email|default:"—" }}</td>
+                    <td class="stat-cell-sm">{{ admin.created_by.email|default:"—" }}</td>
                     <td class="text-end">
                         {% if request.user.role == 'superadmin' %}
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'accounts:admin_edit' admin.user.id %}"
-                               class="btn btn-outline-secondary" title="Edit">
-                                <i class="bi bi-pencil-square"></i>
+                        <div class="row-actions">
+                            <a href="{% url 'accounts:admin_edit' admin.user.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
                             </a>
-                            <a href="{% url 'accounts:admin_change_password' admin.user.id %}"
-                               class="btn btn-outline-secondary" title="Change Password">
-                                <i class="bi bi-key-fill"></i>
+                            <a href="{% url 'accounts:admin_change_password' admin.user.id %}" class="btn-admin-labeled btn-label-key" title="Change Password">
+                                <i class="bi bi-key-fill"></i><span class="btn-label-text">Password</span>
                             </a>
                             <form method="post" action="{% url 'accounts:admin_toggle_active' admin.user.id %}" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-warning" title="{% if admin.user.is_active %}Disable{% else %}Enable{% endif %}">
-                                    <i class="bi bi-slash-circle"></i>
+                                <button type="submit" class="btn-admin-labeled btn-label-toggle" title="{% if admin.user.is_active %}Disable{% else %}Enable{% endif %}">
+                                    <i class="bi bi-slash-circle"></i><span class="btn-label-text">{% if admin.user.is_active %}Disable{% else %}Enable{% endif %}</span>
                                 </button>
                             </form>
                             <form method="post" action="{% url 'accounts:admin_delete' admin.user.id %}" class="d-inline"
                                   onsubmit="return confirm('Permanently delete this admin account? This cannot be undone.');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger" title="Delete">
-                                    <i class="bi bi-trash3-fill"></i>
+                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete">
+                                    <i class="bi bi-trash3-fill"></i><span class="btn-label-text">Delete</span>
                                 </button>
                             </form>
                         </div>
                         {% else %}
-                            <span class="text-muted small">View only</span>
+                            <span class="view-only-tag"><i class="bi bi-eye"></i> View only</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No base admins created yet.</td></tr>
+                <tr>
+                    <td colspan="7" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-person-badge"></i></div>
+                            <div class="empty-state-title">No base admins created yet</div>
+                            <div class="empty-state-sub">Add your first admin account to delegate platform management.</div>
+                            {% if request.user.role == 'superadmin' %}
+                            <a href="{% url 'accounts:admin_create' %}" class="btn-admin-primary mt-3">
+                                <i class="bi bi-plus-lg me-1"></i> Add New Admin
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-2 { grid-template-columns: repeat(2, 1fr); max-width: 620px; }
+    @media (max-width: 560px) { .stat-grid-2 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-red   { border-left-color: #dc2626; } .stat-red   .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ View-only notice ═══ */
+    .view-only-notice {
+        display: flex; align-items: center; gap: 10px;
+        background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8;
+        font-size: 0.85rem; padding: 12px 16px; border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+    .view-only-notice i { font-size: 1rem; flex-shrink: 0; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-active { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-disabled { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .admin-manage-table { border-collapse: separate; border-spacing: 0; }
+    .admin-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .admin-manage-table thead th:last-child { border-right: none; }
+    .admin-manage-table thead th.col-status { border-right: none; padding: 0; }
+    .admin-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .admin-manage-table tbody td:last-child { border-right: none; }
+    .admin-manage-table tbody td.col-status { border-right: none; padding: 0; }
+    .admin-manage-table tbody tr:last-child td { border-bottom: none; }
+
+    .admin-manage-table tbody tr.admin-row:nth-of-type(even) { background: #fafbfd; }
+    .admin-manage-table tbody tr.admin-row:hover { background: #eef4ff !important; }
+    .admin-row { transition: background 0.12s ease; }
+
+    /* status rail */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 60px; }
+    .rail-active   { background: #16a34a; }
+    .rail-disabled { background: #dc2626; }
+
+    tr.row-disabled td:not(.col-status) { color: #94a3b8; }
+    tr.row-disabled .admin-name { color: #64748b; }
+    tr.row-disabled .admin-avatar { opacity: 0.5; filter: grayscale(0.5); }
+
+    /* ═══ Admin cell ═══ */
+    .admin-cell { display: flex; align-items: center; gap: 12px; }
+    .admin-avatar {
+        width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+        background: linear-gradient(135deg, #7c3aed, #4c1d95);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 700; font-size: 0.9rem;
+    }
+    .admin-cell-text { min-width: 0; }
+    .admin-name { font-weight: 600; font-size: 0.87rem; color: #0f172a; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-email { font-size: 0.74rem; color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+
+    .stat-cell-sm { font-size: 0.82rem; color: #64748b; font-weight: 500; }
+
+    /* ═══ Status pills ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready  { background: #dcfce7; color: #15803d; }
+    .pill-failed { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Row action buttons ═══ */
+    .row-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.76rem; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.85rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+
+    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-key    { background: #f5f3ff; border-color: #ddd6fe; color: #6d28d9; }
+    .btn-label-key:hover { background: #ede9fe; color: #5b21b6; }
+    .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-label-toggle:hover { background: #fef3c7; color: #92400e; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    .view-only-tag {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.76rem; color: #94a3b8; font-weight: 500;
+        background: #f8fafc; border: 1px solid #eef1f6;
+        padding: 4px 10px; border-radius: 999px;
+    }
+
+    @media (max-width: 1400px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

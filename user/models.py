@@ -46,6 +46,7 @@ class LearnerProfile(models.Model):
     class Meta:
         db_table = 'user_learnerprofile'
         indexes = [
+            models.Index(fields=['full_name']),
             models.Index(fields=['enrollment_number']),
         ]
 

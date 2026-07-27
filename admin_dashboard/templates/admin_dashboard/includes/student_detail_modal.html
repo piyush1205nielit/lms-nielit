@@ -1,57 +1,146 @@
-<div class="modal-header">
-    <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i>Student Details</h5>
+<div class="modal-header modal-header-styled">
+    <h5 class="modal-title"><i class="bi bi-person-badge"></i> Student Details</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
-<div class="modal-body">
-    <div class="d-flex align-items-center gap-3 mb-4">
+<div class="modal-body modal-body-styled">
+
+    <!-- ═══ Profile summary ═══ -->
+    <div class="detail-profile-header">
         {% if profile.profile_image %}
-            <img src="{{ profile.profile_image.url }}" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+            <img src="{{ profile.profile_image.url }}" class="detail-avatar" alt="">
         {% else %}
-            <span class="rounded-circle d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:#172281;color:white;font-size:1.4rem;font-weight:700;">
-                {{ student.email|slice:":1"|upper }}
-            </span>
+            <span class="detail-avatar detail-avatar-placeholder">{{ student.email|slice:":1"|upper }}</span>
         {% endif %}
         <div>
-            <h5 class="mb-0">{{ profile.full_name|default:"—" }}</h5>
-            <span class="text-primary small fw-semibold">{{ profile.enrollment_number }}</span>
+            <h5 class="detail-profile-name">{{ profile.full_name|default:"—" }}</h5>
+            <span class="enrollment-no-tag">{{ profile.enrollment_number }}</span>
+            {% if profile.profile_completed %}
+                <span class="status-pill pill-ready ms-1"><i class="bi bi-check-circle-fill"></i> Profile Complete</span>
+            {% else %}
+                <span class="status-pill pill-pending ms-1"><i class="bi bi-exclamation-circle-fill"></i> Profile Incomplete</span>
+            {% endif %}
         </div>
     </div>
 
-    <h6 class="text-muted small text-uppercase mb-2">Account Credentials <span class="badge bg-secondary">Read-only</span></h6>
-    <div class="row g-3 mb-3">
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Email</label><div>{{ student.email }}</div></div>
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Contact</label><div>{{ student.contact|default:"—" }}</div></div>
-    </div>
-
-    <hr>
-    <h6 class="text-muted small text-uppercase mb-2">Personal Details</h6>
-    <div class="row g-3 mb-3">
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Date of Birth</label><div>{{ profile.date_of_birth|default:"—" }}</div></div>
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Gender</label><div>{{ profile.get_gender_display|default:"—" }}</div></div>
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Aadhar Number</label><div>{{ profile.aadhar_number|default:"—" }}</div></div>
-        <div class="col-md-6"><label class="form-label small text-muted mb-0">Highest Qualification</label><div>{{ profile.highest_qualification|default:"—" }}</div></div>
-        <div class="col-12"><label class="form-label small text-muted mb-0">Address</label><div>{{ profile.address|default:"—" }}</div></div>
-        <div class="col-md-4"><label class="form-label small text-muted mb-0">City</label><div>{{ profile.city|default:"—" }}</div></div>
-        <div class="col-md-4"><label class="form-label small text-muted mb-0">State</label><div>{{ profile.state|default:"—" }}</div></div>
-        <div class="col-md-4"><label class="form-label small text-muted mb-0">PIN Code</label><div>{{ profile.pin_code|default:"—" }}</div></div>
-    </div>
-
-    <hr>
-    <h6 class="text-muted small text-uppercase mb-2">Enrolled Courses ({{ enrollment_data|length }})</h6>
-    {% for item in enrollment_data %}
-        <div class="mb-3">
-            <div class="d-flex justify-content-between small mb-1">
-                <span class="fw-semibold">{{ item.enrollment.course.course_name }}</span>
-                <span class="text-muted">{{ item.completed }}/{{ item.total }} lessons ({{ item.percent }}%)</span>
-            </div>
-            <div class="progress" style="height: 6px;">
-                <div class="progress-bar {% if item.percent == 100 %}bg-success{% endif %}" style="width: {{ item.percent }}%;"></div>
-            </div>
+    <!-- ═══ Account credentials ═══ -->
+    <div class="detail-section">
+        <div class="modal-section-title">
+            <i class="bi bi-shield-lock-fill"></i> Account Credentials
+            <span class="readonly-tag">Read-only</span>
         </div>
-    {% empty %}
-        <p class="text-muted small">Not enrolled in any courses.</p>
-    {% endfor %}
+        <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value">{{ student.email }}</span></div>
+            <div class="detail-item"><span class="detail-label">Contact</span><span class="detail-value">{{ student.contact|default:"—" }}</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ Personal details ═══ -->
+    <div class="detail-section">
+        <div class="modal-section-title"><i class="bi bi-person-fill"></i> Personal Details</div>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">Date of Birth</span><span class="detail-value">{{ profile.date_of_birth|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">Gender</span><span class="detail-value">{{ profile.get_gender_display|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">Aadhar Number</span><span class="detail-value">{{ profile.aadhar_number|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">Highest Qualification</span><span class="detail-value">{{ profile.highest_qualification|default:"—" }}</span></div>
+            <div class="detail-item detail-item-full"><span class="detail-label">Address</span><span class="detail-value">{{ profile.address|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">City</span><span class="detail-value">{{ profile.city|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">State</span><span class="detail-value">{{ profile.state|default:"—" }}</span></div>
+            <div class="detail-item"><span class="detail-label">PIN Code</span><span class="detail-value">{{ profile.pin_code|default:"—" }}</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ Enrolled courses ═══ -->
+    <div class="detail-section detail-section-last">
+        <div class="modal-section-title">
+            <i class="bi bi-journal-bookmark-fill"></i> Enrolled Courses
+            <span class="course-count-tag">{{ enrollment_data|length }}</span>
+        </div>
+        {% for item in enrollment_data %}
+            <div class="enrollment-progress-item">
+                <div class="progress-label-row">
+                    <span class="enrollment-course-name">{{ item.enrollment.course.course_name }}</span>
+                    <span class="progress-pct">{{ item.completed }}/{{ item.total }} &middot; {{ item.percent }}%</span>
+                </div>
+                <div class="progress-track-custom">
+                    <div class="progress-fill-custom {% if item.percent == 100 %}fill-complete{% elif item.percent > 0 %}fill-active{% else %}fill-empty{% endif %}" style="width: {{ item.percent }}%;"></div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="table-inline-state" style="padding: 2rem 1rem;">
+                <div class="table-inline-state-icon"><i class="bi bi-journal-x"></i></div>
+                <div class="table-inline-state-sub">Not enrolled in any courses.</div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+<div class="modal-footer modal-footer-styled">
+    <button type="button" class="btn-admin-secondary" data-bs-dismiss="modal">Close</button>
 </div>
+
+<style>
+    .modal-header-styled { background: #f1f5f9; border-bottom: 2px solid #cbd5e1; padding: 1rem 1.25rem; }
+    .modal-header-styled .modal-title { font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 9px; }
+    .modal-header-styled .modal-title i { color: #2563eb; }
+    .modal-body-styled { padding: 1.4rem 1.25rem; }
+    .modal-footer-styled { border-top: 2px solid #e2e8f0; padding: 1rem 1.25rem; }
+
+    /* ═══ Profile header ═══ */
+    .detail-profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; }
+    .detail-avatar { width: 66px; height: 66px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #e2e8f0; }
+    .detail-avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #2563eb, #172281); color: white; font-size: 1.4rem; font-weight: 700;
+    }
+    .detail-profile-name { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 6px; }
+
+    /* ═══ Section blocks ═══ */
+    .detail-section { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; }
+    .detail-section-last { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+    .modal-section-title {
+        font-size: 0.76rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+        color: #172281; display: flex; align-items: center; gap: 7px;
+        margin-bottom: 1rem;
+    }
+    .readonly-tag { font-size: 0.64rem; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+    .course-count-tag { font-size: 0.68rem; font-weight: 700; color: #2563eb; background: #dbeafe; padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+
+    /* ═══ Detail grid ═══ */
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 1.5rem; }
+    @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
+    .detail-item-full { grid-column: 1 / -1; }
+    .detail-item { display: flex; flex-direction: column; gap: 3px; }
+    .detail-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
+    .detail-value { font-size: 0.87rem; color: #1e293b; font-weight: 500; }
+
+    /* ═══ Enrollment progress ═══ */
+    .enrollment-progress-item { margin-bottom: 1rem; }
+    .enrollment-progress-item:last-child { margin-bottom: 0; }
+    .progress-label-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px; }
+    .enrollment-course-name { font-weight: 600; color: #1e293b; }
+    .progress-pct { font-size: 0.76rem; color: #64748b; font-weight: 600; }
+    .progress-track-custom { height: 7px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+    .progress-fill-custom { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+    .fill-complete { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .fill-active   { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .fill-empty    { background: #cbd5e1; }
+
+    /* ═══ Shared components ═══ */
+    .enrollment-no-tag { font-size: 0.76rem; font-weight: 700; color: #1d4ed8; background: #eff6ff; border: 1px solid #dbeafe; padding: 3px 9px; border-radius: 6px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready { background: #dcfce7; color: #15803d; }
+    .pill-pending { background: #fef3c7; color: #b45309; }
+
+    .table-inline-state { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .table-inline-state-icon { width: 48px; height: 48px; border-radius: 12px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 0.7rem; }
+    .table-inline-state-sub { font-size: 0.83rem; color: #94a3b8; }
+
+    .btn-admin-secondary {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; border: 1.5px solid #cbd5e1; color: #374151;
+        font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1.1rem; border-radius: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-admin-secondary:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+</style>

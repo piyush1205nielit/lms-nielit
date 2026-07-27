@@ -1,0 +1,607 @@
+<style>
+    /* ============================================================
+       EVENT CARD - CORE DESIGN SYSTEM
+    ============================================================ */
+    .event-banner-wrap {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+    .event-banner-wrap.ebw-80 {
+        display: flex;
+        justify-content: center;
+        padding: 40px 20px;
+        background: var(--page-bg, #f5f7fa);
+    }
+    .event-banner-wrap.ebw-full {
+        padding: 0;
+        margin: 0;
+        background: var(--page-bg, #f5f7fa);
+    }
+
+    .event-banner-wrap.ebw-80 .event-banner {
+        width: 85%;
+        max-width: 1200px;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12), 0 8px 20px rgba(15, 23, 42, 0.06);
+        border: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .event-banner-wrap.ebw-full .event-banner {
+        width: 100%;
+        box-shadow: none;
+        border: none;
+        border-radius: 0 !important;
+    }
+
+    /* ----- Responsive Sizing & Proportions ----- */
+    .event-banner {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        
+        /* Mobile Default: Fluid Portrait Layout */
+        height: auto;
+        min-height: 500px;
+    }
+
+    /* Desktop Breakpoints: Restoring your original fixed-height layout */
+    @media (min-width: 768px) { .event-banner { height: 400px; } }
+    @media (min-width: 1000px) { .event-banner { height: 480px; } }
+    @media (min-width: 1200px) { .event-banner { height: 560px; } }
+    @media (min-width: 1440px) { .event-banner { height: 620px; } }
+
+    .event-banner.eb-corner-sharp { border-radius: 0; }
+    .event-banner.eb-corner-round { border-radius: 24px; }
+
+    /* ----- Background Modifiers ----- */
+    .event-banner.eb-bg-gradient {
+        background: linear-gradient(135deg, var(--eb-grad-start) 0%, var(--eb-grad-end) 100%);
+    }
+    .event-banner.eb-bg-solid {
+        background: var(--eb-bg-solid);
+    }
+    .event-banner.eb-bg-glass {
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+    .event-banner.eb-bg-pattern {
+        background: var(--eb-bg-solid);
+        background-image:
+            radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 70%, rgba(255,255,255,0.05) 0%, transparent 50%);
+    }
+
+    /* ----- Decorative Background Background Elements ----- */
+    .event-banner .deco-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+        opacity: 0.25;
+    }
+    .event-banner .deco-blob.b1 {
+        width: 400px; height: 400px;
+        top: -200px; right: -150px;
+        background: var(--eb-accent);
+        animation: floatBlob 20s ease-in-out infinite;
+    }
+    .event-banner .deco-blob.b2 {
+        width: 300px; height: 300px;
+        bottom: -150px; left: -100px;
+        background: var(--eb-grad-start);
+        opacity: 0.15;
+        animation: floatBlob 25s ease-in-out infinite reverse;
+    }
+    @keyframes floatBlob {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+    .event-banner .deco-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        pointer-events: none;
+    }
+    .event-banner .deco-ring.r1 {
+        width: 600px; height: 600px;
+        top: -300px; right: -200px;
+        animation: spin 50s linear infinite;
+    }
+    .event-banner .deco-ring.r2 {
+        width: 400px; height: 400px;
+        bottom: -200px; left: -150px;
+        animation: spin 40s linear infinite reverse;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* ----- Inner Flex Container ----- */
+    .event-banner-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 1150px;
+        margin: 0 auto;
+        box-sizing: border-box;
+        
+        /* Mobile Layout rules */
+        padding: 24px 20px;
+        gap: 16px;
+    }
+    @media (min-width: 768px) {
+        .event-banner-inner { height: 100%; padding: 20px 32px; gap: 14px; overflow-y: auto; overflow-x: hidden; }
+        .event-banner-inner::-webkit-scrollbar { width: 3px; }
+        .event-banner-inner::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+        .event-banner-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    }
+    @media (min-width: 1000px) { .event-banner-inner { padding: 26px 40px; gap: 18px; } }
+    @media (min-width: 1200px) { .event-banner-inner { padding: 34px 48px; gap: 22px; } }
+    @media (min-width: 1440px) { .event-banner-inner { padding: 40px 56px; gap: 26px; } }
+
+    /* ----- Brand Header Logos Row ----- */
+    .event-banner-logos {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex: 0 0 auto;
+        align-items: center;
+        max-width: 100%;
+    }
+    .event-banner-logos.eb-logo-left { justify-content: flex-start; }
+    .event-banner-logos.eb-logo-center { justify-content: center; }
+    .event-banner-logos.eb-logo-right { justify-content: flex-end; }
+
+   .event-banner-logo-img {
+      width: auto !important;
+      height: auto !important;
+      max-height: 32px !important;
+      max-width: 140px;
+      object-fit: contain;
+      display: block;
+      background: #ffffff;
+
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+    @media (min-width: 768px) { .event-banner-logo-img { max-height: 44px !important; max-width: 190px; } }
+    @media (min-width: 1000px) { .event-banner-logo-img { max-height: 56px !important; max-width: 220px; } }
+    @media (min-width: 1200px) { .event-banner-logo-img { max-height: 68px !important; max-width: 250px; } }
+    @media (min-width: 1440px) { .event-banner-logo-img { max-height: 84px !important; max-width: 280px; } }
+    .event-banner-logo-img:hover { transform: scale(1.05); }
+
+    /* ----- Grid / Content Layout Structure ----- */
+    .event-main-grid {
+        display: grid;
+        grid-template-columns: 1fr; /* Mobile Default Stacked */
+        gap: 20px;
+        align-items: start;
+        min-height: 0;
+        flex: 1;
+    }
+    @media (min-width: 768px) {
+        .event-main-grid {
+            grid-template-columns: 1.6fr 1fr;
+            gap: 24px;
+            align-items: center;
+        }
+        .event-main-grid.eb-single-col {
+            grid-template-columns: 1fr;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+    }
+    @media (min-width: 1000px) { .event-main-grid { gap: 28px; } }
+    @media (min-width: 1440px) { .event-main-grid { gap: 36px; } }
+
+    /* ----- Left Content Column ----- */
+    .event-left-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 12px;
+        min-height: 0;
+        min-width: 0;
+    }
+
+    .event-banner-title {
+        font-weight: 800;
+        line-height: 1.15;
+        font-size: 1.45rem;
+        margin: 0;
+        letter-spacing: -0.02em;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+        overflow-wrap: break-word;
+    }
+    @media (min-width: 768px) { .event-banner-title { font-size: 1.7rem; line-height: 1.08; } }
+    @media (min-width: 1000px) { .event-banner-title { font-size: 2.1rem; } }
+    @media (min-width: 1200px) { .event-banner-title { font-size: 2.6rem; } }
+    @media (min-width: 1440px) { .event-banner-title { font-size: 3.1rem; } }
+
+    .event-banner-subtitle {
+        font-size: .88rem;
+        line-height: 1.45;
+        max-width: 620px;
+        margin: 0;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+    @media (min-width: 768px) { .event-banner-subtitle { font-size: .92rem; opacity: 0.85; font-weight: 400; } }
+    @media (min-width: 1000px) { .event-banner-subtitle { font-size: 1.02rem; } }
+    @media (min-width: 1200px) { .event-banner-subtitle { font-size: 1.15rem; } }
+    @media (min-width: 1440px) { .event-banner-subtitle { font-size: 1.3rem; } }
+
+    .event-banner-body-text {
+        font-size: .82rem;
+        line-height: 1.6;
+        color: var(--eb-text-on-bg);
+        opacity: 0.88;
+        max-width: 640px;
+        
+        /* Mobile Scroll Constraint Protection */
+        overflow-y: auto;
+        max-height: 140px;
+        padding-right: 8px;
+    }
+    @media (min-width: 768px) { .event-banner-body-text { font-size: .82rem; max-height: 70px; } }
+    @media (min-width: 1000px) { .event-banner-body-text { font-size: .92rem; max-height: 100px; } }
+    @media (min-width: 1200px) { .event-banner-body-text { font-size: 1.02rem; max-height: 130px; } }
+    @media (min-width: 1440px) { .event-banner-body-text { font-size: 1.1rem; max-height: 150px; } }
+    
+    .event-banner-body-text::-webkit-scrollbar { width: 3px; }
+    .event-banner-body-text::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 4px; }
+
+    /* ----- Metadata Tags / Chips ----- */
+    .event-banner-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 4px 0;
+    }
+    .event-chip {
+        background: var(--eb-accent);
+        color: #1a1a2e;
+        font-size: .68rem;
+        font-weight: 700;
+        padding: 4px 11px;
+        border-radius: 50px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+    @media (min-width: 1000px) { .event-chip { font-size: .76rem; padding: 6px 15px; } }
+    @media (min-width: 1440px) { .event-chip { font-size: .85rem; padding: 7px 18px; } }
+
+    /* ----- Right Action/Info Column ----- */
+    .event-right-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 16px;
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .event-right-col {
+            justify-content: center;
+            gap: 8px;
+        }
+    }
+
+    /* ----- Information Badges ----- */
+    .event-badge-stack { 
+        display: flex; 
+        flex-direction: row; /* Mobile horizontal layout */
+        gap: 4px; 
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .event-badge-stack {
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+
+    .event-info-badge {
+        padding: 10px 14px;
+        font-weight: 800;
+        font-size: .9rem;
+        color: #1a1a2e;
+        line-height: 1.2;
+        background: var(--eb-accent);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        flex: 1; /* Match widths on mobile */
+        min-width: 0;
+    }
+    
+    /* Mobile rounded setup */
+    .event-info-badge:first-child { border-radius: 12px 0 0 12px; }
+    .event-info-badge:last-child { border-radius: 0 12px 12px 0; }
+    .event-info-badge:only-child { border-radius: 12px; }
+
+    @media (min-width: 768px) {
+        .event-info-badge { padding: 10px 18px; font-size: 1.02rem; flex: initial; }
+        .event-info-badge:first-child { border-radius: 12px 12px 0 0; }
+        .event-info-badge:last-child { border-radius: 0 0 12px 12px; }
+    }
+    @media (min-width: 1000px) { .event-info-badge { padding: 12px 20px; font-size: 1.15rem; } }
+    @media (min-width: 1200px) { .event-info-badge { padding: 14px 22px; font-size: 1.3rem; } }
+    @media (min-width: 1440px) { .event-info-badge { padding: 16px 26px; font-size: 1.45rem; } }
+
+    .event-info-badge .eb-badge-label {
+        display: block;
+        font-size: .55rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        opacity: 0.6;
+        margin-bottom: 2px;
+    }
+    @media (min-width: 1000px) { .event-info-badge .eb-badge-label { font-size: .62rem; } }
+    @media (min-width: 1440px) { .event-info-badge .eb-badge-label { font-size: .7rem; } }
+
+    /* ----- CTA / Interactive Row ----- */
+    .event-cta-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* Spread CTA and QR nicely on mobile */
+        gap: 12px;
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .event-cta-row {
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    }
+
+    .event-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--eb-btn);
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: .85rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        flex: 1; /* Take up remaining horizontal space nicely */
+    }
+    @media (min-width: 768px) { .event-cta-btn { padding: 12px 26px; font-size: .84rem; flex: none; } }
+    @media (min-width: 1000px) { .event-cta-btn { padding: 13px 28px; font-size: .9rem; } }
+    @media (min-width: 1200px) { .event-cta-btn { padding: 15px 32px; font-size: 1rem; } }
+    @media (min-width: 1440px) { .event-cta-btn { padding: 17px 36px; font-size: 1.1rem; } }
+
+    .event-cta-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+    .event-cta-btn:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+        color: #fff;
+    }
+    .event-cta-btn:hover::after { opacity: 1; }
+    .event-cta-btn:active { transform: scale(0.96); }
+    .event-cta-btn i { font-size: .85em; transition: transform 0.3s ease; }
+    .event-cta-btn:hover i { transform: translateX(4px); }
+
+    /* ----- QR Block ----- */
+    .event-qr-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    .event-qr-img {
+        width: 54px !important;
+        height: 54px !important;
+        border-radius: 8px;
+        padding: 3px;
+        background: rgba(255, 255, 255, 0.95);
+        object-fit: contain;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+    @media (min-width: 1000px) { .event-qr-img { width: 62px !important; height: 62px !important; } }
+    @media (min-width: 1440px) { .event-qr-img { width: 74px !important; height: 74px !important; } }
+
+    .event-qr-placeholder {
+        width: 54px;
+        height: 54px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .55rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 4px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+    @media (min-width: 1000px) { .event-qr-placeholder { width: 62px; height: 62px; } }
+    @media (min-width: 1440px) { .event-qr-placeholder { width: 74px; height: 74px; } }
+
+    .event-qr-caption {
+        font-size: .52rem;
+        font-weight: 600;
+        color: var(--eb-text-on-bg);
+        opacity: 0.65;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    @media (min-width: 1000px) { .event-qr-caption { font-size: .58rem; } }
+    @media (min-width: 1440px) { .event-qr-caption { font-size: .64rem; } }
+
+    /* ============================================================
+       MOBILE INTERACTIVE ENHANCEMENTS (Below 768px Optimization)
+    ============================================================ */
+    @media (max-width: 767px) {
+        .event-banner-wrap.ebw-80 { padding: 16px 12px; }
+        .event-banner-wrap.ebw-80 .event-banner { width: 100%; border-radius: 20px; }
+        
+        /* Turning off complex background loops for better mobile battery/rendering performance */
+        .deco-blob, .deco-ring { display: none !important; }
+    }
+
+    @media (max-width: 480px) {
+        .event-badge-stack { flex-direction: column; gap: 2px; }
+        .event-info-badge:first-child { border-radius: 10px 10px 0 0; }
+        .event-info-badge:last-child { border-radius: 0 0 10px 10px; }
+        
+        .event-cta-row { flex-direction: column-reverse; gap: 14px; align-items: center; }
+        .event-cta-btn { width: 100%; }
+    }
+
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    .text-shadow-light { text-shadow: 0 2px 16px rgba(0, 0, 0, 0.04); }
+    .text-shadow-strong { text-shadow: 0 4px 30px rgba(0, 0, 0, 0.06); }
+</style>
+
+<!-- ============================================================
+     BANNER MARKUP
+============================================================ -->
+<div class="event-banner-wrap {% if event.card_width == 'full' %}ebw-full{% else %}ebw-80{% endif %}">
+    <div class="event-banner eb-corner-{{ event.corner_style }} eb-bg-{{ event.bg_type }}"
+         style="
+            --eb-bg-solid: {{ event.bg_color }};
+            --eb-grad-start: {{ event.gradient_start }};
+            --eb-grad-end: {{ event.gradient_end }};
+            --eb-accent: {{ event.accent_color }};
+            --eb-btn: {{ event.button_color }};
+            --eb-text-on-bg: {{ event.text_color }};
+            --eb-title-color: {{ event.title_color }};
+         ">
+
+        <div class="deco-blob b1"></div>
+        <div class="deco-blob b2"></div>
+        <div class="deco-ring r1"></div>
+        <div class="deco-ring r2"></div>
+
+        <div class="event-banner-inner">
+
+            {% if event.logo1 or event.logo2 %}
+                <div class="event-banner-logos eb-logo-{{ event.logo_position }}">
+                    {% if event.logo1 %}
+                        <img src="{{ event.logo1.url }}" alt="{{ event.title }} logo" class="event-banner-logo-img">
+                    {% endif %}
+                    {% if event.logo_count == 2 and event.logo2 %}
+                        <img src="{{ event.logo2.url }}" alt="{{ event.title }} logo" class="event-banner-logo-img">
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="event-main-grid {% if not event.event_date and not event.registration_deadline and not event.url and not event.show_qr %}eb-single-col{% endif %}">
+
+                <div class="event-left-col">
+                    <h1 class="event-banner-title text-shadow-strong" style="color: {{ event.title_color }};">
+                        {{ event.title }}
+                    </h1>
+
+                    {% if event.subtitle %}
+                        <p class="event-banner-subtitle text-shadow-light" style="color: {{ event.text_color }};">
+                            {{ event.subtitle }}
+                        </p>
+                    {% endif %}
+
+                    {% if event.get_keywords_list %}
+                        <div class="event-banner-chips">
+                            {% for kw in event.get_keywords_list|slice:":6" %}
+                                <span class="event-chip">{{ kw }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% if event.body %}
+                        <div class="event-banner-body-text" style="color: {{ event.text_color }};">
+                            {{ event.body|linebreaks }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if event.event_date or event.registration_deadline or event.url or event.show_qr %}
+                    <div class="event-right-col">
+
+                        {% if event.event_date or event.registration_deadline %}
+                            <div class="event-badge-stack">
+                                {% if event.event_date %}
+                                    <div class="event-info-badge" style="background: {{ event.date_badge_color }};">
+                                        <span class="eb-badge-label">Date</span>
+                                        {{ event.event_date|date:"d/m/Y" }}
+                                    </div>
+                                {% endif %}
+                                {% if event.registration_deadline %}
+                                    <div class="event-info-badge" style="background: {{ event.deadline_badge_color }};">
+                                        <span class="eb-badge-label">Registration Closes</span>
+                                        {{ event.registration_deadline|date:"d/m/Y" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        {% if event.url or event.show_qr %}
+                            <div class="event-cta-row">
+                                {% if event.url %}
+                                    <a href="{{ event.url }}" target="_blank" rel="noopener" class="event-cta-btn">
+                                        <i class="fas fa-arrow-right"></i> Apply Now
+                                    </a>
+                                {% endif %}
+
+                                {% if event.show_qr %}
+                                    <div class="event-qr-block">
+                                        {% if event.qr_code %}
+                                            <img src="{{ event.qr_code.url }}" alt="QR Code" class="event-qr-img">
+                                        {% else %}
+                                            <div class="event-qr-placeholder">QR Code</div>
+                                        {% endif %}
+                                        <span class="event-qr-caption">or scan QR</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>

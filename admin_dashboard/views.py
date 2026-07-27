@@ -2,7 +2,7 @@ from django.shortcuts import render
 from accounts.decorators import admin_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Q, Count, Prefetch
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -12,6 +12,7 @@ from accounts.models import User
 from .forms import AdminUserProfileEditForm, UserCredentialsForm
 from course.models import Course, Domain, Enrollment, Progress
 from user.forms import ProfileEditForm  # or a dedicated AdminStudentEditForm, see note below
+
 
 @admin_required
 def dashboard_home(request):
@@ -57,13 +58,22 @@ def user_credentials_edit_view(request, user_id):
 
 @admin_required
 def registered_users_view(request):
-    profiles = LearnerProfile.objects.select_related('user').prefetch_related(
-        Prefetch('user__enrollments', queryset=Enrollment.objects.select_related('course'))
-    ).annotate(
-        enrollment_count=Count('user__enrollments', distinct=True)
-    )
+    """Renders the page shell only — the table itself loads via AJAX."""
+    return render(request, 'admin_dashboard/registered_users_list.html', {
+        'all_courses': Course.objects.filter(status=Course.Status.ACTIVE).only('id', 'course_name').order_by('course_name'),
+        'all_domains': Domain.objects.filter(is_active=True).only('id', 'name').order_by('name'),
+        'active_page': 'users',
+    })
 
-    # ── Search: name, email, contact, enrollment number ──
+@admin_required
+def registered_users_data_view(request):
+    """
+    AJAX endpoint — does all filtering on lightweight fields first,
+    paginates the ID list, and only then attaches the expensive
+    related data (enrollments) to the single page of results.
+    """
+    profiles = LearnerProfile.objects.select_related('user')
+
     query = request.GET.get('q', '').strip()
     if query:
         profiles = profiles.filter(
@@ -73,39 +83,59 @@ def registered_users_view(request):
             Q(enrollment_number__icontains=query)
         )
 
-    # ── Filter: specific course ──
     course_id = request.GET.get('course', '').strip()
     if course_id:
         profiles = profiles.filter(user__enrollments__course_id=course_id)
 
-    # ── Filter: specific domain (any course under that domain) ──
     domain_id = request.GET.get('domain', '').strip()
     if domain_id:
         profiles = profiles.filter(user__enrollments__course__domains__id=domain_id)
 
-    # ── Filter: profile completion status ──
     status = request.GET.get('status', '').strip()
     if status == 'complete':
         profiles = profiles.filter(profile_completed=True)
     elif status == 'incomplete':
         profiles = profiles.filter(profile_completed=False)
 
+    # distinct() is only needed when the course/domain filters introduce M2M/FK
+    # join duplication — cheap to always apply here since it's on an already-narrowed set
     profiles = profiles.distinct().order_by('-created_at')
 
-    paginator = Paginator(profiles, 20)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    page_number = request.GET.get('page', 1)
+    per_page = 20
 
-    return render(request, 'admin_dashboard/registered_users_list.html', {
-        'profiles': page_obj,
-        'all_courses': Course.objects.filter(status=Course.Status.ACTIVE).order_by('course_name'),
-        'all_domains': Domain.objects.filter(is_active=True).order_by('name'),
-        'query': query,
-        'selected_course': course_id,
-        'selected_domain': domain_id,
-        'selected_status': status,
-        'active_page': 'users',
+    paginator = Paginator(profiles.values_list('id', flat=True), per_page)
+    try:
+        page = paginator.page(page_number)
+    except EmptyPage:
+        return JsonResponse({'html': '', 'has_next': False, 'total_count': paginator.count})
+
+    # Only now — for this one page's worth of IDs — do the expensive join/prefetch
+    page_profile_ids = list(page.object_list)
+    page_profiles = LearnerProfile.objects.filter(id__in=page_profile_ids).select_related(
+        'user'
+    ).prefetch_related(
+        Prefetch('user__enrollments', queryset=Enrollment.objects.select_related('course'))
+    ).annotate(
+        enrollment_count=Count('user__enrollments', distinct=True)
+    )
+    # preserve the original ordering (created_at desc) — filtering by id__in loses row order
+    page_profiles_by_id = {p.id: p for p in page_profiles}
+    ordered_page_profiles = [page_profiles_by_id[pid] for pid in page_profile_ids if pid in page_profiles_by_id]
+
+    html = render_to_string('admin_dashboard/includes/students_table_rows.html', {
+        'profiles': ordered_page_profiles,
+        'request': request,
     })
 
+    return JsonResponse({
+        'html': html,
+        'has_next': page.has_next(),
+        'has_previous': page.has_previous(),
+        'current_page': page.number,
+        'total_pages': paginator.num_pages,
+        'total_count': paginator.count,
+    })
 
 
 @admin_required

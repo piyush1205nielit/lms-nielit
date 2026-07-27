@@ -1,54 +1,136 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}Submissions — {{ assignment.title }}{% endblock %}
+{% block page_title %}Submissions — {{ assignment.title }}{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-people-fill me-2"></i>{{ assignment.title }}</h2>
-        <p>{{ assignment.course.course_name }} &middot; Max Marks: {{ assignment.max_marks }} &middot; Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}</p>
+        <h2><i class="bi bi-people-fill"></i> {{ assignment.title }}</h2>
+        <p class="assignment-meta-line">
+            <i class="bi bi-journal-bookmark"></i> {{ assignment.course.course_name }}
+            <span class="meta-sep">&middot;</span>
+            <i class="bi bi-award"></i> Max Marks: {{ assignment.max_marks }}
+            <span class="meta-sep">&middot;</span>
+            <i class="bi bi-clock"></i> Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}
+        </p>
     </div>
-    <a href="{% url 'assignment:manage_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
+    <div class="page-header-actions">
+        {% if assignment.is_past_deadline %}
+            <span class="course-status-badge status-inactive"><span class="status-dot"></span> Closed</span>
+        {% else %}
+            <span class="course-status-badge status-active"><span class="status-dot"></span> Open</span>
+        {% endif %}
+        <a href="{% url 'assignment:manage_list' %}" class="btn-admin-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
 </div>
 
-<div class="card-panel p-3">
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-4">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ roster|length }}</div><div class="stat-mini-label">Enrolled Students</div></div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div><div class="stat-mini-value">{{ pending_count|default:0 }}</div><div class="stat-mini-label">Not Submitted</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-inbox-fill"></i></div>
+        <div><div class="stat-mini-value">{{ awaiting_count|default:0 }}</div><div class="stat-mini-label">Awaiting Grading</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ graded_count|default:0 }}</div><div class="stat-mini-label">Graded</div></div>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-gray"></span> Pending (not submitted)</span>
+    <span class="legend-item"><span class="legend-dot dot-blue"></span> Awaiting grading</span>
+    <span class="legend-item"><span class="legend-dot dot-green"></span> Graded</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> Student Roster</h5>
+        <span class="table-count-tag">{{ roster|length }} student{{ roster|length|pluralize }}</span>
+    </div>
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr><th>Student</th><th>Submitted On</th><th>Status</th><th>Marks</th><th class="text-end">Actions</th></tr>
+        <table class="table table-admin submission-roster-table mb-0">
+            <thead>
+                <tr>
+                    <th class="col-status"></th>
+                    <th style="min-width: 220px;">Student</th>
+                    <th style="min-width: 170px;">Submitted On</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Marks</th>
+                    <th class="text-end" style="min-width: 180px;">Actions</th>
+                </tr>
             </thead>
             <tbody>
                 {% for item in roster %}
-                <tr>
-                    <td>
-                        <div class="fw-semibold small">{{ item.student.learner_profile.full_name|default:item.student.email }}</div>
-                        <div class="text-muted small">{{ item.student.email }}</div>
+                {% widthratio item.submission.marks_obtained assignment.max_marks 100 as grade_pct %}
+                <tr class="submission-row
+                    {% if not item.submission %}row-pending
+                    {% elif item.submission.status == 'graded' %}row-graded
+                    {% else %}row-awaiting{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail
+                            {% if not item.submission %}rail-pending
+                            {% elif item.submission.status == 'graded' %}rail-graded
+                            {% else %}rail-awaiting{% endif %}"></span>
                     </td>
-                    <td class="small">
+                    <td>
+                        <div class="student-cell">
+                            {% if item.student.learner_profile.profile_image %}
+                                <img src="{{ item.student.learner_profile.profile_image.url }}" class="student-avatar" alt="">
+                            {% else %}
+                                <span class="student-avatar student-avatar-placeholder">{{ item.student.email|slice:":1"|upper }}</span>
+                            {% endif %}
+                            <div class="student-cell-text">
+                                <div class="student-name">{{ item.student.learner_profile.full_name|default:item.student.email }}</div>
+                                <div class="student-email">{{ item.student.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
                         {% if item.submission %}
-                            {{ item.submission.submitted_at|date:"d M Y, g:i A" }}
-                            {% if item.submission.is_late %}<span class="badge bg-warning text-dark ms-1">Late</span>{% endif %}
+                            <div class="stat-cell-sm">{{ item.submission.submitted_at|date:"d M Y" }}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">{{ item.submission.submitted_at|date:"g:i A" }}</div>
+                            {% if item.submission.is_late %}
+                                <span class="late-tag"><i class="bi bi-exclamation-triangle-fill"></i> Late</span>
+                            {% endif %}
                         {% else %}
-                            <span class="text-muted">Not submitted</span>
+                            <span class="text-muted small">—</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="text-center">
                         {% if not item.submission %}
-                            <span class="badge bg-secondary">Pending</span>
+                            <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> Pending</span>
                         {% elif item.submission.status == 'graded' %}
-                            <span class="badge bg-success">Graded</span>
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Graded</span>
                         {% else %}
-                            <span class="badge bg-info text-dark">Awaiting Grading</span>
+                            <span class="status-pill pill-processing"><i class="bi bi-hourglass-split"></i> Awaiting Grading</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="text-center">
                         {% if item.submission.status == 'graded' %}
-                            <strong>{{ item.submission.marks_obtained }}</strong> / {{ assignment.max_marks }}
-                        {% else %}—{% endif %}
+                            <span class="mini-grade-badge {% if grade_pct >= 75 %}score-high{% elif grade_pct >= 40 %}score-mid{% else %}score-low{% endif %}">
+                                {{ item.submission.marks_obtained }}<span class="score-max">/{{ assignment.max_marks }}</span>
+                            </span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
                     <td class="text-end">
                         {% if item.submission %}
-                            <a href="{% url 'assignment:grade_submission' item.submission.id %}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-check2-square me-1"></i> {% if item.submission.status == 'graded' %}Update Grade{% else %}Grade{% endif %}
+                            <a href="{% url 'assignment:grade_submission' item.submission.id %}" class="btn-admin-labeled {% if item.submission.status == 'graded' %}btn-label-edit{% else %}btn-label-view{% endif %}">
+                                <i class="bi bi-check2-square"></i>
+                                <span class="btn-label-text">{% if item.submission.status == 'graded' %}Update Grade{% else %}Grade{% endif %}</span>
                             </a>
                         {% else %}
                             <span class="text-muted small">—</span>
@@ -56,10 +138,160 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5" class="text-center text-muted py-4">No students enrolled in this course.</td></tr>
+                <tr>
+                    <td colspan="6" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-people"></i></div>
+                            <div class="empty-state-title">No students enrolled</div>
+                            <div class="empty-state-sub">No students are enrolled in this course yet.</div>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .assignment-meta-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.85rem; color: #64748b; margin: 0; }
+    .meta-sep { color: #cbd5e1; }
+
+    /* ═══ Status badge (reused) ═══ */
+    .course-status-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 0.76rem; font-weight: 700; padding: 6px 13px; border-radius: 999px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .status-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-active .status-dot { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .status-inactive { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .status-inactive .status-dot { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-amber  { border-left-color: #d97706; } .stat-amber  .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+    .dot-blue  { background: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .submission-roster-table { border-collapse: separate; border-spacing: 0; }
+    .submission-roster-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .submission-roster-table thead th:last-child { border-right: none; }
+    .submission-roster-table thead th.col-status { border-right: none; padding: 0; }
+    .submission-roster-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .submission-roster-table tbody td:last-child { border-right: none; }
+    .submission-roster-table tbody td.col-status { border-right: none; padding: 0; }
+    .submission-roster-table tbody tr:last-child td { border-bottom: none; }
+
+    .submission-roster-table tbody tr.submission-row:nth-of-type(even) { background: #fafbfd; }
+    .submission-roster-table tbody tr.submission-row:hover { background: #eef4ff !important; }
+    .submission-row { transition: background 0.12s ease; }
+
+    /* status rail — 3 states */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 62px; }
+    .rail-pending  { background: #94a3b8; }
+    .rail-awaiting { background: #2563eb; }
+    .rail-graded   { background: #16a34a; }
+
+    tr.row-pending td:not(.col-status) { color: #94a3b8; }
+    tr.row-pending .student-name { color: #64748b; }
+    tr.row-pending .student-avatar { opacity: 0.55; filter: grayscale(0.4); }
+
+    /* ═══ Student cell ═══ */
+    .student-cell { display: flex; align-items: center; gap: 12px; }
+    .student-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #eef1f6; }
+    .student-avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #2563eb, #172281); color: white; font-weight: 700; font-size: 0.85rem;
+    }
+    .student-cell-text { min-width: 0; }
+    .student-name { font-weight: 600; font-size: 0.87rem; color: #0f172a; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .student-email { font-size: 0.74rem; color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+    .late-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.66rem; font-weight: 700; color: #b45309;
+        background: #fef3c7; padding: 2px 8px; border-radius: 999px; margin-top: 4px;
+    }
+
+    /* ═══ Status pills ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready      { background: #dcfce7; color: #15803d; }
+    .pill-processing { background: #dbeafe; color: #1d4ed8; }
+    .pill-pending    { background: #f1f5f9; color: #64748b; }
+
+    /* ═══ Grade badge (mini, for table) ═══ */
+    .mini-grade-badge {
+        display: inline-flex; align-items: baseline; gap: 2px;
+        font-size: 0.88rem; font-weight: 800;
+        padding: 4px 11px; border-radius: 8px;
+    }
+    .score-max { font-size: 0.72rem; font-weight: 600; opacity: 0.7; }
+    .score-high { background: #dcfce7; color: #15803d; }
+    .score-mid  { background: #fef3c7; color: #b45309; }
+    .score-low  { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Action buttons ═══ */
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600; white-space: nowrap; text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-view { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+    .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+
+    @media (max-width: 1100px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

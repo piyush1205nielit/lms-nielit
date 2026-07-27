@@ -122,6 +122,7 @@ INSTALLED_APPS = [
     'admin_dashboard',
     'announcement',
     'assignment',
+    'event',
     'user',
     'user_dashboard',
     'course',

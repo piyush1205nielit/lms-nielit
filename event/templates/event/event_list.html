@@ -1,0 +1,147 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block title %}Event Cards - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-bold text-dark mb-0">
+            <i class="fas fa-calendar-star text-primary me-2"></i>Event Cards
+        </h1>
+        <a href="{% url 'event:event_create' %}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Create New Event
+        </a>
+    </div>
+
+    <div class="section-card mb-4">
+        <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fas fa-tv me-2"></i>Homepage Display Mode</span>
+            <span class="badge bg-light text-dark border">
+                Currently: <strong>{{ display_settings.get_display_mode_display }}</strong>
+            </span>
+        </div>
+        <div class="p-3">
+            <div class="d-flex gap-2 flex-wrap mb-3">
+                <form method="post" action="{% url 'event:event_set_display_mode' 'stacked' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'stacked' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-bars me-1"></i>Stacked
+                    </button>
+                </form>
+                <form method="post" action="{% url 'event:event_set_display_mode' 'carousel' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'carousel' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="fas fa-images me-1"></i>Carousel
+                    </button>
+                </form>
+                <form method="post" action="{% url 'event:event_set_display_mode' 'hidden' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'hidden' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                        <i class="fas fa-eye-slash me-1"></i>Hide from Homepage
+                    </button>
+                </form>
+            </div>
+
+            {% if display_settings.display_mode == 'hidden' %}
+                <div class="alert alert-warning small mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Events are currently hidden from the homepage, even if individually marked active.
+                </div>
+            {% elif active_events %}
+                <div class="border rounded" style="overflow: hidden;">
+                    {% include 'public/includes/event_cards_display.html' with events=active_events display_mode=display_settings.display_mode %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No active events yet — activate one below to see it here.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        {% for event in events %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header text-white d-flex justify-content-between align-items-center"
+                     style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
+                    <h5 class="mb-0 text-truncate" style="max-width: 75%;">{{ event.title }}</h5>
+                    {% if event.is_active %}
+                        <span class="badge bg-success"><i class="fas fa-circle-check me-1"></i>Live</span>
+                    {% else %}
+                        <span class="badge bg-secondary"><i class="fas fa-eye-slash me-1"></i>Hidden</span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    {% if event.subtitle %}
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-align-left me-1"></i>{{ event.subtitle|truncatechars:60 }}
+                    </p>
+                    {% endif %}
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {% if event.event_date %}{{ event.event_date|date:"d M Y" }}{% else %}No date set{% endif %}
+                    </p>
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-images me-1"></i>
+                        Logo Position: {{ event.get_logo_position_display }}
+                    </p>
+                    <p class="small text-muted mb-3">
+                        <i class="fas fa-tags me-1"></i>
+                        {% with kw=event.get_keywords_list %}
+                            {% if kw %}{{ kw|length }} keyword{{ kw|length|pluralize }}{% else %}No keywords{% endif %}
+                        {% endwith %}
+                    </p>
+
+                    <div class="border p-2 text-center bg-light rounded d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <span class="small text-muted">Theme:</span>
+                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.gradient_start }};border:1px solid #ddd;" title="Gradient start"></span>
+                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.gradient_end }};border:1px solid #ddd;" title="Gradient end"></span>
+                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.accent_color }};border:1px solid #ddd;" title="Accent"></span>
+                        <span class="small text-muted ms-1">{{ event.get_card_width_display }} · {{ event.get_corner_style_display }}</span>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white">
+                    <div class="btn-group w-100 mb-2">
+                        <a href="{% url 'event:event_preview' event.id %}" class="btn btn-sm btn-info" target="_blank">
+                            <i class="fas fa-eye"></i> Preview
+                        </a>
+                        <a href="{% url 'event:event_update' event.id %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'event:event_delete' event.id %}" class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+                    </div>
+
+                    <form method="post" action="{% url 'event:event_toggle_active' event.id %}">
+                        {% csrf_token %}
+                        {% if event.is_active %}
+                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="fas fa-eye-slash me-1"></i>Remove from Homepage
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            <i class="fas fa-star me-1"></i>Set Active / Feature on Homepage
+                        </button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                <h4>No Events Yet</h4>
+                <p>Create your first event card to feature it on the homepage.</p>
+                <a href="{% url 'event:event_create' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus me-2"></i>Create Event
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

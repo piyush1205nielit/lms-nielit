@@ -1,67 +1,334 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% block title %}Manage Assignments{% endblock %}
+{% block page_title %}Manage Assignments{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="page-header">
     <div>
-        <h2><i class="bi bi-clipboard-check-fill me-2"></i>Manage Assignments</h2>
+        <h2><i class="bi bi-clipboard-check-fill"></i> Manage Assignments</h2>
         <p>{{ assignments.count }} total assignment{{ assignments.count|pluralize }}</p>
     </div>
-    <a href="{% url 'assignment:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> New Assignment</a>
+    <div class="page-header-actions">
+        <a href="{% url 'assignment:create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Assignment
+        </a>
+    </div>
 </div>
 
-<div class="card-panel p-3 mb-3">
-    <form method="get" class="d-flex gap-2 align-items-end">
-        <div>
-            <label class="form-label small mb-1">Filter by Course</label>
-            <select name="course" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">All Courses</option>
-                {% for course in all_courses %}
-                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.course_name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </form>
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-4">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+        <div><div class="stat-mini-value">{{ assignments.count }}</div><div class="stat-mini-label">Total Assignments</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-toggle-on"></i></div>
+        <div><div class="stat-mini-value">{{ active_count|default:0 }}</div><div class="stat-mini-label">Active</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-inbox-fill"></i></div>
+        <div><div class="stat-mini-value">{{ total_submissions|default:0 }}</div><div class="stat-mini-label">Total Submissions</div></div>
+    </div>
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div><div class="stat-mini-value">{{ pending_grading|default:0 }}</div><div class="stat-mini-label">Pending Grading</div></div>
+    </div>
 </div>
 
-<div class="card-panel p-3">
+<!-- ═══ Filter panel ═══ -->
+<div class="card-panel filter-panel">
+    <div class="filter-panel-header">
+        <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
+    </div>
+    <div class="filter-panel-body">
+        <form method="get" class="filter-grid">
+            <div class="filter-field">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Courses</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if selected_course %}
+            <div class="filter-field filter-field-clear">
+                <a href="{% url 'assignment:manage_list' %}" class="btn-admin-secondary btn-clear-filters">
+                    <i class="bi bi-x-circle me-1"></i> Clear Filter
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active &amp; open</span>
+    <span class="legend-item"><span class="legend-dot dot-closed"></span> Closed (deadline passed)</span>
+    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> All Assignments</h5>
+        <span class="table-count-tag">{{ assignments.count }} record{{ assignments.count|pluralize }}</span>
+    </div>
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="table table-admin assignment-manage-table mb-0">
+            <thead>
                 <tr>
-                    <th>Title</th><th>Course</th><th>Max Marks</th><th>Deadline</th>
-                    <th>Submissions</th><th>Graded</th><th>Status</th><th class="text-end">Actions</th>
+                    <th class="col-status"></th>
+                    <th style="min-width: 200px;">Title</th>
+                    <th>Course</th>
+                    <th class="text-center">Max Marks</th>
+                    <th style="min-width: 160px;">Deadline</th>
+                    <th style="min-width: 140px;">Grading Progress</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end" style="min-width: 260px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for a in assignments %}
-                <tr>
-                    <td class="fw-semibold">{{ a.title }}</td>
-                    <td class="small">{{ a.course.course_name }}</td>
-                    <td>{{ a.max_marks }}</td>
-                    <td class="small">
-                        {{ a.deadline|date:"d M Y, g:i A" }}
-                        {% if a.is_past_deadline %}<span class="badge bg-secondary ms-1">Closed</span>{% endif %}
+                <tr class="assignment-row
+                    {% if not a.is_active %}row-inactive
+                    {% elif a.is_past_deadline %}row-closed
+                    {% else %}row-active{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail
+                            {% if not a.is_active %}rail-inactive
+                            {% elif a.is_past_deadline %}rail-closed
+                            {% else %}rail-active{% endif %}"></span>
                     </td>
-                    <td><span class="badge bg-info text-dark">{{ a.submission_count }}</span></td>
-                    <td><span class="badge bg-success">{{ a.graded_count }}</span></td>
-                    <td>{% if a.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                    <td>
+                        <strong class="assignment-title-text">{{ a.title }}</strong>
+                    </td>
+                    <td class="course-name-cell"><i class="bi bi-journal-bookmark"></i> {{ a.course.course_name }}</td>
+                    <td class="text-center">
+                        <span class="marks-badge">{{ a.max_marks }}</span>
+                    </td>
+                    <td>
+                        <div class="stat-cell-sm">{{ a.deadline|date:"d M Y" }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">{{ a.deadline|date:"g:i A" }}</div>
+                        {% if a.is_past_deadline %}
+                            <span class="deadline-closed-tag"><i class="bi bi-lock-fill"></i> Closed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="progress-label-row">
+                            <span>{{ a.graded_count }}/{{ a.submission_count }} graded</span>
+                            <span class="progress-pct">
+                                {% if a.submission_count > 0 %}{% widthratio a.graded_count a.submission_count 100 %}%{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="progress-track-custom">
+                            <div class="progress-fill-custom {% if a.graded_count == a.submission_count and a.submission_count > 0 %}fill-complete{% elif a.graded_count > 0 %}fill-active{% else %}fill-empty{% endif %}"
+                                 style="width: {% if a.submission_count > 0 %}{% widthratio a.graded_count a.submission_count 100 %}{% else %}0{% endif %}%;"></div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if not a.is_active %}
+                            <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> Inactive</span>
+                        {% elif a.is_past_deadline %}
+                            <span class="status-pill pill-failed"><i class="bi bi-lock-fill"></i> Closed</span>
+                        {% else %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'assignment:submissions_list' a.id %}" class="btn btn-outline-primary" title="View Submissions"><i class="bi bi-people"></i></a>
-                            <a href="{% url 'assignment:edit' a.id %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil-square"></i></a>
-                            <form method="post" action="{% url 'assignment:delete' a.id %}" class="d-inline" onsubmit="return confirm('Delete this assignment and all its submissions?');">
+                        <div class="row-actions">
+                            <a href="{% url 'assignment:submissions_list' a.id %}" class="btn-admin-labeled btn-label-view" title="View Submissions">
+                                <i class="bi bi-people"></i><span class="btn-label-text">Submissions</span>
+                            {% if a.submission_count > a.graded_count %}
+                                  <span class="pending-count-badge">{{ a.pending_count }}</span>
+                              {% endif %}
+                            </a>
+                            <a href="{% url 'assignment:edit' a.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+                            </a>
+                            <form method="post" action="{% url 'assignment:delete' a.id %}" class="d-inline"
+                                  onsubmit="return confirm('Delete this assignment and all its submissions?');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete">
+                                    <i class="bi bi-trash3"></i><span class="btn-label-text">Delete</span>
+                                </button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No assignments created yet.</td></tr>
+                <tr>
+                    <td colspan="8" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-clipboard-x"></i></div>
+                            <div class="empty-state-title">No assignments created yet</div>
+                            <div class="empty-state-sub">Create your first assignment to start collecting student work.</div>
+                            <a href="{% url 'assignment:create' %}" class="btn-admin-primary mt-3">
+                                <i class="bi bi-plus-lg me-1"></i> New Assignment
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-amber  { border-left-color: #d97706; } .stat-amber  .stat-mini-icon { background: #fef3c7; color: #d97706; }
+
+    /* ═══ Filter panel ═══ */
+    .filter-panel { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .filter-panel-header { padding: 0.9rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .filter-panel-header h5 i { color: #2563eb; }
+    .filter-panel-body { padding: 1.1rem 1.2rem; }
+    .filter-grid { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin: 0; }
+    .filter-field { min-width: 220px; }
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .filter-field .form-select { border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; padding: 0.45rem 0.7rem; }
+    .filter-field .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
+    .btn-clear-filters { height: 38px; padding: 0 14px; font-size: 0.82rem; display: inline-flex; align-items: center; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-active { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-closed { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+    .dot-inactive { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .assignment-manage-table { border-collapse: separate; border-spacing: 0; }
+    .assignment-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .assignment-manage-table thead th:last-child { border-right: none; }
+    .assignment-manage-table thead th.col-status { border-right: none; padding: 0; }
+    .assignment-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .assignment-manage-table tbody td:last-child { border-right: none; }
+    .assignment-manage-table tbody td.col-status { border-right: none; padding: 0; }
+    .assignment-manage-table tbody tr:last-child td { border-bottom: none; }
+
+    .assignment-manage-table tbody tr.assignment-row:nth-of-type(even) { background: #fafbfd; }
+    .assignment-manage-table tbody tr.assignment-row:hover { background: #eef4ff !important; }
+    .assignment-row { transition: background 0.12s ease; }
+
+    /* status rail — 3 states */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 66px; }
+    .rail-active   { background: #16a34a; }
+    .rail-closed   { background: #dc2626; }
+    .rail-inactive { background: #94a3b8; }
+
+    tr.row-inactive td:not(.col-status) { color: #94a3b8; }
+    tr.row-inactive .assignment-title-text { color: #64748b; }
+
+    /* ═══ Cells ═══ */
+    .assignment-title-text { font-size: 0.88rem; color: #0f172a; }
+    .course-name-cell { font-size: 0.82rem; color: #64748b; }
+    .course-name-cell i { font-size: 0.76rem; color: #94a3b8; margin-right: 4px; }
+
+    .marks-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 34px; height: 26px; padding: 0 8px;
+        background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe;
+        font-size: 0.78rem; font-weight: 700; border-radius: 999px;
+    }
+
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
+    .deadline-closed-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.66rem; font-weight: 700; color: #b91c1c;
+        background: #fee2e2; padding: 2px 8px; border-radius: 999px;
+        margin-top: 4px;
+    }
+
+    /* ═══ Grading progress ═══ */
+    .progress-label-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-bottom: 5px; }
+    .progress-pct { font-weight: 700; color: #334155; }
+    .progress-track-custom { height: 7px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+    .progress-fill-custom { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+    .fill-complete { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .fill-active   { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .fill-empty    { background: #cbd5e1; }
+
+    /* ═══ Status pills ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready   { background: #dcfce7; color: #15803d; }
+    .pill-failed  { background: #fee2e2; color: #b91c1c; }
+    .pill-pending { background: #f1f5f9; color: #64748b; }
+
+    /* ═══ Row action buttons ═══ */
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+    .btn-admin-labeled {
+        position: relative;
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-view   { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    .pending-count-badge {
+        background: #dc2626; color: white;
+        font-size: 0.62rem; font-weight: 700;
+        min-width: 16px; height: 16px; padding: 0 4px;
+        border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+        margin-left: 2px;
+    }
+
+    @media (max-width: 1350px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}
