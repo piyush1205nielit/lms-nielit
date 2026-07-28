@@ -5,62 +5,144 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 <style>
-    :root { --primary2: #172281; --border: #e2e8f0; --text-muted: #64748b; }
-
-    .player-layout { display: flex; min-height: calc(100vh - 200px); }
-    .player-sidebar {
-        width: 320px; flex-shrink: 0;
-        border-right: 1px solid var(--border);
-        background: #f8fafc;
-        overflow-y: auto;
-        max-height: calc(100vh - 120px);
-        position: sticky; top: 100px;
+    :root {
+        --primary2: #172281;
+        --primary2-light: #2d3ba8;
+        --accent: #f59e0b;
+        --border: #e2e8f0;
+        --text-muted: #64748b;
+        --sidebar-bg: #0a1530;
+        --sidebar-bg-alt: #0e1c40;
+        --sidebar-border: rgba(255,255,255,0.08);
+        --theater-bg: #050a1a;
     }
-    .player-sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
-    .player-sidebar-header h6 { font-weight: 700; font-size: 0.9rem; margin: 0 0 8px; color: #0e1b2e; }
-    .course-progress-text { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px; display: block; }
-    .course-progress-bar { height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
-    .course-progress-bar-fill { height: 100%; background: linear-gradient(90deg, #172281, #4f5fd6); border-radius: 3px; transition: width 0.3s ease; }
+
+    body { background: #f1f4f9; }
+
+    /* ═══════════════ Shell ═══════════════ */
+    .player-shell {
+        display: flex;
+        min-height: calc(100vh - 200px);
+        background: #f1f4f9;
+    }
+
+    /* ═══════════════ Sidebar (dark themed) ═══════════════ */
+    .player-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+        background: var(--sidebar-bg);
+        overflow-y: auto;
+        max-height: calc(100vh - 90px);
+        position: sticky;
+        top: 90px;
+        border-right: 1px solid var(--sidebar-border);
+    }
+    .player-sidebar::-webkit-scrollbar { width: 5px; }
+    .player-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+    .player-sidebar-header {
+        padding: 20px 18px;
+        border-bottom: 1px solid var(--sidebar-border);
+        background: linear-gradient(135deg, #0d1836, #172281 130%);
+    }
+    .player-sidebar-header .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.74rem; color: rgba(255,255,255,0.55); text-decoration: none;
+        margin-bottom: 10px; transition: color 0.15s ease;
+    }
+    .player-sidebar-header .back-link:hover { color: var(--accent); }
+    .player-sidebar-header h6 {
+        font-weight: 700; font-size: 0.94rem; margin: 0 0 10px; color: #fff;
+        overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+        -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .course-progress-text {
+        font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-bottom: 7px; display: block;
+    }
+    .course-progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .course-progress-bar-fill {
+        height: 100%; background: linear-gradient(90deg, var(--accent), #fbbf24);
+        border-radius: 4px; transition: width 0.3s ease;
+    }
 
     .sb-module-title {
-        padding: 14px 16px 6px; font-size: 0.76rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+        padding: 16px 18px 7px;
+        font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.07em;
+        color: var(--accent);
+        background: var(--sidebar-bg-alt);
+        border-top: 1px solid var(--sidebar-border);
+        border-bottom: 1px solid var(--sidebar-border);
     }
     .sb-lesson-link {
-        display: flex; align-items: center; gap: 10px;
-        padding: 10px 16px; font-size: 0.86rem; color: #374151;
+        display: flex; align-items: center; gap: 11px;
+        padding: 11px 18px; font-size: 0.85rem; color: rgba(255,255,255,0.75);
         text-decoration: none; border-left: 3px solid transparent;
         transition: background 0.15s ease, color 0.15s ease;
     }
-    .sb-lesson-link:hover { background: #eef2f9; color: #172281; }
-    .sb-lesson-link.active { background: #eaf1fb; border-left-color: var(--primary2); color: var(--primary2); font-weight: 600; }
+    .sb-lesson-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .sb-lesson-link.active {
+        background: linear-gradient(90deg, rgba(245,158,11,0.14), rgba(245,158,11,0.02));
+        border-left-color: var(--accent); color: #fff; font-weight: 600;
+    }
     .sb-lesson-link i.status-icon { font-size: 0.85rem; width: 16px; flex-shrink: 0; }
-    .sb-lesson-link .locked-icon { color: #cbd5e1; }
+    .sb-lesson-link i.status-icon.fa-check-circle { color: #34d399; }
+    .sb-lesson-link i.status-icon.fa-play-circle { color: #60a5fa; }
+    .sb-lesson-link .locked-icon { color: rgba(255,255,255,0.25); }
     .sb-lesson-link span.lesson-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .player-main { flex: 1; padding: 24px 32px; max-width: 900px; }
+    /* ═══════════════ Main content ═══════════════ */
+    .player-main {
+        flex: 1;
+        min-width: 0;
+        padding: 22px 32px 48px;
+    }
+    .player-main-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .player-breadcrumb {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;
+    }
+    .player-breadcrumb a { color: var(--primary2); text-decoration: none; font-weight: 600; }
+    .player-breadcrumb a:hover { text-decoration: underline; }
+    .player-breadcrumb i.sep { font-size: 0.6rem; color: #cbd5e1; }
+
+    /* ═══════════════ Theater (video) section ═══════════════ */
+    .theater-frame {
+        background: var(--theater-bg);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 18px 46px rgba(5,10,26,0.35);
+        border: 1px solid #101a35;
+        margin-bottom: 22px;
+    }
     .video-wrap {
-        background: #000; border-radius: 12px; overflow: hidden;
-        margin-bottom: 20px; position: relative; aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+        aspect-ratio: 16 / 9;
+        width: 100%;
     }
     .video-wrap video { width: 100%; height: 100%; display: block; }
 
-    /* Plyr theme tuned to brand color */
-    .plyr { --plyr-color-main: #172281; border-radius: 12px; height: 100%; }
-    .plyr__video-wrapper { border-radius: 12px; }
+    .plyr { --plyr-color-main: var(--accent); border-radius: 10px; height: 100%; }
+    .plyr__video-wrapper { border-radius: 10px; }
 
-    /* Loading spinner shown while the HLS manifest is being fetched/parsed */
     .video-loading-overlay {
         position: absolute; inset: 0;
         display: flex; align-items: center; justify-content: center;
-        background: #0e1b2e; border-radius: 12px; z-index: 5;
+        background: #0e1b2e; border-radius: 10px; z-index: 5;
         transition: opacity 0.2s ease;
     }
     .video-loading-overlay.hide { opacity: 0; pointer-events: none; }
     .spinner {
-        width: 40px; height: 40px;
+        width: 42px; height: 42px;
         border: 3px solid rgba(255,255,255,0.15);
-        border-top-color: #4f5fd6;
+        border-top-color: var(--accent);
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
     }
@@ -71,56 +153,97 @@
         display: none;
         flex-direction: column; align-items: center; justify-content: center;
         background: #0e1b2e; color: white; text-align: center; padding: 24px;
-        border-radius: 12px; z-index: 10;
+        border-radius: 10px; z-index: 10;
     }
     .video-error-overlay.show { display: flex; }
-    .video-error-overlay i { font-size: 2.2rem; color: #f59e0b; margin-bottom: 12px; }
+    .video-error-overlay i { font-size: 2.2rem; color: var(--accent); margin-bottom: 12px; }
     .video-error-overlay h5 { font-size: 1rem; font-weight: 700; margin: 0 0 6px; }
     .video-error-overlay p { font-size: 0.85rem; color: #cbd5e1; margin: 0 0 16px; max-width: 380px; }
     .video-error-overlay button {
-        background: #172281; color: white; border: none; padding: 8px 20px;
-        border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        background: var(--accent); color: #0a1530; border: none; padding: 9px 22px;
+        border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
     }
-    .video-error-overlay button:hover { background: #0f1a5f; }
+    .video-error-overlay button:hover { background: #fbbf24; }
 
-    .lesson-meta-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
-    .lesson-title { font-size: 1.25rem; font-weight: 700; color: #0e1b2e; margin: 0; }
+    /* ═══════════════ Lesson info section ═══════════════ */
+    .lesson-info-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .lesson-meta-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+    .lesson-title { font-size: 1.3rem; font-weight: 700; color: #0e1b2e; margin: 0; }
     .quality-badge {
-        font-size: 0.72rem; font-weight: 700; color: #172281; background: #eaf1fb;
-        padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+        font-size: 0.72rem; font-weight: 700; color: var(--primary2); background: #eaf1fb;
+        padding: 5px 12px; border-radius: 20px; white-space: nowrap;
+        border: 1px solid #d6e2f7;
     }
-    .lesson-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
+    .lesson-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; margin: 10px 0 0; }
 
+    /* ═══════════════ Actions section ═══════════════ */
+    .actions-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 26px;
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
     .player-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn-mark-complete {
-        background: #059669; border: none; color: white; font-weight: 600;
-        padding: 10px 20px; border-radius: 8px; font-size: 0.88rem;
-        transition: background 0.15s ease;
-    }
-    .btn-mark-complete:hover:not(:disabled) { background: #047857; }
-    .btn-mark-complete:disabled { background: #94a3b8; }
-    .btn-next-lesson {
-        background: var(--primary2); border: none; color: white; font-weight: 600;
-        padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none;
-        display: inline-flex; align-items: center; gap: 6px;
-        transition: background 0.15s ease;
-    }
-    .btn-next-lesson:hover { background: #0f1a5f; color: white; }
 
-    @media (max-width: 900px) {
-        .player-layout { flex-direction: column; }
-        .player-sidebar { width: 100%; position: static; max-height: none; }
-        .player-main { padding: 20px 16px; }
+    .btn-mark-complete {
+        background: linear-gradient(90deg, #059669, #10b981);
+        border: none; color: white; font-weight: 600;
+        padding: 11px 22px; border-radius: 10px; font-size: 0.88rem;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    .btn-mark-complete:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-mark-complete:disabled { background: #94a3b8; opacity: 0.85; }
+
+    .btn-next-lesson {
+        background: linear-gradient(90deg, var(--primary2), var(--primary2-light));
+        border: none; color: white; font-weight: 600;
+        padding: 11px 22px; border-radius: 10px; font-size: 0.88rem; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 7px;
+        transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    .btn-next-lesson:hover { filter: brightness(1.1); transform: translateY(-1px); color: white; }
+
+    .progress-inline {
+        font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ═══════════════ Responsive ═══════════════ */
+    @media (max-width: 992px) {
+        .player-shell { flex-direction: column; }
+        .player-sidebar { width: 100%; position: static; max-height: 320px; border-right: none; border-bottom: 1px solid var(--sidebar-border); }
+        .player-main { padding: 18px 16px 40px; }
+    }
+    @media (max-width: 560px) {
+        .theater-frame { padding: 8px; border-radius: 12px; }
+        .lesson-info-card, .actions-card { padding: 16px 18px; }
+        .lesson-title { font-size: 1.1rem; }
+        .actions-card { flex-direction: column; align-items: stretch; }
+        .player-actions { flex-direction: column; }
+        .btn-mark-complete, .btn-next-lesson { width: 100%; justify-content: center; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="player-layout">
+<div class="player-shell">
     <aside class="player-sidebar">
         <div class="player-sidebar-header">
+            <a href="{% url 'course:detail' course.slug %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Course
+            </a>
             <h6>{{ course.course_name }}</h6>
             <span class="course-progress-text">{{ completed_lesson_ids|length }} lesson{{ completed_lesson_ids|length|pluralize }} completed</span>
+            <div class="course-progress-bar">
+                <div class="course-progress-bar-fill" style="width: {% widthratio completed_lesson_ids|length total_lessons|default:1 100 %}%;"></div>
+            </div>
         </div>
 
         {% for module in modules %}
@@ -128,7 +251,7 @@
             {% for l in module.lessons.all %}
                 <a href="{% url 'stream:player' course.slug l.id %}" class="sb-lesson-link {% if l.id == lesson.id %}active{% endif %}">
                     {% if l.id in completed_lesson_ids %}
-                        <i class="fas fa-check-circle status-icon text-success"></i>
+                        <i class="fas fa-check-circle status-icon"></i>
                     {% elif l.video_status == 'ready' %}
                         <i class="fas fa-play-circle status-icon"></i>
                     {% else %}
@@ -141,53 +264,73 @@
     </aside>
 
     <main class="player-main">
-        <div class="video-wrap">
-            <video
-                id="lessonVideo"
-                playsinline
-                controls
-                preload="metadata"
-                controlsList="nodownload noremoteplayback"
-                disablePictureInPicture
-                oncontextmenu="return false;"
-                {% if progress.watched_seconds %}data-resume="{{ progress.watched_seconds }}"{% endif %}>
-                Your browser does not support video playback.
-            </video>
+        <div class="player-main-inner">
 
-            <div class="video-loading-overlay" id="videoLoadingOverlay">
-                <div class="spinner"></div>
+            <div class="player-breadcrumb">
+                <a href="{% url 'course:detail' course.slug %}">{{ course.course_name }}</a>
+                <i class="fas fa-chevron-right sep"></i>
+                <span>{{ lesson.title }}</span>
             </div>
 
-            <div class="video-error-overlay" id="videoErrorOverlay">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h5>Video unavailable</h5>
-                <p id="videoErrorMessage">We couldn't load this video right now. Please refresh the page, or contact support if the problem continues.</p>
-                <button onclick="window.location.reload()">Refresh Page</button>
+            <div class="theater-frame">
+                <div class="video-wrap">
+                    <video
+                        id="lessonVideo"
+                        playsinline
+                        controls
+                        preload="metadata"
+                        controlsList="nodownload noremoteplayback"
+                        disablePictureInPicture
+                        oncontextmenu="return false;"
+                        {% if progress.watched_seconds %}data-resume="{{ progress.watched_seconds }}"{% endif %}>
+                        Your browser does not support video playback.
+                    </video>
+
+                    <div class="video-loading-overlay" id="videoLoadingOverlay">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div class="video-error-overlay" id="videoErrorOverlay">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h5>Video unavailable</h5>
+                        <p id="videoErrorMessage">We couldn't load this video right now. Please refresh the page, or contact support if the problem continues.</p>
+                        <button onclick="window.location.reload()">Refresh Page</button>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="lesson-meta-row">
-            <h4 class="lesson-title">{{ lesson.title }}</h4>
-            <span class="quality-badge" id="qualityBadge" style="display:none;"></span>
-        </div>
-        {% if lesson.description %}<p class="lesson-desc">{{ lesson.description }}</p>{% endif %}
+            <div class="lesson-info-card">
+                <div class="lesson-meta-row">
+                    <h4 class="lesson-title">{{ lesson.title }}</h4>
+                    <span class="quality-badge" id="qualityBadge" style="display:none;"></span>
+                </div>
+                {% if lesson.description %}<p class="lesson-desc">{{ lesson.description }}</p>{% endif %}
+            </div>
 
-        <div class="player-actions">
-            {% if lesson.id in completed_lesson_ids %}
-                <button class="btn-mark-complete" disabled><i class="fas fa-check-circle me-1"></i> Completed</button>
-            {% else %}
-                <button class="btn-mark-complete" id="markCompleteBtn"><i class="fas fa-check me-1"></i> Mark as Complete</button>
-            {% endif %}
+            <div class="actions-card">
+                <div class="player-actions">
+                    {% if lesson.id in completed_lesson_ids %}
+                        <button class="btn-mark-complete" disabled><i class="fas fa-check-circle me-1"></i> Completed</button>
+                    {% else %}
+                        <button class="btn-mark-complete" id="markCompleteBtn"><i class="fas fa-check me-1"></i> Mark as Complete</button>
+                    {% endif %}
 
-            {% if next_lesson %}
-                <a href="{% url 'stream:player' course.slug next_lesson.id %}" class="btn-next-lesson">
-                    Next Lesson <i class="fas fa-arrow-right"></i>
-                </a>
-            {% else %}
-                <a href="{% url 'course:my_courses' %}" class="btn-next-lesson">
-                    <i class="fas fa-flag-checkered"></i> Back to My Courses
-                </a>
-            {% endif %}
+                    {% if next_lesson %}
+                        <a href="{% url 'stream:player' course.slug next_lesson.id %}" class="btn-next-lesson">
+                            Next Lesson <i class="fas fa-arrow-right"></i>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'course:my_courses' %}" class="btn-next-lesson">
+                            <i class="fas fa-flag-checkered"></i> Back to My Courses
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="progress-inline">
+                    <i class="fas fa-chart-line" style="color: var(--primary2);"></i>
+                    {{ completed_lesson_ids|length }} of {{ total_lessons|default:"—" }} lessons complete
+                </div>
+            </div>
+
         </div>
     </main>
 </div>
@@ -268,7 +411,6 @@
             updateQualityBadge('Auto');
         }
 
-        // resume from last watched position, once metadata is ready
         const resumeAt = videoEl.dataset.resume;
         player.on('loadedmetadata', function () {
             hideLoadingOverlay();
@@ -293,7 +435,7 @@
     function updateHlsQuality(newQuality) {
         if (!hls) return;
         if (newQuality === 0) {
-            hls.currentLevel = -1;   // Auto — hls.js decides based on bandwidth
+            hls.currentLevel = -1;
         } else {
             hls.levels.forEach(function (level, levelIndex) {
                 if (level.height === newQuality) {
@@ -306,7 +448,7 @@
     if (window.Hls && Hls.isSupported()) {
         hls = new Hls({
             xhrSetup: function (xhr) {
-                xhr.withCredentials = true;   // send CloudFront signed cookies with every segment request
+                xhr.withCredentials = true;
             },
         });
 
@@ -316,13 +458,11 @@
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
             const availableQualities = hls.levels
                 .map(function (level) { return level.height; })
-                .sort(function (a, b) { return b - a; });   // highest first, e.g. [720, 480, 360]
+                .sort(function (a, b) { return b - a; });
 
             initPlyr(availableQualities);
         });
 
-        // reflect automatic quality switches (e.g. due to bandwidth changes) in the badge,
-        // but only while the user hasn't manually forced a specific level
         hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
             if (hls.autoLevelEnabled) {
                 const level = hls.levels[data.level];
@@ -347,8 +487,6 @@
         });
 
     } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari supports HLS natively — no manual quality menu available here,
-        // Safari's own adaptive switching handles quality automatically
         videoEl.src = manifestUrl;
         videoEl.addEventListener('loadedmetadata', function () {
             initPlyr();

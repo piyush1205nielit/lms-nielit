@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.home_view, name='home'),
     path('courses/', views.courses_view, name='courses'),
     path('announcements/', views.announcements_view, name='announcements'),
+    path('courses/domain/<slug:domain_slug>/', views.domain_courses_view, name='domain_courses'),
     # path('centres/', views.centres_view, name='centres'),
 ]

@@ -10,9 +10,9 @@ class DomainForm(forms.ModelForm):
         model = Domain
         fields = ['name', 'description', 'is_active']
         widgets = {
-            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Cyber Security'}),
-            'description': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'Optional short description'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Cyber Security'}),
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional short description'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'}),
         }
 
 

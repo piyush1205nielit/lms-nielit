@@ -20,8 +20,9 @@ urlpatterns = [
     path('manage/lesson/<uuid:lesson_id>/delete/', views.lesson_delete_view, name='lesson_delete'),
 
     path('manage/domains/', views.domain_list_view, name='domain_list'),
-    path('manage/domains/create/', views.domain_create_view, name='domain_create'),
-    path('manage/domains/<uuid:domain_id>/edit/', views.domain_edit_view, name='domain_edit'),
+    path('manage/domains/add/', views.domain_modal_view, name='domain_add'),
+    path('manage/domains/<uuid:domain_id>/edit/', views.domain_modal_view, name='domain_edit'),
+    path('manage/domains/<uuid:domain_id>/toggle-active/', views.domain_toggle_active_view, name='domain_toggle_active'),
     path('manage/domains/<uuid:domain_id>/delete/', views.domain_delete_view, name='domain_delete'),
 
     path('my-courses/', views.my_courses_view, name='my_courses'),

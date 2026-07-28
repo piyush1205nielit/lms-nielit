@@ -9,9 +9,9 @@
         <p>{{ domains.count }} total domain{{ domains.count|pluralize }} — used to tag and filter courses</p>
     </div>
     <div class="page-header-actions">
-        <a href="{% url 'course:domain_create' %}" class="btn-admin-primary">
+        <button type="button" class="btn-admin-primary" id="addDomainBtn">
             <i class="bi bi-plus-lg me-1"></i> New Domain
-        </a>
+        </button>
     </div>
 </div>
 
@@ -33,8 +33,8 @@
 
 <!-- ═══ Legend ═══ -->
 <div class="table-legend">
-    <span class="legend-item"><span class="legend-dot dot-active"></span> Active domain</span>
-    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive domain</span>
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active — used by at least one published course</span>
+    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive — not currently used, or manually hidden</span>
 </div>
 
 <div class="card-panel">
@@ -53,23 +53,17 @@
                     <th style="min-width: 220px;">Description</th>
                     <th class="text-center">Courses</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end" style="min-width: 200px;">Actions</th>
+                    <th class="text-end" style="min-width: 160px;">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="domainsTableBody">
                 {% for domain in domains %}
-                <tr class="domain-row {% if domain.is_active %}row-active{% else %}row-inactive{% endif %}">
+                <tr class="domain-row {% if domain.is_active %}row-active{% else %}row-inactive{% endif %}" data-domain-id="{{ domain.id }}">
                     <td class="col-status">
                         <span class="status-rail {% if domain.is_active %}rail-active{% else %}rail-inactive{% endif %}"></span>
                     </td>
                     <td>
                         <div class="domain-cell">
-                            <span class="domain-swatch" style="background:{{ domain.color_hex|default:'#172281' }};"></span>
-                            {% if domain.icon_class %}
-                                <span class="domain-icon-chip" style="background:{{ domain.color_hex|default:'#172281' }}1A; color:{{ domain.color_hex|default:'#172281' }};">
-                                    <i class="fas {{ domain.icon_class }}"></i>
-                                </span>
-                            {% endif %}
                             <strong class="domain-name-text">{{ domain.name }}</strong>
                         </div>
                     </td>
@@ -77,28 +71,26 @@
                     <td class="domain-desc-cell">{{ domain.description|default:"—"|truncatechars:60 }}</td>
                     <td class="text-center">
                         <span class="course-count-badge">
-                            <i class="bi bi-journal-bookmark"></i> {{ domain.courses.count }}
+                            <i class="bi bi-journal-bookmark"></i> {{ domain.course_count }}
                         </span>
                     </td>
                     <td class="text-center">
-                        {% if domain.is_active %}
-                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
-                        {% else %}
-                            <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> Inactive</span>
-                        {% endif %}
+                        <button type="button" class="toggle-switch-btn {% if domain.is_active %}on{% endif %} btn-toggle-domain"
+                                data-domain-id="{{ domain.id }}" title="Toggle active status">
+                            <span class="toggle-knob"></span>
+                        </button>
+                        <div class="toggle-status-label">{% if domain.is_active %}Active{% else %}Inactive{% endif %}</div>
                     </td>
                     <td class="text-end">
                         <div class="row-actions">
-                            <a href="{% url 'course:domain_edit' domain.id %}" class="btn-admin-labeled btn-label-edit" title="Edit Domain">
+                            <button type="button" class="btn-admin-labeled btn-label-edit btn-edit-domain" data-domain-id="{{ domain.id }}" title="Edit Domain">
                                 <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
-                            </a>
-                            <form method="post" action="{% url 'course:domain_delete' domain.id %}" class="d-inline"
-                                  onsubmit="return confirm('Delete \'{{ domain.name }}\'? This will remove it from {{ domain.courses.count }} course(s). This cannot be undone.');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete Domain">
-                                    <i class="bi bi-trash3-fill"></i><span class="btn-label-text">Delete</span>
-                                </button>
-                            </form>
+                            </button>
+                            <button type="button" class="btn-admin-labeled btn-label-delete btn-delete-domain"
+                                    data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}" data-course-count="{{ domain.course_count }}"
+                                    title="Delete Domain">
+                                <i class="bi bi-trash3-fill"></i><span class="btn-label-text">Delete</span>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -109,9 +101,9 @@
                             <div class="empty-state-icon"><i class="bi bi-tags"></i></div>
                             <div class="empty-state-title">No domains created yet</div>
                             <div class="empty-state-sub">Domains help learners filter and find courses without needing to know exact course names.</div>
-                            <a href="{% url 'course:domain_create' %}" class="btn-admin-primary mt-3">
+                            <button type="button" class="btn-admin-primary mt-3" id="addDomainBtnEmpty">
                                 <i class="bi bi-plus-lg me-1"></i> Create Domain
-                            </a>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -119,6 +111,11 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- ═══ Shared modal shell ═══ -->
+<div class="modal fade" id="domainModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content" id="domainModalContent"></div></div>
 </div>
 {% endblock %}
 
@@ -158,35 +155,25 @@
     .dot-active { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
     .dot-inactive { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
 
-    /* ═══ Panel header ═══ */
     .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
 
-    /* ═══ Table structure: dark division lines ═══ */
+    /* ═══ Table structure ═══ */
     .domain-manage-table { border-collapse: separate; border-spacing: 0; }
-    .domain-manage-table thead th {
-        border-bottom: 2px solid #94a3b8 !important;
-        border-right: 1px solid #cbd5e1;
-    }
+    .domain-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
     .domain-manage-table thead th:last-child { border-right: none; }
     .domain-manage-table thead th.col-status { border-right: none; padding: 0; }
 
-    .domain-manage-table tbody td {
-        border-bottom: 1px solid #dbe2ea;
-        border-right: 1px solid #e9edf1;
-        vertical-align: middle;
-    }
+    .domain-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
     .domain-manage-table tbody td:last-child { border-right: none; }
     .domain-manage-table tbody td.col-status { border-right: none; padding: 0; }
     .domain-manage-table tbody tr:last-child td { border-bottom: none; }
 
-    /* zebra striping */
     .domain-manage-table tbody tr.domain-row:nth-of-type(even) { background: #fafbfd; }
     .domain-manage-table tbody tr.domain-row:hover { background: #eef4ff !important; }
     .domain-row { transition: background 0.12s ease; }
 
-    /* status rail */
     .col-status { width: 5px; padding: 0 !important; }
-    .status-rail { display: block; width: 5px; height: 100%; min-height: 60px; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 60px; transition: background 0.2s ease; }
     .rail-active { background: #10b981; }
     .rail-inactive { background: #cbd5e1; }
 
@@ -194,52 +181,44 @@
     tr.row-inactive .domain-name-text { color: #64748b; }
     tr.row-inactive .domain-swatch { opacity: 0.5; }
 
-    /* ═══ Domain cell ═══ */
     .domain-cell { display: flex; align-items: center; gap: 10px; }
     .domain-swatch { display: inline-block; width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px #e2e8f0; }
-    .domain-icon-chip {
-        width: 26px; height: 26px; border-radius: 7px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.76rem; flex-shrink: 0;
-    }
     .domain-name-text { font-size: 0.89rem; color: #0f172a; }
 
-    .domain-slug-tag {
-        font-size: 0.76rem; color: #64748b; background: #f1f5f9;
-        padding: 3px 9px; border-radius: 6px; border: 1px solid #e2e8f0;
-    }
-
+    .domain-slug-tag { font-size: 0.76rem; color: #64748b; background: #f1f5f9; padding: 3px 9px; border-radius: 6px; border: 1px solid #e2e8f0; }
     .domain-desc-cell { font-size: 0.82rem; color: #64748b; max-width: 280px; }
 
     .course-count-badge {
         display: inline-flex; align-items: center; gap: 5px;
         background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe;
-        font-size: 0.76rem; font-weight: 700;
-        padding: 4px 10px; border-radius: 999px;
+        font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
     }
     .course-count-badge i { font-size: 0.7rem; }
 
-    /* ═══ Status pills ═══ */
-    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-    .status-pill i { font-size: 0.72rem; }
-    .pill-ready   { background: #dcfce7; color: #15803d; }
-    .pill-pending { background: #f1f5f9; color: #64748b; }
+    /* ═══ Real-time toggle switch ═══ */
+    .toggle-switch-btn {
+        width: 40px; height: 21px; border-radius: 20px; background: #cbd5e1; border: none;
+        position: relative; padding: 0; cursor: pointer; transition: background 0.2s ease;
+    }
+    .toggle-switch-btn.on { background: #10b981; }
+    .toggle-switch-btn:disabled { opacity: 0.6; cursor: wait; }
+    .toggle-switch-btn .toggle-knob {
+        position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%;
+        background: white; transition: transform 0.2s ease; display: block;
+    }
+    .toggle-switch-btn.on .toggle-knob { transform: translateX(19px); }
+    .toggle-status-label { font-size: 0.66rem; font-weight: 700; color: #64748b; margin-top: 4px; text-transform: uppercase; }
 
     /* ═══ Row action buttons ═══ */
     .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
-
     .btn-admin-labeled {
-        display: inline-flex; align-items: center; gap: 6px;
-        height: 32px; padding: 0 12px;
-        border-radius: 8px; border: 1px solid transparent;
-        font-size: 0.78rem; font-weight: 600;
-        white-space: nowrap;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+        border-radius: 8px; border: 1px solid transparent; font-size: 0.78rem; font-weight: 600;
+        white-space: nowrap; transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
         cursor: pointer; text-decoration: none;
     }
     .btn-admin-labeled i { font-size: 0.88rem; }
     .btn-admin-labeled:hover { transform: translateY(-1px); }
-
     .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
     .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
     .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
@@ -257,4 +236,86 @@
     .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = "{{ csrf_token }}";
+    const modal = new bootstrap.Modal(document.getElementById('domainModal'));
+    const modalContent = document.getElementById('domainModalContent');
+
+    function openForm(url) {
+        fetch(url).then(r => r.json()).then(data => { modalContent.innerHTML = data.html; modal.show(); });
+    }
+
+    document.getElementById('addDomainBtn')?.addEventListener('click', () => openForm("{% url 'course:domain_add' %}"));
+    document.getElementById('addDomainBtnEmpty')?.addEventListener('click', () => openForm("{% url 'course:domain_add' %}"));
+
+    document.getElementById('domainsTableBody').addEventListener('click', function (e) {
+        const editBtn = e.target.closest('.btn-edit-domain');
+        if (editBtn) {
+            openForm(`/courses/manage/domains/${editBtn.dataset.domainId}/edit/`);
+            return;
+        }
+
+        const deleteBtn = e.target.closest('.btn-delete-domain');
+        if (deleteBtn) {
+            const name = deleteBtn.dataset.domainName;
+            const courseCount = deleteBtn.dataset.courseCount;
+            const msg = courseCount > 0
+                ? `"${name}" is used by ${courseCount} course(s) and cannot be deleted until they're untagged.`
+                : `Delete domain "${name}"? This cannot be undone.`;
+            if (courseCount > 0) { alert(msg); return; }
+            if (!confirm(msg)) return;
+
+            fetch(`/courses/manage/domains/${deleteBtn.dataset.domainId}/delete/`, {
+                method: 'POST', headers: { 'X-CSRFToken': csrfToken },
+            })
+            .then(r => r.json())
+            .then(data => data.success ? location.reload() : alert(data.message));
+            return;
+        }
+
+        const toggleBtn = e.target.closest('.btn-toggle-domain');
+        if (toggleBtn) {
+            toggleBtn.disabled = true;
+            fetch(`/courses/manage/domains/${toggleBtn.dataset.domainId}/toggle-active/`, {
+                method: 'POST', headers: { 'X-CSRFToken': csrfToken },
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { toggleBtn.disabled = false; return; }
+                const row = toggleBtn.closest('tr');
+                const rail = row.querySelector('.status-rail');
+                const label = toggleBtn.parentElement.querySelector('.toggle-status-label');
+
+                toggleBtn.classList.toggle('on', data.is_active);
+                row.classList.toggle('row-active', data.is_active);
+                row.classList.toggle('row-inactive', !data.is_active);
+                rail.classList.toggle('rail-active', data.is_active);
+                rail.classList.toggle('rail-inactive', !data.is_active);
+                label.textContent = data.is_active ? 'Active' : 'Inactive';
+                toggleBtn.disabled = false;
+            })
+            .catch(() => { toggleBtn.disabled = false; });
+        }
+    });
+
+    modalContent.addEventListener('submit', function (e) {
+        if (!e.target.matches('#domainForm')) return;
+        e.preventDefault();
+        fetch(e.target.action, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: new FormData(e.target) })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) { location.reload(); }
+                else {
+                    const box = e.target.querySelector('#domainFormErrors');
+                    box.innerHTML = Object.values(data.errors).flat().join('<br>');
+                    box.classList.remove('d-none');
+                }
+            });
+    });
+});
+</script>
 {% endblock %}

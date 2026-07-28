@@ -1,677 +1,1183 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}NIELIT - Course Registration Platform{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}
+        NIELIT - Course Registration Platform
+      {% endblock %}
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-        /* ── Tokens ──────────────────────────────────────── */
-        :root {
-            --primary:       #0f2b6d;
-            --primary-dark:  #0a1f4f;
-            --primary-light: #1e40af;
-            --accent:        #f59e0b;
-            --footer-bg:     #0a1a2f;
-            --nav-gradient: linear-gradient(120deg, #0b1f4d 0%, #163a8c 55%, #0a1f4f 100%);
-            --nav-gradient-floating: linear-gradient(120deg, rgba(11,31,77,0.95) 0%, rgba(22,58,140,0.95) 55%, rgba(10,31,79,0.95) 100%);
-        }
-
-        /* ── Base ────────────────────────────────────────── */
-        *, *::before, *::after { box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            font-size: 16px;
-            background: #f8fafc;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding-top: 0;
-            color: #1e293b;
-        }
-        /* ── Top Header ──────────────────────────────────── */
-        .top-header {
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            padding: 10px 0;
-            transition: padding 0.3s ease;
-        }
-        .top-header.scrolled { padding: 6px 0; }
+      /* ── Tokens ──────────────────────────────────────── */
+      :root {
+        --primary: #0f2b6d;
+        --primary-dark: #0a1f4f;
+        --primary-light: #1e40af;
+        --accent: #f59e0b;
+        --footer-bg: #0a1a2f;
+        --nav-gradient: linear-gradient(120deg, #0b1f4d 0%, #163a8c 55%, #0a1f4f 100%);
+        --nav-gradient-floating: linear-gradient(120deg, rgba(11, 31, 77, 0.95) 0%, rgba(22, 58, 140, 0.95) 55%, rgba(10, 31, 79, 0.95) 100%);
+      }
+      
+      /* ── Base ────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding-top: 0;
+        color: #1e293b;
+      }
+      /* ── Top Header ──────────────────────────────────── */
+      .top-header {
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 10px 0;
+        transition: padding 0.3s ease;
+      }
+      .top-header.scrolled {
+        padding: 6px 0;
+      }
+      .top-header .logo-img {
+        height: 56px;
+        width: auto;
+        object-fit: contain;
+        transition: height 0.3s ease;
+      }
+      .top-header.scrolled .logo-img {
+        height: 44px;
+      }
+      .top-header .main-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e3a8a;
+        margin: 0;
+        line-height: 1.3;
+      }
+      .top-header .sub-title {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.4;
+      }
+      @media (max-width: 768px) {
         .top-header .logo-img {
-            height: 56px;
-            width: auto;
-            object-fit: contain;
-            transition: height 0.3s ease;
+          height: 40px;
         }
-        .top-header.scrolled .logo-img { height: 44px; }
         .top-header .main-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin: 0;
-            line-height: 1.3;
+          font-size: 0.82rem;
         }
         .top-header .sub-title {
-            font-size: 0.78rem;
-            color: #6b7280;
-            margin: 0;
-            line-height: 1.4;
+          font-size: 0.68rem;
         }
-        @media (max-width: 768px) {
-            .top-header .logo-img   { height: 40px; }
-            .top-header .main-title { font-size: 0.82rem; }
-            .top-header .sub-title  { font-size: 0.68rem; }
+      }
+      @media (max-width: 576px) {
+        .top-header .logo-img {
+          height: 34px;
         }
-        @media (max-width: 576px) {
-            .top-header .logo-img   { height: 34px; }
-            .top-header .main-title { font-size: 0.72rem; }
-            .top-header .sub-title  { font-size: 0.6rem; }
+        .top-header .main-title {
+          font-size: 0.72rem;
         }
-
-        /* ── Nav wrapper (sticky host — animates the "gap" that creates the floating pill) ── */
-        .nav-wrapper {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            padding-top: 0;
-            transition: padding-top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        .top-header .sub-title {
+          font-size: 0.6rem;
         }
-        .nav-wrapper.floating-wrap { padding-top: 14px; }
-
-        /* ── Main Nav ────────────────────────────────────── */
-        .main-nav {
-            background: var(--nav-gradient);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            border-radius: 0;
-            width: 100%;
-            margin: 0 auto;
-            transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      
+      /* ── Nav wrapper (sticky host — animates the "gap" that creates the floating pill) ── */
+      .nav-wrapper {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        padding-top: 0;
+        transition: padding-top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .nav-wrapper.floating-wrap {
+        padding-top: 14px;
+      }
+      
+      /* ── Main Nav ────────────────────────────────────── */
+      .main-nav {
+        background: var(--nav-gradient);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 0;
+        width: 100%;
+        margin: 0 auto;
+        transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      
+      /* ── Floating "dynamic island" state — evolves in place, no jump ── */
+      .main-nav.floating {
+        width: min(94%, 1140px);
+        border-radius: 999px;
+        box-shadow: 0 12px 32px rgba(5, 12, 33, 0.35);
+        background: var(--nav-gradient-floating);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .main-nav.floating .nav-inner {
+        padding-top: 4px;
+        padding-bottom: 4px;
+      }
+      .main-nav.floating .brand-text {
+        display: none;
+      }
+      
+      .nav-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        transition: padding 0.3s ease, gap 0.3s ease;
+        gap: 8px;
+      }
+      
+      .navbar-brand {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: white !important;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      /* Logo: full image, no crop/circle — just height + slight rounding */
+      .navbar-brand .brand-logo {
+        height: 34px;
+        width: auto;
+        object-fit: contain;
+        border-radius: 6px;
+        background: transparent;
+        padding: 0;
+        flex-shrink: 0;
+        transition: height 0.3s ease;
+      }
+      .main-nav.floating .navbar-brand .brand-logo {
+        height: 26px;
+      }
+      @media (max-width: 576px) {
+        .navbar-brand .brand-text {
+          display: none;
         }
-
-        /* ── Floating "dynamic island" state — evolves in place, no jump ── */
-        .main-nav.floating {
-            width: min(94%, 1140px);
-            border-radius: 999px;
-            box-shadow: 0 12px 32px rgba(5,12,33,0.35);
-            background: var(--nav-gradient-floating);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .main-nav.floating .nav-inner { padding-top: 4px; padding-bottom: 4px; }
-        .main-nav.floating .brand-text { display: none; }
-
-        .nav-inner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            transition: padding 0.3s ease, gap 0.3s ease;
-            gap: 8px;
-        }
-
-        .navbar-brand {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: white !important;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-        /* Logo: full image, no crop/circle — just height + slight rounding */
         .navbar-brand .brand-logo {
-            height: 34px;
-            width: auto;
-            object-fit: contain;
-            border-radius: 6px;
-            background: transparent;
-            padding: 0;
-            flex-shrink: 0;
-            transition: height 0.3s ease;
+          height: 28px;
         }
-        .main-nav.floating .navbar-brand .brand-logo { height: 26px; }
-        @media (max-width: 576px) {
-            .navbar-brand .brand-text { display: none; }
-            .navbar-brand .brand-logo { height: 28px; }
+      }
+      
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      
+      .main-nav .nav-link {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9) !important;
+        padding: 8px 14px;
+        border-radius: 6px;
+        position: relative;
+        transition: color 0.2s ease, background 0.2s ease, padding 0.2s ease;
+        text-decoration: none;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+      }
+      .main-nav .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background: white;
+        border-radius: 1px;
+        transition: width 0.25s ease;
+      }
+      .main-nav .nav-link:hover,
+      .main-nav .nav-link.active {
+        color: white !important;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .main-nav .nav-link:hover::after,
+      .main-nav .nav-link.active::after {
+        width: 60%;
+      }
+      
+      /* ── Auth area ────────────────────────────────────── */
+      .nav-auth {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        margin-left: 8px;
+      }
+      
+      .btn-nav-login {
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: white !important;
+        padding: 7px 16px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(255, 255, 255, 0.35);
+        text-decoration: none;
+        transition: background 0.2s ease, border-color 0.2s ease;
+        white-space: nowrap;
+      }
+      .btn-nav-login:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.6);
+      }
+      
+      .btn-nav-signup {
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--primary-dark) !important;
+        background: var(--accent);
+        padding: 7px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: filter 0.2s ease, transform 0.2s ease;
+        white-space: nowrap;
+      }
+      .btn-nav-signup:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+      }
+      
+      /* ── User / Guest menu (shared look) ─────────────── */
+      .user-menu-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 4px 14px 4px 4px;
+        cursor: pointer;
+        transition: background 0.2s ease, padding 0.2s ease;
+      }
+      .user-menu-toggle:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        flex-shrink: 0;
+      }
+      .guest-avatar {
+        background: rgba(255, 255, 255, 0.18);
+        color: white;
+        font-size: 0.9rem;
+      }
+      .user-menu-toggle .user-name {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: white;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .user-menu-toggle i.chev {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.7);
+        transition: transform 0.2s ease;
+      }
+      .user-menu-toggle.open i.chev {
+        transform: rotate(180deg);
+      }
+      
+      .user-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        min-width: 220px;
+        padding: 8px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        z-index: 1100;
+      }
+      /* ── Notification bell ─────────────────────────────── */
+      .notif-bell-wrap {
+        position: relative;
+      }
+      .notif-bell-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        position: relative;
+        transition: background 0.2s ease, transform 0.15s ease;
+      }
+      .notif-bell-btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+        transform: translateY(-1px);
+      }
+      .notif-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background: #dc2626;
+        color: white;
+        font-size: 0.62rem;
+        font-weight: 700;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 2px solid var(--primary-dark);
+      }
+      .notif-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        width: 340px;
+        max-height: 420px;
+        overflow-y: auto;
+        padding: 8px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        z-index: 1100;
+      }
+      .notif-dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      .notif-dropdown-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 4px;
+      }
+      .notif-dropdown-header span {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+      }
+      .notif-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s ease;
+      }
+      .notif-item:hover {
+        background: #f0f4ff;
+      }
+      .notif-item.pinned {
+        background: #fffbeb;
+      }
+      .notif-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+      }
+      .notif-icon-announcement {
+        background: #eaf1fb;
+        color: #172281;
+      }
+      .notif-icon-assignment {
+        background: #d1fae5;
+        color: #059669;
+      }
+      .notif-title {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #0e1b2e;
+      }
+      .notif-body {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin: 2px 0;
+      }
+      .notif-time {
+        font-size: 0.7rem;
+        color: #94a3b8;
+      }
+      .notif-empty {
+        text-align: center;
+        padding: 30px 10px;
+        color: #94a3b8;
+      }
+      .notif-empty i {
+        font-size: 1.6rem;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .notif-loading {
+        text-align: center;
+        padding: 30px;
+      }
+      
+      /* ── Domain dropdown nav item ── */
+      .nav-domain-dropdown {
+        position: relative;
+      }
+      .nav-domain-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(245, 158, 11, 0.14);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--accent);
+        padding: 8px 14px;
+        border-radius: 999px;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        white-space: nowrap;
+      }
+      .nav-domain-toggle:hover,
+      .nav-domain-toggle.open {
+        color: var(--primary-dark);
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .nav-domain-toggle i.chev-domain {
+        font-size: 0.65rem;
+        transition: transform 0.2s ease;
+      }
+      .nav-domain-toggle.open i.chev-domain {
+        transform: rotate(180deg);
+      }
+      
+      .domain-mega-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+        width: 300px;
+        max-height: 380px;
+        overflow-y: auto;
+        padding: 10px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s ease;
+        z-index: 1100;
+      }
+      .domain-mega-dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      .domain-mega-dropdown .dmd-header {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #94a3b8;
+        padding: 6px 10px 8px;
+      }
+      .domain-mega-dropdown a.dmd-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        color: #374151;
+        text-decoration: none;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .domain-mega-dropdown a.dmd-item:hover {
+        background: var(--accent);
+        color: #000;
+        font-weight: 700;
+      }
+      .domain-mega-dropdown a.dmd-item:hover i.dmd-dot {
+        background: #000;
+      }
+      .domain-mega-dropdown .dmd-empty {
+        text-align: center;
+        padding: 20px 10px;
+        color: #94a3b8;
+        font-size: 0.82rem;
+      }
+      .domain-mega-dropdown .dmd-footer {
+        border-top: 1px solid #f1f5f9;
+        margin-top: 6px;
+        padding-top: 8px;
+      }
+      .domain-mega-dropdown .dmd-footer a {
+        display: block;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #172281;
+        text-decoration: none;
+        padding: 6px;
+      }
+      
+      /* mobile drawer variant */
+      .mobile-domain-section {
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .mobile-domain-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        background: none;
+        border: none;
+        text-align: left;
+        padding: 13px 20px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #374151;
+      }
+      .mobile-domain-toggle i.chev-mobile {
+        transition: transform 0.2s ease;
+        color: #94a3b8;
+      }
+      .mobile-domain-toggle.open i.chev-mobile {
+        transform: rotate(180deg);
+      }
+      .mobile-domain-list {
+        display: none;
+        background: #f8fafc;
+      }
+      .mobile-domain-list.show {
+        display: block;
+      }
+      .mobile-domain-list a {
+        display: block;
+        padding: 11px 20px 11px 40px;
+        font-size: 0.88rem;
+        color: #4b5563;
+        text-decoration: none;
+        border-bottom: 1px solid #eef2f7;
+      }
+      .mobile-domain-list a:hover {
+        background: #eef2f9;
+        color: #172281;
+      }
+      
+      .user-dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      .user-dropdown .dd-header {
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 6px;
+      }
+      .user-dropdown .dd-header .dd-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+      }
+      .user-dropdown .dd-header .dd-email {
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+      .user-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        font-size: 0.86rem;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .user-dropdown a:hover {
+        background: #f0f4ff;
+        color: var(--primary);
+      }
+      .user-dropdown a i {
+        width: 16px;
+        text-align: center;
+        color: #94a3b8;
+      }
+      .user-dropdown a.logout-item {
+        color: #dc2626;
+      }
+      .user-dropdown a.logout-item i {
+        color: #dc2626;
+      }
+      .user-dropdown a.logout-item:hover {
+        background: #fef2f2;
+      }
+      .nav-user-wrap,
+      .nav-guest-wrap {
+        position: relative;
+      }
+      .nav-guest-wrap {
+        display: none;
+      } /* shown only on mobile, see media query */
+      
+      /* ── Dropdown (generic bootstrap-esque) ──────────── */
+      .dropdown-menu {
+        border: none;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        padding: 6px 0;
+        min-width: 180px;
+      }
+      .dropdown-item {
+        font-size: 0.9rem;
+        padding: 9px 18px;
+        transition: background 0.15s ease, padding-left 0.15s ease;
+      }
+      .dropdown-item:hover {
+        background: #f0f4ff;
+        padding-left: 24px;
+        color: var(--primary);
+      }
+      
+      /* ── Alerts ──────────────────────────────────────── */
+      .alert {
+        font-size: 0.92rem;
+        border-radius: 10px;
+        border: none;
+      }
+      
+      /* ── Responsive collapse rules ────────────────────── */
+      @media (max-width: 991px) {
+        /* Icon-only nav is shown at all times on mobile — same look whether floating or not */
+        .nav-links,
+        .nav-auth {
+          display: flex;
         }
-
-        .nav-links { display: flex; align-items: center; gap: 2px; }
-
-        .main-nav .nav-link {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: rgba(255,255,255,0.9) !important;
-            padding: 8px 14px;
-            border-radius: 6px;
-            position: relative;
-            transition: color 0.2s ease, background 0.2s ease, padding 0.2s ease;
-            text-decoration: none;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
+      
+        .nav-inner {
+          gap: 2px;
+          padding-left: 12px;
+          padding-right: 12px;
         }
-        .main-nav .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 2px;
-            background: white;
-            border-radius: 1px;
-            transition: width 0.25s ease;
+      
+        /* Icon-only nav links */
+        .nav-link {
+          padding: 8px 9px;
         }
-        .main-nav .nav-link:hover,
-        .main-nav .nav-link.active {
-            color: white !important;
-            background: rgba(255,255,255,0.08);
+        .nav-link .link-text {
+          display: none;
         }
-        .main-nav .nav-link:hover::after,
-        .main-nav .nav-link.active::after { width: 60%; }
-
-        /* ── Auth area ────────────────────────────────────── */
-        .nav-auth { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px; }
-
-        .btn-nav-login {
-            font-size: 0.86rem;
-            font-weight: 600;
-            color: white !important;
-            padding: 7px 16px;
-            border-radius: 999px;
-            border: 1.5px solid rgba(255,255,255,0.35);
-            text-decoration: none;
-            transition: background 0.2s ease, border-color 0.2s ease;
-            white-space: nowrap;
+        .nav-link i {
+          margin: 0 !important;
+          font-size: 1.05rem;
         }
-        .btn-nav-login:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
-
+      
+        .nav-domain-toggle {
+          padding: 8px 9px;
+          background: rgba(245, 158, 11, 0.18);
+        }
+        .nav-domain-toggle .link-text,
+        .nav-domain-toggle i.chev-domain {
+          display: none;
+        }
+        .nav-domain-toggle i.fa-layer-group {
+          margin: 0 !important;
+          font-size: 1.05rem;
+        }
+      
+        /* Guest icon replaces text Login/Sign Up buttons */
+        .btn-nav-login,
         .btn-nav-signup {
-            font-size: 0.86rem;
-            font-weight: 600;
-            color: var(--primary-dark) !important;
-            background: var(--accent);
-            padding: 7px 18px;
-            border-radius: 999px;
-            text-decoration: none;
-            transition: filter 0.2s ease, transform 0.2s ease;
-            white-space: nowrap;
+          display: none;
         }
-        .btn-nav-signup:hover { filter: brightness(1.06); transform: translateY(-1px); }
-
-        /* ── User / Guest menu (shared look) ─────────────── */
+        .nav-guest-wrap {
+          display: flex;
+        }
+      
+        /* User icon: avatar only, name/chevron hidden, dropdown still works */
         .user-menu-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 999px;
-            padding: 4px 14px 4px 4px;
-            cursor: pointer;
-            transition: background 0.2s ease, padding 0.2s ease;
+          padding: 4px;
+          gap: 0;
         }
-        .user-menu-toggle:hover { background: rgba(255,255,255,0.16); }
-        .user-avatar {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: var(--accent);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.82rem; font-weight: 700; color: var(--primary-dark);
-            flex-shrink: 0;
+        .user-menu-toggle .user-name,
+        .user-menu-toggle i.chev {
+          display: none;
         }
-        .guest-avatar { background: rgba(255,255,255,0.18); color: white; font-size: 0.9rem; }
-        .user-menu-toggle .user-name {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: white;
-            max-width: 120px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .user-menu-toggle i.chev { font-size: 0.7rem; color: rgba(255,255,255,0.7); transition: transform 0.2s ease; }
-        .user-menu-toggle.open i.chev { transform: rotate(180deg); }
-
+      
         .user-dropdown {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-            min-width: 220px;
-            padding: 8px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-8px);
-            transition: all 0.2s ease;
-            z-index: 1100;
+          right: -8px;
+          min-width: 230px;
         }
-        /* ── Notification bell ─────────────────────────────── */
-.notif-bell-wrap { position: relative; }
-.notif-bell-btn {
-    display: flex; align-items: center; justify-content: center;
-    width: 38px; height: 38px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 50%;
-    color: white; font-size: 1rem;
-    cursor: pointer; position: relative;
-    transition: background 0.2s ease;
-}
-.notif-bell-btn:hover { background: rgba(255,255,255,0.16); }
-.notif-badge {
-    position: absolute; top: -3px; right: -3px;
-    background: #dc2626; color: white;
-    font-size: 0.62rem; font-weight: 700;
-    min-width: 17px; height: 17px; border-radius: 999px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 3px; border: 2px solid var(--primary-dark);
-}
-.notif-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0;
-    background: white; border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-    width: 340px; max-height: 420px; overflow-y: auto;
-    padding: 8px;
-    opacity: 0; visibility: hidden; transform: translateY(-8px);
-    transition: all 0.2s ease; z-index: 1100;
-}
-.notif-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-.notif-dropdown-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 10px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 4px;
-}
-.notif-dropdown-header span { font-size: 0.88rem; font-weight: 700; color: var(--primary-dark); }
-.notif-item {
-    display: flex; gap: 10px; padding: 10px; border-radius: 8px;
-    text-decoration: none; color: inherit;
-    transition: background 0.15s ease;
-}
-.notif-item:hover { background: #f0f4ff; }
-.notif-item.pinned { background: #fffbeb; }
-.notif-icon {
-    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
-}
-.notif-icon-announcement { background: #eaf1fb; color: #172281; }
-.notif-icon-assignment { background: #d1fae5; color: #059669; }
-.notif-title { font-size: 0.84rem; font-weight: 700; color: #0e1b2e; }
-.notif-body { font-size: 0.78rem; color: #64748b; margin: 2px 0; }
-.notif-time { font-size: 0.7rem; color: #94a3b8; }
-.notif-empty { text-align: center; padding: 30px 10px; color: #94a3b8; }
-.notif-empty i { font-size: 1.6rem; margin-bottom: 8px; display: block; }
-.notif-loading { text-align: center; padding: 30px; }
-
-        .user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        .user-dropdown .dd-header {
-            padding: 10px 12px 8px;
-            border-bottom: 1px solid #f1f5f9;
-            margin-bottom: 6px;
+      }
+      
+      /* ── Utility ─────────────────────────────────────── */
+      .card-hover {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+      }
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-12px);
         }
-        .user-dropdown .dd-header .dd-name { font-size: 0.88rem; font-weight: 600; color: var(--primary-dark); }
-        .user-dropdown .dd-header .dd-email { font-size: 0.75rem; color: #94a3b8; }
-        .user-dropdown a {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 12px;
-            font-size: 0.86rem;
-            color: #374151;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: background 0.15s ease, color 0.15s ease;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .user-dropdown a:hover { background: #f0f4ff; color: var(--primary); }
-        .user-dropdown a i { width: 16px; text-align: center; color: #94a3b8; }
-        .user-dropdown a.logout-item { color: #dc2626; }
-        .user-dropdown a.logout-item i { color: #dc2626; }
-        .user-dropdown a.logout-item:hover { background: #fef2f2; }
-        .nav-user-wrap, .nav-guest-wrap { position: relative; }
-        .nav-guest-wrap { display: none; } /* shown only on mobile, see media query */
-
-        /* ── Dropdown (generic bootstrap-esque) ──────────── */
-        .dropdown-menu { border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px; padding: 6px 0; min-width: 180px; }
-        .dropdown-item { font-size: 0.9rem; padding: 9px 18px; transition: background 0.15s ease, padding-left 0.15s ease; }
-        .dropdown-item:hover { background: #f0f4ff; padding-left: 24px; color: var(--primary); }
-
-        /* ── Alerts ──────────────────────────────────────── */
-        .alert { font-size: 0.92rem; border-radius: 10px; border: none; }
-
-        /* ── Responsive collapse rules ────────────────────── */
-        @media (max-width: 991px) {
-            /* Icon-only nav is shown at all times on mobile — same look whether floating or not */
-            .nav-links, .nav-auth { display: flex; }
-
-            .nav-inner { gap: 2px; padding-left: 12px; padding-right: 12px; }
-
-            /* Icon-only nav links */
-            .nav-link { padding: 8px 9px; }
-            .nav-link .link-text { display: none; }
-            .nav-link i { margin: 0 !important; font-size: 1.05rem; }
-
-            /* Guest icon replaces text Login/Sign Up buttons */
-            .btn-nav-login,
-            .btn-nav-signup { display: none; }
-            .nav-guest-wrap { display: flex; }
-
-            /* User icon: avatar only, name/chevron hidden, dropdown still works */
-            .user-menu-toggle { padding: 4px; gap: 0; }
-            .user-menu-toggle .user-name,
-            .user-menu-toggle i.chev { display: none; }
-
-            .user-dropdown { right: -8px; min-width: 230px; }
-        }
-
-        /* ── Utility ─────────────────────────────────────── */
-        .card-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeInDown 0.3s ease; }
-
-        /* ── Footer ──────────────────────────────────────── */
-        footer {
-            background: linear-gradient(180deg, #0a1a2f 0%, #051220 100%);
-            color: #9ca3af;
-            margin-top: auto;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .footer-brand-logo { height: 42px; width: auto; object-fit: contain; border-radius: 6px; }
-        .footer-brand-title { color: white; font-weight: 700; font-size: 1rem; margin: 0 0 2px; }
-        .footer-brand-sub { font-size: 0.78rem; color: rgba(255,255,255,0.45); }
-        .footer-about-text { font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.55); max-width: 320px; }
-
-        .footer-col-title {
-            color: white;
-            font-size: 0.92rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            position: relative;
-            padding-bottom: 8px;
-        }
-        .footer-col-title::after {
-            content: '';
-            position: absolute;
-            left: 0; bottom: 0;
-            width: 28px; height: 2px;
-            background: var(--accent);
-            border-radius: 1px;
-        }
-
-        footer ul.footer-links { list-style: none; padding: 0; margin: 0; }
-        footer ul.footer-links li { margin-bottom: 10px; }
-        footer ul.footer-links a {
-            color: rgba(255,255,255,0.55);
-            text-decoration: none;
-            font-size: 0.87rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-        footer ul.footer-links a i { font-size: 0.7rem; color: var(--accent); }
-        footer ul.footer-links a:hover { color: white; transform: translateX(3px); }
-
-        .footer-contact-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 0.85rem; color: rgba(255,255,255,0.55); }
-        .footer-contact-item i { color: var(--accent); margin-top: 3px; width: 16px; }
-
-        .footer-social { display: flex; gap: 10px; margin-top: 4px; }
-        .footer-social a {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.7);
-            font-size: 0.85rem;
-            text-decoration: none;
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-        }
-        .footer-social a:hover { background: var(--accent); color: var(--primary-dark); transform: translateY(-2px); }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding-top: 18px;
-            margin-top: 30px;
-            font-size: 0.83rem;
-            color: rgba(255,255,255,0.4);
-        }
-        .footer-bottom strong { color: rgba(255,255,255,0.7); }
-        .footer-bottom-links { display: flex; gap: 18px; flex-wrap: wrap; }
-        .footer-bottom-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 0.8rem; transition: color 0.2s ease; }
-        .footer-bottom-links a:hover { color: white; }
+      }
+      .animate-fade-in {
+        animation: fadeInDown 0.3s ease;
+      }
+      
+      /* ── Footer ──────────────────────────────────────── */
+      footer {
+        background: linear-gradient(180deg, #0a1a2f 0%, #051220 100%);
+        color: #9ca3af;
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .footer-brand-logo {
+        height: 42px;
+        width: auto;
+        object-fit: contain;
+        border-radius: 6px;
+      }
+      .footer-brand-title {
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        margin: 0 0 2px;
+      }
+      .footer-brand-sub {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.45);
+      }
+      .footer-about-text {
+        font-size: 0.85rem;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.55);
+        max-width: 320px;
+      }
+      
+      .footer-col-title {
+        color: white;
+        font-size: 0.92rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        position: relative;
+        padding-bottom: 8px;
+      }
+      .footer-col-title::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 28px;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 1px;
+      }
+      
+      footer ul.footer-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      footer ul.footer-links li {
+        margin-bottom: 10px;
+      }
+      footer ul.footer-links a {
+        color: rgba(255, 255, 255, 0.55);
+        text-decoration: none;
+        font-size: 0.87rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+      footer ul.footer-links a i {
+        font-size: 0.7rem;
+        color: var(--accent);
+      }
+      footer ul.footer-links a:hover {
+        color: white;
+        transform: translateX(3px);
+      }
+      
+      .footer-contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .footer-contact-item i {
+        color: var(--accent);
+        margin-top: 3px;
+        width: 16px;
+      }
+      
+      .footer-social {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .footer-social a {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+      .footer-social a:hover {
+        background: var(--accent);
+        color: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+      
+      .footer-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 18px;
+        margin-top: 30px;
+        font-size: 0.83rem;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .footer-bottom strong {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .footer-bottom-links {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .footer-bottom-links a {
+        color: rgba(255, 255, 255, 0.45);
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: color 0.2s ease;
+      }
+      .footer-bottom-links a:hover {
+        color: white;
+      }
     </style>
 
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
+    {% block extra_css %}
+    {% endblock %}
+  </head>
+  <body>
     <!-- ── Top Header ──────────────────────────────────── -->
     <div class="top-header" id="topHeader">
-        <div class="container">
-            <div class="d-flex flex-column flex-lg-row justify-content-center justify-content-lg-between align-items-center gap-2 gap-lg-4">
-                <div class="text-start">
-                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3">
-                        <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT Logo"
-                             class="logo-img"
-                             onerror="this.src='https://via.placeholder.com/70?text=NIELIT'">
-                        <div>
-                            <p class="main-title">National Institute of Electronics<br>&amp; Information Technology</p>
-                            <p class="sub-title">राष्ट्रीय इलेक्ट्रॉनिकी एवं सूचना प्रौद्योगिकी संस्थान</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <img src="{% static 'assets/digital_india.png' %}" alt="Digital India"
-                         style="height:50px;width:auto;object-fit:contain;"
-                         onerror="this.src='https://via.placeholder.com/120x50?text=Digital+India'">
-                </div>
-                <div class="">
-                    <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
-                        <div class="text-center text-md-end">
-                            <p class="mb-0 fw-bold" style="font-size:0.82rem;color:#1f2937;">
-                                Ministry of Electronics &amp;<br>Information Technology
-                            </p>
-                            <p class="mb-0" style="font-size:0.75rem;color:#6b7280;">Government of India</p>
-                        </div>
-                        <img src="{% static 'assets/nat_emblem.jpg' %}" alt="Government Emblem"
-                             style="height:48px;width:auto;object-fit:contain;"
-                             onerror="this.src='https://via.placeholder.com/50?text=Emblem'">
-                    </div>
-                </div>
+      <div class="container">
+        <div class="d-flex flex-column flex-lg-row justify-content-center justify-content-lg-between align-items-center gap-2 gap-lg-4">
+          <div class="text-start">
+            <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3">
+              <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT Logo" class="logo-img" onerror="this.src='https://via.placeholder.com/70?text=NIELIT'" />
+              <div>
+                <p class="main-title">
+                  National Institute of Electronics<br />&amp; Information Technology
+                </p>
+                <p class="sub-title">राष्ट्रीय इलेक्ट्रॉनिकी एवं सूचना प्रौद्योगिकी संस्थान</p>
+              </div>
             </div>
+          </div>
+          <div class="text-center">
+            <img src="{% static 'assets/digital_india.png' %}" alt="Digital India" style="height:50px;width:auto;object-fit:contain;" onerror="this.src='https://via.placeholder.com/120x50?text=Digital+India'" />
+          </div>
+          <div class="">
+            <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
+              <div class="text-center text-md-end">
+                <p class="mb-0 fw-bold" style="font-size:0.82rem;color:#1f2937;">
+                  Ministry of Electronics &amp;<br />Information Technology
+                </p>
+                <p class="mb-0" style="font-size:0.75rem;color:#6b7280;">Government of India</p>
+              </div>
+              <img src="{% static 'assets/nat_emblem.jpg' %}" alt="Government Emblem" style="height:48px;width:auto;object-fit:contain;" onerror="this.src='https://via.placeholder.com/50?text=Emblem'" />
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
     <!-- ── Main Navigation ─────────────────────────────── -->
     <div class="nav-wrapper" id="navWrapper">
-        <nav class="main-nav" id="mainNav">
-            <div class="container nav-inner">
+      <nav class="main-nav" id="mainNav">
+        <div class="container nav-inner">
+          <a class="navbar-brand" href="{% url 'public:home' %}">
+            <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT" class="brand-logo" onerror="this.src='https://via.placeholder.com/120x34?text=NIELIT'" />
+            <span class="brand-text">NIELIT Delhi</span>
+          </a>
 
-                <a class="navbar-brand" href="{% url 'public:home' %}">
-                    <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT"
-                         class="brand-logo"
-                         onerror="this.src='https://via.placeholder.com/120x34?text=NIELIT'">
-                    <span class="brand-text">NIELIT Delhi</span>
-                </a>
+          <div class="nav-links">
+            <a href="{% url 'public:home' %}" class="nav-link" title="Home"><i class="fas fa-home me-1"></i><span class="link-text">Home</span></a>
+            <a href="{% url 'public:announcements' %}" class="nav-link" title="Announcements"><i class="fas fa-bullhorn me-1"></i><span class="link-text">Announcements</span></a>
+            <a href="{% url 'public:courses' %}" class="nav-link" title="Courses"><i class="fas fa-book me-1"></i><span class="link-text">Courses</span></a>
 
-                <div class="nav-links">
-                    <a href="{% url 'public:home' %}" class="nav-link" title="Home">
-                        <i class="fas fa-home me-1"></i><span class="link-text">Home</span>
-                    </a>
-                    <a href="{% url 'public:announcements' %}" class="nav-link" title="Announcements">
-                        <i class="fas fa-bullhorn me-1"></i><span class="link-text">Announcements</span>
-                    </a>
-                    <a href="{% url 'public:courses' %}" class="nav-link" title="Courses">
-                        <i class="fas fa-book me-1"></i><span class="link-text">Courses</span>
-                    </a>
-                    <a href="{% url 'user_dashboard:status_check' %}" class="nav-link" title="Check Status">
-                        <i class="fas fa-magnifying-glass me-1"></i><span class="link-text">Check Status</span>
-                    </a>
+            <div class="nav-domain-dropdown">
+              <button type="button" class="nav-domain-toggle" id="domainDropdownToggle" title="Technology Domains">
+                <i class="fas fa-layer-group me-1"></i><span class="link-text">Technology Domains</span>
+                <i class="fas fa-chevron-down chev-domain"></i>
+              </button>
+              <div class="domain-mega-dropdown" id="domainMegaDropdown">
+                <div class="dmd-header">Browse by Domain</div>
+                {% for domain in nav_domains %}
+                  <a href="{% url 'public:domain_courses' domain.slug %}" class="dmd-item"><span class="dmd-dot"></span>{{ domain.name }}</a>
+                {% empty %}
+                  <div class="dmd-empty">No domains available yet.</div>
+                {% endfor %}
+                <div class="dmd-footer">
+                  <a href="{% url 'public:courses' %}">View All Courses &rarr;</a>
                 </div>
-
-                <div class="nav-auth">
-                {% if user.is_authenticated %}
-<div class="notif-bell-wrap">
-    <button type="button" class="notif-bell-btn" id="notifBellToggle" title="Notifications">
-        <i class="fas fa-bell"></i>
-        {% if unread_notification_count > 0 %}
-            <span class="notif-badge" id="notifBadge">{% if unread_notification_count > 9 %}9+{% else %}{{ unread_notification_count }}{% endif %}</span>
-        {% endif %}
-    </button>
-    <div class="notif-dropdown" id="notifDropdown">
-        <div class="notif-dropdown-header">
-            <span>Notifications</span>
-            <a href="{% url 'announcement:my_announcements' %}" class="small text-decoration-none">View all</a>
-        </div>
-        <div id="notifDropdownBody">
-            <div class="notif-loading"><div class="spinner-border spinner-border-sm text-primary"></div></div>
-        </div>
-    </div>
-</div>
-{% endif %}
-                    {% if user.is_authenticated %}
-                        <div class="nav-user-wrap">
-    <button type="button" class="user-menu-toggle" id="userMenuToggle" title="Account">
-        {% if user.learner_profile.profile_image %}
-            <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
-        {% else %}
-            <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
-        {% endif %}
-        <span class="user-name">{{ user.learner_profile.full_name|default:user.email }}</span>
-        <i class="fas fa-chevron-down chev"></i>
-    </button>
-    <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-            <div class="dd-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
-            <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-th-large"></i> My Dashboard</a>
-        <a href="{% url 'user:profile_edit' %}"><i class="fas fa-user-cog"></i> Profile Settings</a>
-        <a href="{% url 'course:my_courses' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
-        <a href="{% url 'assignment:my_assignments' %}"><i class="fas fa-clipboard-check"></i> Assignments</a>
-        <a href="{% url 'announcement:my_announcements' %}"><i class="fas fa-bullhorn"></i> Announcements</a>
-        <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-</div>
-                    {% else %}
-                        <a href="{% url 'user:login' %}" class="btn-nav-login">Login</a>
-                        <a href="{% url 'user:signup' %}" class="btn-nav-signup">Sign Up</a>
-
-                        <!-- Icon-only guest menu, shown only on mobile -->
-                        <div class="nav-guest-wrap">
-                            <button type="button" class="user-menu-toggle" id="guestMenuToggle" title="Account">
-                                <span class="user-avatar guest-avatar"><i class="fas fa-user"></i></span>
-                                <i class="fas fa-chevron-down chev"></i>
-                            </button>
-                            <div class="user-dropdown" id="guestDropdown">
-                                <a href="{% url 'user:login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
-                                <a href="{% url 'user:signup' %}"><i class="fas fa-user-plus"></i> Sign Up</a>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-
+              </div>
             </div>
-        </nav>
+        
+          </div>
+
+          <div class="nav-auth">
+            {% if user.is_authenticated %}
+              <div class="notif-bell-wrap">
+                <button type="button" class="notif-bell-btn" id="notifBellToggle" title="Notifications">
+                  <i class="fas fa-bell"></i>
+                  {% if unread_notification_count > 0 %}
+                    <span class="notif-badge" id="notifBadge">
+                      {% if unread_notification_count > 9 %}
+                        9+
+                      {% else %}
+                        {{ unread_notification_count }}
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                  <div class="notif-dropdown-header">
+                    <span>Notifications</span>
+                    <a href="{% url 'announcement:my_announcements' %}" class="small text-decoration-none">View all</a>
+                  </div>
+                  <div id="notifDropdownBody">
+                    <div class="notif-loading">
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+            {% if user.is_authenticated %}
+              <div class="nav-user-wrap">
+                <button type="button" class="user-menu-toggle" id="userMenuToggle" title="Account">
+                  {% if user.learner_profile.profile_image %}
+                    <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile" />
+                  {% else %}
+                    <span class="user-avatar">{{ user.email|slice:':1'|upper }}</span>
+                  {% endif %}
+                  <span class="user-name">{{ user.learner_profile.full_name|default:user.email }}</span>
+                  <i class="fas fa-chevron-down chev"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                  <div class="dd-header">
+                    <div class="dd-name">{{ user.learner_profile.full_name|default:'Student' }}</div>
+                    <div class="dd-email">{{ user.email }}</div>
+                  </div>
+                  <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-th-large"></i> My Dashboard</a>
+                  <a href="{% url 'user:profile_edit' %}"><i class="fas fa-user-cog"></i> Profile Settings</a>
+                  <a href="{% url 'course:my_courses' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
+                  <a href="{% url 'assignment:my_assignments' %}"><i class="fas fa-clipboard-check"></i> Assignments</a>
+                  <a href="{% url 'announcement:my_announcements' %}"><i class="fas fa-bullhorn"></i> Announcements</a>
+                  <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+              </div>
+              {% else %}
+              <a href="{% url 'user_dashboard:status_check' %}" class="nav-link" title="Check Status"><i class="fas fa-magnifying-glass me-1"></i><span class="link-text">Check Status</span></a>
+              <a href="{% url 'user:login' %}" class="btn-nav-login">Login</a>
+              <a href="{% url 'user:signup' %}" class="btn-nav-signup">Sign Up</a>
+
+              <!-- Icon-only guest menu, shown only on mobile -->
+              <div class="nav-guest-wrap">
+                <button type="button" class="user-menu-toggle" id="guestMenuToggle" title="Account">
+                  <span class="user-avatar guest-avatar"><i class="fas fa-user"></i></span>
+                  <i class="fas fa-chevron-down chev"></i>
+                </button>
+                <div class="user-dropdown" id="guestDropdown">
+                    <a href="{% url 'user:login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                    <a href="{% url 'user:signup' %}"><i class="fas fa-user-plus"></i> Sign Up</a>
+                    <a href="{% url 'user_dashboard:status_check' %}" class="" title="Check Status"><i class="fas fa-magnifying-glass me-1"></i><span class="link-text">Check Status</span></a>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </nav>
     </div>
 
     <!-- ── Page Content ────────────────────────────────── -->
     <main class="flex-grow-1">
-        {% if messages %}
+      {% if messages %}
         <div class="container mt-3">
-            {% for message in messages %}
+          {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm animate-fade-in" role="alert">
-                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+              <i class="fas fa-{% if message.tags == 'success' %}
+                  check-circle
+                {% elif message.tags == 'error' %}
+                  exclamation-circle
+                {% else %}
+                  info-circle
+                {% endif %} me-2">
 
-        {% block content %}{% endblock %}
+              </i>
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}
+      {% endblock %}
     </main>
 
     <!-- ── Footer ──────────────────────────────────────── -->
     <footer>
-        <div class="container py-5">
-            <div class="row gy-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT" class="footer-brand-logo"
-                             onerror="this.src='https://via.placeholder.com/120x42?text=NIELIT'">
-                        <div>
-                            <p class="footer-brand-title">NIELIT Delhi</p>
-                            <p class="footer-brand-sub mb-0">Ministry of Electronics &amp; IT, Govt. of India</p>
-                        </div>
-                    </div>
-                    <p class="footer-about-text">
-                        National Institute of Electronics &amp; Information Technology, Delhi Centre —
-                        empowering learners with quality IT &amp; electronics education, skill
-                        development programs, and government-recognized certifications.
-                    </p>
-                    <div class="footer-social">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    </div>
-                </div>
-
-                <div class="col-lg-2 col-md-6 col-6">
-                    <p class="footer-col-title">Quick Links</p>
-                    <ul class="footer-links">
-                        <li><a href="{% url 'public:home' %}"><i class="fas fa-chevron-right"></i>Home</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right"></i>Announcements</a></li>
-                        <li><a href="{% url 'public:courses' %}"><i class="fas fa-chevron-right"></i>Courses</a></li>
-                        <li><a href="{% url 'user:login' %}"><i class="fas fa-chevron-right"></i>Student Login</a></li>
-                        <li><a href="{% url 'user:signup' %}"><i class="fas fa-chevron-right"></i>Sign Up</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-3 col-md-6 col-6">
-                    <p class="footer-col-title">Resources</p>
-                    <ul class="footer-links">
-                        <li><a href="https://www.nielit.gov.in/delhi/index.php" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Official Website</a></li>
-                        <li><a href="https://onlineapply.nielit.in/" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Online Apply</a></li>
-                        <li><a href="{% url 'accounts:admin_login' %}" target="_blank"><i class="fas fa-chevron-right"></i>Admin Login</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <p class="footer-col-title">Get in Touch</p>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>NIELIT Delhi Centre, New Delhi, India</span>
-                    </div>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <span>info@nielitdelhi.gov.in</span>
-                    </div>
-                    <div class="footer-contact-item">
-                        <i class="fas fa-phone-alt"></i>
-                        <span>+91-11-XXXXXXXX</span>
-                    </div>
-                </div>
+      <div class="container py-5">
+        <div class="row gy-4">
+          <div class="col-lg-4 col-md-6">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT" class="footer-brand-logo" onerror="this.src='https://via.placeholder.com/120x42?text=NIELIT'" />
+              <div>
+                <p class="footer-brand-title">NIELIT Delhi</p>
+                <p class="footer-brand-sub mb-0">Ministry of Electronics &amp; IT, Govt. of India</p>
+              </div>
             </div>
-
-            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                <p class="mb-0"><i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved. Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong></p>
-                <div class="footer-bottom-links">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Use</a>
-                    <a href="#">Sitemap</a>
-                </div>
+            <p class="footer-about-text">National Institute of Electronics &amp; Information Technology, Delhi Centre — empowering learners with quality IT &amp; electronics education, skill development programs, and government-recognized certifications.</p>
+            <div class="footer-social">
+              <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+              <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+              <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+              <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
             </div>
+          </div>
+
+          <div class="col-lg-2 col-md-6 col-6">
+            <p class="footer-col-title">Quick Links</p>
+            <ul class="footer-links">
+              <li>
+                <a href="{% url 'public:home' %}"><i class="fas fa-chevron-right"></i>Home</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-chevron-right"></i>Announcements</a>
+              </li>
+              <li>
+                <a href="{% url 'public:courses' %}"><i class="fas fa-chevron-right"></i>Courses</a>
+              </li>
+              <li>
+                <a href="{% url 'user:login' %}"><i class="fas fa-chevron-right"></i>Student Login</a>
+              </li>
+              <li>
+                <a href="{% url 'user:signup' %}"><i class="fas fa-chevron-right"></i>Sign Up</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6 col-6">
+            <p class="footer-col-title">Resources</p>
+            <ul class="footer-links">
+              <li>
+                <a href="https://www.nielit.gov.in/delhi/index.php" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Official Website</a>
+              </li>
+              <li>
+                <a href="https://onlineapply.nielit.in/" target="_blank"><i class="fas fa-chevron-right"></i>NIELIT Online Apply</a>
+              </li>
+              <li>
+                <a href="{% url 'accounts:admin_login' %}" target="_blank"><i class="fas fa-chevron-right"></i>Admin Login</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <p class="footer-col-title">Get in Touch</p>
+            <div class="footer-contact-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>NIELIT Delhi Centre, New Delhi, India</span>
+            </div>
+            <div class="footer-contact-item">
+              <i class="fas fa-envelope"></i>
+              <span>info@nielitdelhi.gov.in</span>
+            </div>
+            <div class="footer-contact-item">
+              <i class="fas fa-phone-alt"></i>
+              <span>+91-11-XXXXXXXX</span>
+            </div>
+          </div>
         </div>
+
+        <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+          <p class="mb-0">
+            <i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved. Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong>
+          </p>
+          <div class="footer-bottom-links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="#">Sitemap</a>
+          </div>
+        </div>
+      </div>
     </footer>
 
     <!-- ── Scripts ─────────────────────────────────────── -->
@@ -681,95 +1187,127 @@
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-    (function () {
+      ;(function () {
         // ── Top header shrink + Main nav floating (evolves in place) ──
-        const topHeader   = document.getElementById('topHeader');
-        const mainNav     = document.getElementById('mainNav');
-        const navWrapper  = document.getElementById('navWrapper');
-        const THRESHOLD   = 80;
-
+        const topHeader = document.getElementById('topHeader')
+        const mainNav = document.getElementById('mainNav')
+        const navWrapper = document.getElementById('navWrapper')
+        const THRESHOLD = 80
+      
         function handleScroll() {
-            const scrolled = window.scrollY > THRESHOLD;
-            topHeader.classList.toggle('scrolled', window.scrollY > 50);
-            navWrapper.classList.toggle('floating-wrap', scrolled);
-            mainNav.classList.toggle('floating', scrolled);
+          const scrolled = window.scrollY > THRESHOLD
+          topHeader.classList.toggle('scrolled', window.scrollY > 50)
+          navWrapper.classList.toggle('floating-wrap', scrolled)
+          mainNav.classList.toggle('floating', scrolled)
         }
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        handleScroll()
+      
         // ── Generic dropdown wiring (used for user + guest menus) ──
         function wireDropdown(toggleId, dropdownId) {
-            const toggle = document.getElementById(toggleId);
-            const dropdown = document.getElementById(dropdownId);
-            if (!toggle || !dropdown) return;
-            toggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                toggle.classList.toggle('open');
-                dropdown.classList.toggle('show');
-            });
-            document.addEventListener('click', function (e) {
-                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
-                    toggle.classList.remove('open');
-                    dropdown.classList.remove('show');
-                }
-            });
-        }
-        wireDropdown('userMenuToggle', 'userDropdown');
-        wireDropdown('guestMenuToggle', 'guestDropdown');
-
-        // ── Notification bell dropdown ──
-        (function () {
-            const bellToggle = document.getElementById('notifBellToggle');
-            const dropdown = document.getElementById('notifDropdown');
-            const dropdownBody = document.getElementById('notifDropdownBody');
-            const badge = document.getElementById('notifBadge');
-            if (!bellToggle || !dropdown) return;
-
-            let loaded = false;
-
-            bellToggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                dropdown.classList.toggle('show');
-
-                if (dropdown.classList.contains('show') && !loaded) {
-                    fetch("{% url 'user_dashboard:notifications_dropdown' %}")
-                        .then(res => res.json())
-                        .then(data => {
-                            dropdownBody.innerHTML = data.html;
-                            loaded = true;
-                            if (badge) badge.remove();
-                        })
-                        .catch(() => {
-                            dropdownBody.innerHTML = '<div class="notif-empty"><p>Failed to load notifications.</p></div>';
-                        });
-                }
-            });
-
-            document.addEventListener('click', function (e) {
-                if (!dropdown.contains(e.target) && !bellToggle.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                }
-            });
-        })();
-
-        // ── Active nav link ──
-        const path = window.location.pathname;
-        document.querySelectorAll('.main-nav .nav-link').forEach(function (link) {
-            const href = link.getAttribute('href');
-            if (href && href !== '/' && href !== '#' && path.startsWith(href)) {
-                link.classList.add('active');
-            } else if (href === '/' && path === '/') {
-                link.classList.add('active');
+          const toggle = document.getElementById(toggleId)
+          const dropdown = document.getElementById(dropdownId)
+          if (!toggle || !dropdown) return
+          toggle.addEventListener('click', function (e) {
+            e.stopPropagation()
+            toggle.classList.toggle('open')
+            dropdown.classList.toggle('show')
+          })
+          document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+              toggle.classList.remove('open')
+              dropdown.classList.remove('show')
             }
-        });
-
+          })
+        }
+        wireDropdown('userMenuToggle', 'userDropdown')
+        wireDropdown('guestMenuToggle', 'guestDropdown')
+      
+        // ── Technology Domains dropdown (desktop) ──
+        ;(function () {
+          const toggle = document.getElementById('domainDropdownToggle')
+          const dropdown = document.getElementById('domainMegaDropdown')
+          if (!toggle || !dropdown) return
+      
+          toggle.addEventListener('click', function (e) {
+            e.stopPropagation()
+            toggle.classList.toggle('open')
+            dropdown.classList.toggle('show')
+          })
+          document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+              toggle.classList.remove('open')
+              dropdown.classList.remove('show')
+            }
+          })
+        })()
+      
+        // ── Technology Domains expandable section (mobile drawer) ──
+        ;(function () {
+          const toggle = document.getElementById('mobileDomainToggle')
+          const list = document.getElementById('mobileDomainList')
+          if (!toggle || !list) return
+      
+          toggle.addEventListener('click', function () {
+            toggle.classList.toggle('open')
+            list.classList.toggle('show')
+          })
+        })()
+      
+        // ── Notification bell dropdown ──
+        ;(function () {
+          const bellToggle = document.getElementById('notifBellToggle')
+          const dropdown = document.getElementById('notifDropdown')
+          const dropdownBody = document.getElementById('notifDropdownBody')
+          const badge = document.getElementById('notifBadge')
+          if (!bellToggle || !dropdown) return
+      
+          let loaded = false
+      
+          bellToggle.addEventListener('click', function (e) {
+            e.stopPropagation()
+            dropdown.classList.toggle('show')
+      
+            if (dropdown.classList.contains('show') && !loaded) {
+              fetch("{% url 'user_dashboard:notifications_dropdown' %}")
+                .then((res) => res.json())
+                .then((data) => {
+                  dropdownBody.innerHTML = data.html
+                  loaded = true
+                  if (badge) badge.remove()
+                })
+                .catch(() => {
+                  dropdownBody.innerHTML = '<div class="notif-empty"><p>Failed to load notifications.</p></div>'
+                })
+            }
+          })
+      
+          document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !bellToggle.contains(e.target)) {
+              dropdown.classList.remove('show')
+            }
+          })
+        })()
+      
+        // ── Active nav link ──
+        const path = window.location.pathname
+        document.querySelectorAll('.main-nav .nav-link').forEach(function (link) {
+          const href = link.getAttribute('href')
+          if (href && href !== '/' && href !== '#' && path.startsWith(href)) {
+            link.classList.add('active')
+          } else if (href === '/' && path === '/') {
+            link.classList.add('active')
+          }
+        })
+      
         // ── Bootstrap tooltips ──
         document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-            new bootstrap.Tooltip(el);
-        });
-    })();
+          new bootstrap.Tooltip(el)
+        })
+      })()
     </script>
 
-    {% block extra_js %}{% endblock %}
-</body>
+    {% block extra_js %}
+    {% endblock %}
+  </body>
 </html>

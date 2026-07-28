@@ -52,6 +52,21 @@ class Domain(models.Model):
             self.slug = slugify(self.name)[:120]
         super().save(*args, **kwargs)
 
+    def sync_active_status(self):
+        """
+        A domain should only appear as a usable filter option once at least
+        one *active/published* course actually uses it — this keeps the
+        public course filter free of empty, unusable tags. Called
+        automatically whenever a course's domain tags or status change
+        (see course/signals.py). Admins can still flip a domain manually via
+        the toggle button on the Manage Domains page — the next course
+        change recomputes it again, so a manual override isn't permanent.
+        """
+        should_be_active = self.courses.filter(status=self.courses.model.Status.ACTIVE).exists()
+        if self.is_active != should_be_active:
+            self.is_active = should_be_active
+            self.save(update_fields=['is_active'])
+
 
 class Course(models.Model):
     class Status(models.TextChoices):

@@ -12,48 +12,65 @@ from django.views.decorators.http import require_POST
 from accounts.models import User
 from admin_dashboard.notifications import notify_users
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 
 # ── Admin: domain management ──────────────────────────────
 
 @admin_required
 def domain_list_view(request):
-    domains = Domain.objects.all().prefetch_related('courses')
+    domains = Domain.objects.annotate(course_count=Count('courses', distinct=True)).order_by('name')
+    active_count = domains.filter(is_active=True).count()
+    inactive_count = domains.filter(is_active=False).count()
+
     return render(request, 'course/domain_list.html', {
         'domains': domains,
+        'active_count': active_count,
+        'inactive_count': inactive_count,
         'active_page': 'domains',
     })
 
 
 @admin_required
-def domain_create_view(request):
-    form = DomainForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, "Domain created.")
-        return redirect('course:domain_list')
-    return render(request, 'course/domain_form.html', {'form': form, 'active_page': 'domains'})
+def domain_modal_view(request, domain_id=None):
+    """GET returns the modal's inner HTML (create or edit); POST saves it."""
+    domain = get_object_or_404(Domain, id=domain_id) if domain_id else None
+
+    if request.method == 'POST':
+        form = DomainForm(request.POST, instance=domain)
+        if form.is_valid():
+            saved = form.save()
+            saved.sync_active_status()   # re-derive immediately in case course associations already exist
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    form = DomainForm(instance=domain)
+    html = render_to_string('course/includes/domain_form_modal.html', {
+        'form': form, 'domain': domain,
+    }, request=request)
+    return JsonResponse({'html': html})
 
 
 @admin_required
-def domain_edit_view(request, domain_id):
+@require_POST
+def domain_toggle_active_view(request, domain_id):
     domain = get_object_or_404(Domain, id=domain_id)
-    form = DomainForm(request.POST or None, instance=domain)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, "Domain updated.")
-        return redirect('course:domain_list')
-    return render(request, 'course/domain_form.html', {'form': form, 'domain': domain, 'active_page': 'domains'})
+    domain.is_active = not domain.is_active
+    domain.save(update_fields=['is_active'])
+    return JsonResponse({'success': True, 'is_active': domain.is_active})
 
 
 @admin_required
+@require_POST
 def domain_delete_view(request, domain_id):
     domain = get_object_or_404(Domain, id=domain_id)
-    if request.method == 'POST':
-        name = domain.name
-        domain.delete()
-        messages.success(request, f"Domain '{name}' deleted.")
-    return redirect('course:domain_list')
+    if domain.courses.exists():
+        return JsonResponse({
+            'success': False,
+            'message': f"Cannot delete — {domain.courses.count()} course(s) still use this domain.",
+        }, status=400)
+    domain.delete()
+    return JsonResponse({'success': True})
 
 
 # ── Admin: course management list ──────────────────────────

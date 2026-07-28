@@ -1,0 +1,146 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}{{ domain.name }} Courses - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --primary2: #172281; --accent: #f59e0b; --text-muted: #64748b; --border: #e2e8f0; }
+
+    .domain-header {
+        background: linear-gradient(135deg, #0a1f4f, #172281);
+        padding: 44px 0 36px; color: white;
+    }
+    .domain-header .breadcrumb-link { color: rgba(255,255,255,0.6); font-size: 0.82rem; text-decoration: none; }
+    .domain-header .breadcrumb-link:hover { color: white; }
+    .domain-header h1 { font-size: 1.8rem; font-weight: 700; margin: 10px 0 8px; }
+    .domain-header p { color: rgba(255,255,255,0.75); font-size: 0.92rem; margin: 0 0 20px; }
+
+    .domain-search-form { display: flex; gap: 10px; max-width: 560px; }
+    .domain-search-form input { flex: 1; border: none; border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; }
+    .domain-search-form button { background: var(--accent); border: none; color: #0a1f4f; font-weight: 700; padding: 12px 22px; border-radius: 10px; font-size: 0.9rem; }
+
+    .domain-body { padding: 32px 0 60px; }
+    .domain-layout { display: flex; gap: 28px; align-items: flex-start; }
+
+    .filter-sidebar {
+        width: 240px; flex-shrink: 0; background: white; border: 1px solid var(--border);
+        border-radius: 14px; padding: 20px; position: sticky; top: 100px;
+    }
+    .filter-sidebar h6 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 14px; }
+    .filter-domain-link {
+        display: flex; align-items: center; padding: 8px 10px; border-radius: 8px;
+        font-size: 0.86rem; color: #374151; text-decoration: none; margin-bottom: 2px;
+    }
+    .filter-domain-link:hover { background: #f0f4ff; color: var(--primary2); }
+    .filter-domain-link.active { background: #eaf1fb; color: var(--primary2); font-weight: 700; }
+
+    .domain-results { flex: 1; }
+    .domain-results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .domain-results-header p { font-size: 0.86rem; color: var(--text-muted); margin: 0; }
+    .active-filter-chip { display: inline-flex; align-items: center; gap: 8px; background: #eaf1fb; color: var(--primary2); padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+    .active-filter-chip a { color: var(--primary2); text-decoration: none; font-weight: 700; }
+
+    .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; color: #cbd5e1; margin-bottom: 12px; display: block; }
+
+    .domain-pagination { display: flex; justify-content: center; gap: 6px; margin-top: 40px; }
+    .domain-pagination a, .domain-pagination span {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 38px; height: 38px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+        text-decoration: none; border: 1px solid var(--border); color: var(--primary2);
+    }
+    .domain-pagination a:hover { background: #f0f4ff; }
+    .domain-pagination .active { background: var(--primary2); color: white; border-color: var(--primary2); }
+    .domain-pagination .disabled { color: #cbd5e1; pointer-events: none; }
+
+    @media (max-width: 991px) {
+        .domain-layout { flex-direction: column; }
+        .filter-sidebar { width: 100%; position: static; }
+        .course-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 576px) { .course-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="domain-header">
+    <div class="container">
+        <a href="{% url 'public:courses' %}" class="breadcrumb-link"><i class="fas fa-arrow-left me-1"></i> All Courses</a>
+        <h1><i class="fas fa-layer-group me-2"></i>{{ domain.name }}</h1>
+        <p>{% if domain.description %}{{ domain.description }}{% else %}Explore courses under the {{ domain.name }} domain.{% endif %}</p>
+
+        <form method="get" class="domain-search-form">
+            {% if selected_domain_slug != domain.slug %}<input type="hidden" name="domain" value="{{ selected_domain_slug }}">{% endif %}
+            <input type="text" name="q" value="{{ query }}" placeholder="Search within {{ domain.name }} courses">
+            <button type="submit"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+</section>
+
+<section class="domain-body">
+    <div class="container">
+        <div class="domain-layout">
+            <aside class="filter-sidebar">
+                <h6>Other Domains</h6>
+                {% for d in all_domains %}
+                    <a href="{% url 'public:domain_courses' d.slug %}" class="filter-domain-link {% if d.slug == domain.slug %}active{% endif %}">
+                        {{ d.name }}
+                    </a>
+                {% endfor %}
+            </aside>
+
+            <div class="domain-results">
+                <div class="domain-results-header">
+                    <p>{{ courses.paginator.count }} course{{ courses.paginator.count|pluralize }} found</p>
+                    {% if query %}
+                        <span class="active-filter-chip">
+                            "{{ query }}"
+                            <a href="{% url 'public:domain_courses' domain.slug %}" title="Clear search">&times;</a>
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if courses %}
+                    <div class="course-grid">
+                        {% for course in courses %}
+                            {% include 'course/course_card.html' with course=course %}
+                        {% endfor %}
+                    </div>
+
+                    {% if courses.paginator.num_pages > 1 %}
+                    <div class="domain-pagination">
+                        {% if courses.has_previous %}
+                            <a href="?page={{ courses.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="fas fa-chevron-left"></i></a>
+                        {% else %}
+                            <span class="disabled"><i class="fas fa-chevron-left"></i></span>
+                        {% endif %}
+
+                        {% for num in courses.paginator.page_range %}
+                            {% if num == courses.number %}
+                                <span class="active">{{ num }}</span>
+                            {% else %}
+                                <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if courses.has_next %}
+                            <a href="?page={{ courses.next_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="fas fa-chevron-right"></i></a>
+                        {% else %}
+                            <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No courses found{% if query %} for "{{ query }}"{% endif %} in {{ domain.name }}.</p>
+                        <a href="{% url 'public:courses' %}" class="btn btn-sm btn-outline-primary mt-2">Browse All Courses</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

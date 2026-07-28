@@ -1,0 +1,33 @@
+<div class="modal-header">
+    <h5 class="modal-title">{% if domain %}Edit Domain{% else %}Add Domain{% endif %}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form id="domainForm" method="post"
+      action="{% if domain %}{% url 'course:domain_edit' domain.id %}{% else %}{% url 'course:domain_add' %}{% endif %}">
+    {% csrf_token %}
+    <div class="modal-body">
+        <div id="domainFormErrors" class="alert alert-danger py-2 small d-none"></div>
+
+        <div class="mb-3">
+            <label class="form-label small">Domain Name</label>
+            {{ form.name }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small">Description <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.description }}
+        </div>
+        <div class="form-check form-switch">
+            {{ form.is_active }}
+            <label class="form-check-label small">Active (shown in course filter)</label>
+        </div>
+
+        <div class="form-text mt-2">
+            <i class="bi bi-info-circle"></i> Domains automatically activate once a published course
+            uses them, and deactivate again once none do. This switch lets you override that manually.
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+    </div>
+</form>
