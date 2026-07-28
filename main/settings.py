@@ -162,6 +162,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "user_dashboard.context_processors.notifications_context",
+                "admin_dashboard.context_processors.admin_notifications_context",
             ],
         },
     },

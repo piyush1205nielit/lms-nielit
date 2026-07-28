@@ -5,170 +5,215 @@
 
 {% block extra_css %}
 <style>
-    :root {
-        --ea-ink: #14192b;
-        --ea-indigo: #4f46e5;
-        --ea-indigo-dark: #3730a3;
-        --ea-indigo-light: #eef0ff;
-        --ea-border: #e4e7f0;
-        --ea-muted: #6b7280;
-        --ea-bg: #f4f5fa;
-    }
+:root {
+    --ea-ink: #14192b;
+    --ea-indigo: #4f46e5;
+    --ea-indigo-dark: #3730a3;
+    --ea-indigo-light: #eef0ff;
+    --ea-border: #cbd5e1;
+    --ea-border-soft: #e4e7f0;
+    --ea-muted: #6b7280;
+    --ea-bg: #f4f5fa;
+}
 
-    body { background: var(--ea-bg); }
+body { background: var(--ea-bg); }
+.main-content { max-width: none; }
 
-    /* ===== Page header ===== */
-    .ea-topbar {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 28px;
-    }
-    .ea-back-btn {
-        width: 42px; height: 42px;
-        display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 12px;
-        background: #fff;
-        border: 1px solid var(--ea-border);
-        color: var(--ea-ink);
-        transition: all .2s ease;
-        flex-shrink: 0;
-    }
-    .ea-back-btn:hover { background: var(--ea-indigo); color: #fff; border-color: var(--ea-indigo); }
-    .ea-title-block h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: var(--ea-ink);
-        margin: 0;
-        letter-spacing: -0.01em;
-    }
-    .ea-title-block p {
-        margin: 2px 0 0;
-        color: var(--ea-muted);
-        font-size: .87rem;
-    }
+/* ===== Page header (aligned with shared admin pattern) ===== */
+.ea-topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--ea-border-soft);
+}
+.ea-back-btn {
+    width: 42px; height: 42px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: #fff;
+    border: 1.5px solid var(--ea-border);
+    color: var(--ea-ink);
+    transition: all .2s ease;
+    flex-shrink: 0;
+}
+.ea-back-btn:hover { background: var(--ea-indigo); color: #fff; border-color: var(--ea-indigo); }
+.ea-title-block { flex: 1; }
+.ea-title-block h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ea-ink);
+    margin: 0;
+    letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 10px;
+}
+.ea-title-block p {
+    margin: 3px 0 0;
+    color: var(--ea-muted);
+    font-size: .86rem;
+}
+.ea-status-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.74rem; font-weight: 700;
+    padding: 5px 12px; border-radius: 999px;
+    flex-shrink: 0;
+}
+.ea-status-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+.ea-status-live { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.ea-status-live .dot { background: #16a34a; }
+.ea-status-draft { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.ea-status-draft .dot { background: #94a3b8; }
 
-    /* ===== Form sections ===== */
-    .section-card {
-        background: #fff;
-        border-radius: 16px;
-        margin-bottom: 18px;
-        border: 1px solid var(--ea-border);
-        box-shadow: 0 1px 2px rgba(20, 25, 43, .03);
-        overflow: hidden;
-        transition: box-shadow .2s ease;
-    }
-    .section-card:hover { box-shadow: 0 4px 16px rgba(20, 25, 43, .06); }
+/* ===== Form sections ===== */
+.section-card {
+    background: #fff;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    border: 1.5px solid var(--ea-border);
+    box-shadow: 0 1px 2px rgba(20, 25, 43, .03);
+    overflow: hidden;
+    transition: box-shadow .2s ease;
+}
+.section-card:hover { box-shadow: 0 4px 16px rgba(20, 25, 43, .06); }
 
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 16px 22px;
-        border-bottom: 1px solid var(--ea-border);
-        font-weight: 700;
-        font-size: .95rem;
-        color: var(--ea-ink);
-        background: linear-gradient(180deg, #fbfbfe 0%, #ffffff 100%);
-    }
-    .section-header .ea-icon {
-        width: 30px; height: 30px;
-        border-radius: 9px;
-        background: var(--ea-indigo-light);
-        color: var(--ea-indigo);
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: .85rem;
-        flex-shrink: 0;
-    }
-    .section-body { padding: 22px; }
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 22px;
+    border-bottom: 2px solid var(--ea-border);
+    font-weight: 700;
+    font-size: .93rem;
+    color: var(--ea-ink);
+    background: #f8f8fc;
+}
+.section-header .ea-icon {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: var(--ea-indigo-light);
+    color: var(--ea-indigo);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    flex-shrink: 0;
+}
+.section-body { padding: 22px; }
+.section-body > .row,
+.section-body > div {
+    padding-bottom: 0;
+}
 
-    .form-hint { font-size: 12.5px; color: var(--ea-muted); margin-top: 6px; }
-    .form-label.fw-bold { font-size: .85rem; color: #374151; margin-bottom: 6px; }
+/* subtle divider between stacked fields within a section */
+.section-body .mb-3:not(:last-child) {
+    padding-bottom: 16px;
+    margin-bottom: 16px !important;
+    border-bottom: 1px solid var(--ea-border-soft);
+}
+.section-body .row .mb-3 { border-bottom: none; padding-bottom: 0; }
 
-    /* Make Django-rendered inputs feel native to this design */
-    #eventForm input[type="text"],
-    #eventForm input[type="url"],
-    #eventForm input[type="number"],
-    #eventForm input[type="date"],
-    #eventForm input[type="datetime-local"],
-    #eventForm textarea,
-    #eventForm select {
-        width: 100%;
-        border: 1px solid var(--ea-border);
-        border-radius: 10px;
-        padding: 9px 12px;
-        font-size: .9rem;
-        color: var(--ea-ink);
-        background: #fcfcfe;
-        transition: border-color .15s ease, box-shadow .15s ease;
-    }
-    #eventForm input:focus,
-    #eventForm textarea:focus,
-    #eventForm select:focus {
-        outline: none;
-        border-color: var(--ea-indigo);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
-        background: #fff;
-    }
-    #eventForm textarea { min-height: 90px; resize: vertical; }
+.form-hint { font-size: 12.5px; color: var(--ea-muted); margin-top: 6px; }
+.form-label.fw-bold {
+    font-size: .84rem; color: #374151; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px;
+}
+.form-label.fw-bold .text-danger { font-weight: 700; }
 
-    .color-input {
-        width: 100%;
-        height: 42px;
-        padding: 3px;
-        border: 1px solid var(--ea-border);
-        border-radius: 10px;
-        cursor: pointer;
-    }
+/* toggle rows for is_active / show_qr checkboxes */
+.form-check {
+    display: flex; align-items: center; gap: 10px;
+    background: #f8fafc; border: 1.5px solid var(--ea-border-soft); border-radius: 10px;
+    padding: 10px 14px; margin: 0;
+}
+.form-check .form-check-input { width: 2.6em; height: 1.4em; margin: 0; cursor: pointer; }
+.form-check .form-check-label { margin: 0; font-size: 0.85rem; }
 
-    .logo-preview {
-        max-width: 100px;
-        max-height: 100px;
-        margin-top: 10px;
-        border: 1px solid var(--ea-border);
-        padding: 5px;
-        border-radius: 10px;
-        object-fit: contain;
-        display: block;
-        background: #fff;
-    }
+/* Make Django-rendered inputs feel native to this design */
+#eventForm input[type="text"],
+#eventForm input[type="url"],
+#eventForm input[type="number"],
+#eventForm input[type="date"],
+#eventForm input[type="datetime-local"],
+#eventForm textarea,
+#eventForm select {
+    width: 100%;
+    border: 1.5px solid var(--ea-border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: .9rem;
+    color: var(--ea-ink);
+    background: #fcfcfe;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+#eventForm input:focus,
+#eventForm textarea:focus,
+#eventForm select:focus {
+    outline: none;
+    border-color: var(--ea-indigo);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+    background: #fff;
+}
+#eventForm textarea { min-height: 90px; resize: vertical; }
 
-    .ea-chip-list .badge-chip {
-        display: inline-flex;
-        align-items: center;
-        background: var(--ea-indigo-light);
-        color: var(--ea-indigo-dark);
-        font-size: .72rem;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 50px;
-        text-transform: uppercase;
-        letter-spacing: .3px;
-    }
+.color-input {
+    width: 100%;
+    height: 42px;
+    padding: 3px;
+    border: 1.5px solid var(--ea-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
 
-    .ea-submit-bar {
-        position: sticky;
-        bottom: 0;
-        background: linear-gradient(180deg, rgba(244,245,250,0) 0%, var(--ea-bg) 30%);
-        padding: 18px 0 6px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
-    .ea-btn-primary {
-        background: var(--ea-indigo);
-        border-color: var(--ea-indigo);
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 10px 22px;
-        box-shadow: 0 6px 16px rgba(79, 70, 229, .28);
-    }
-    .ea-btn-primary:hover { background: var(--ea-indigo-dark); border-color: var(--ea-indigo-dark); }
-    .ea-btn-secondary {
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-    }
+.logo-preview {
+    max-width: 100px;
+    max-height: 100px;
+    margin-top: 10px;
+    border: 1.5px solid var(--ea-border);
+    padding: 5px;
+    border-radius: 10px;
+    object-fit: contain;
+    display: block;
+    background: #fff;
+}
+
+.ea-chip-list .badge-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--ea-indigo-light);
+    color: var(--ea-indigo-dark);
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 50px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+.ea-submit-bar {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(244,245,250,0) 0%, var(--ea-bg) 30%);
+    padding: 18px 0 6px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 2px solid var(--ea-border-soft);
+    margin-top: 4px;
+}
+.ea-btn-primary {
+    background: var(--ea-indigo);
+    border-color: var(--ea-indigo);
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 22px;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, .28);
+}
+.ea-btn-primary:hover { background: var(--ea-indigo-dark); border-color: var(--ea-indigo-dark); }
+.ea-btn-secondary {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    border: 1.5px solid var(--ea-border);
+}
 
     /* ===== Live preview panel ===== */
     .preview-container {
@@ -317,15 +362,23 @@
 {% block content %}
 <div class="container-fluid">
 
-    <div class="ea-topbar">
-        <a href="{% url 'event:event_list' %}" class="ea-back-btn">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <div class="ea-title-block">
-            <h1>{{ title }}</h1>
-            <p>Build the promotional card shown on the home page — changes appear live on the right.</p>
-        </div>
+ <div class="ea-topbar">
+    <a href="{% url 'event:event_list' %}" class="ea-back-btn">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="ea-title-block">
+        <h1>
+            <i class="fas fa-calendar-star" style="color: var(--ea-indigo); font-size: 1.1rem;"></i>
+            {{ title }}
+        </h1>
+        <p>Build the promotional card shown on the home page — changes appear live on the right.</p>
     </div>
+    {% if form.instance.is_active %}
+        <span class="ea-status-chip ea-status-live"><span class="dot"></span> Live on Homepage</span>
+    {% else %}
+        <span class="ea-status-chip ea-status-draft"><span class="dot"></span> Draft / Hidden</span>
+    {% endif %}
+</div>
 
     <div class="row">
         <!-- ==================== FORM COLUMN ==================== -->
@@ -362,10 +415,10 @@
                             <label class="form-label fw-bold">Body Text</label>
                             {{ form.body }}
                         </div>
-                        <div class="form-check">
-                            {{ form.is_active }}
-                            <label class="form-check-label fw-bold">Active (show on site)</label>
-                        </div>
+                    <div class="form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">Active (show on site)</label>
+                    </div>
                     </div>
                 </div>
 
@@ -408,10 +461,10 @@
                             {{ form.url }}
                             <div class="form-hint">Shown as the CTA button link</div>
                         </div>
-                        <div class="form-check mb-2">
-                            {{ form.show_qr }}
-                            <label class="form-check-label fw-bold">Show QR Code</label>
-                        </div>
+                     <div class="form-check mb-2">
+                          {{ form.show_qr }}
+                          <label class="form-check-label fw-bold" for="{{ form.show_qr.id_for_label }}">Show QR Code</label>
+                      </div>
                         <div class="form-hint">
                             QR code is generated automatically from the URL the first time this event is saved.
                         </div>

@@ -1,0 +1,286 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Manage Centres{% endblock %}
+{% block page_title %}Manage Centres{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-building"></i> Manage Centres</h2>
+        <p>{{ centres.count }} centre{{ centres.count|pluralize }}</p>
+    </div>
+    <div class="page-header-actions">
+        <button type="button" class="btn-admin-primary" id="addCentreBtn">
+            <i class="bi bi-plus-lg me-1"></i> Add Centre
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-3">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-building"></i></div>
+        <div><div class="stat-mini-value">{{ centres.count }}</div><div class="stat-mini-label">Total Centres</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ active_count|default:0 }}</div><div class="stat-mini-label">Active</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ total_students|default:0 }}</div><div class="stat-mini-label">Total Students</div></div>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active centre</span>
+    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive centre</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> All Centres</h5>
+        <span class="table-count-tag">{{ centres.count }} record{{ centres.count|pluralize }}</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-admin centre-manage-table mb-0">
+            <thead>
+                <tr>
+                    <th class="col-status"></th>
+                    <th style="min-width: 240px;">Centre</th>
+                    <th>Contact</th>
+                    <th class="text-center">Students</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end" style="min-width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for centre in centres %}
+                <tr class="centre-row {% if centre.is_active %}row-active{% else %}row-inactive{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail {% if centre.is_active %}rail-active{% else %}rail-inactive{% endif %}"></span>
+                    </td>
+                    <td>
+                        <div class="centre-cell">
+                            <span class="centre-avatar">{{ centre.centre_name|slice:":1"|upper }}</span>
+                            <div class="centre-cell-text">
+                                <div class="centre-name">{{ centre.centre_name }}</div>
+                                <div class="centre-address">{{ centre.centre_address|truncatechars:60 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="centre-contact-cell">
+                        {% if centre.centre_email %}<div><i class="bi bi-envelope"></i> {{ centre.centre_email }}</div>{% endif %}
+                        {% if centre.centre_contact %}<div><i class="bi bi-telephone"></i> {{ centre.centre_contact }}</div>{% endif %}
+                        {% if not centre.centre_email and not centre.centre_contact %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="student-count-badge"><i class="bi bi-people-fill"></i> {{ centre.user_count }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if centre.is_active %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
+                        {% else %}
+                            <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="row-actions">
+                            <button type="button" class="btn-admin-labeled btn-label-edit btn-edit-centre" data-centre-id="{{ centre.id }}" title="Edit">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+                            </button>
+                            <button type="button" class="btn-admin-labeled btn-label-delete btn-delete-centre" data-centre-id="{{ centre.id }}" data-centre-name="{{ centre.centre_name }}" title="Delete">
+                                <i class="bi bi-trash3"></i><span class="btn-label-text">Delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-building-x"></i></div>
+                            <div class="empty-state-title">No centres created yet</div>
+                            <div class="empty-state-sub">Add your first NIELIT centre to start assigning students.</div>
+                            <button type="button" class="btn-admin-primary mt-3" id="addCentreBtnEmpty">
+                                <i class="bi bi-plus-lg me-1"></i> Add Centre
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="centreModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content" id="centreModalContent"></div></div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 700px) { .stat-grid-3 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-active { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+    .dot-inactive { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .centre-manage-table { border-collapse: separate; border-spacing: 0; }
+    .centre-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .centre-manage-table thead th:last-child { border-right: none; }
+    .centre-manage-table thead th.col-status { border-right: none; padding: 0; }
+    .centre-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .centre-manage-table tbody td:last-child { border-right: none; }
+    .centre-manage-table tbody td.col-status { border-right: none; padding: 0; }
+    .centre-manage-table tbody tr:last-child td { border-bottom: none; }
+
+    .centre-manage-table tbody tr.centre-row:nth-of-type(even) { background: #fafbfd; }
+    .centre-manage-table tbody tr.centre-row:hover { background: #eef4ff !important; }
+    .centre-row { transition: background 0.12s ease; }
+
+    /* status rail */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 62px; }
+    .rail-active { background: #10b981; }
+    .rail-inactive { background: #cbd5e1; }
+
+    tr.row-inactive td:not(.col-status) { color: #94a3b8; }
+    tr.row-inactive .centre-name { color: #64748b; }
+    tr.row-inactive .centre-avatar { opacity: 0.55; filter: grayscale(0.4); }
+
+    /* ═══ Centre cell ═══ */
+    .centre-cell { display: flex; align-items: center; gap: 12px; }
+    .centre-avatar {
+        width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+        background: linear-gradient(135deg, #2563eb, #172281);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 700; font-size: 1rem;
+    }
+    .centre-cell-text { min-width: 0; }
+    .centre-name { font-weight: 600; font-size: 0.89rem; color: #0f172a; }
+    .centre-address { font-size: 0.76rem; color: #94a3b8; margin-top: 2px; max-width: 320px; }
+
+    .centre-contact-cell { font-size: 0.81rem; color: #64748b; line-height: 1.7; }
+    .centre-contact-cell i { font-size: 0.76rem; color: #94a3b8; margin-right: 5px; width: 14px; }
+
+    .student-count-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe;
+        font-size: 0.76rem; font-weight: 700;
+        padding: 4px 10px; border-radius: 999px;
+    }
+
+    /* ═══ Status pills ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready   { background: #dcfce7; color: #15803d; }
+    .pill-pending { background: #f1f5f9; color: #64748b; }
+
+    /* ═══ Row action buttons ═══ */
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer;
+    }
+    .btn-admin-labeled i { font-size: 0.88rem; }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 1000px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = "{{ csrf_token }}";
+    const modal = new bootstrap.Modal(document.getElementById('centreModal'));
+    const modalContent = document.getElementById('centreModalContent');
+
+    function openForm(url) {
+        fetch(url).then(r => r.json()).then(data => { modalContent.innerHTML = data.html; modal.show(); });
+    }
+
+    document.getElementById('addCentreBtn').addEventListener('click', () => openForm("{% url 'admin_dashboard:centre_add' %}"));
+    document.getElementById('addCentreBtnEmpty')?.addEventListener('click', () => openForm("{% url 'admin_dashboard:centre_add' %}"));
+
+    document.querySelectorAll('.btn-edit-centre').forEach(btn => {
+        btn.addEventListener('click', () => openForm(`/management/centres/${btn.dataset.centreId}/edit/`));
+    });
+    document.querySelectorAll('.btn-delete-centre').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!confirm(`Delete centre "${btn.dataset.centreName}"?`)) return;
+            fetch(`/management/centres/${btn.dataset.centreId}/delete/`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken } })
+                .then(r => r.json())
+                .then(data => data.success ? location.reload() : alert(data.message));
+        });
+    });
+
+    modalContent.addEventListener('submit', function (e) {
+        if (!e.target.matches('#centreForm')) return;
+        e.preventDefault();
+        fetch(e.target.action, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: new FormData(e.target) })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) { location.reload(); }
+                else {
+                    const box = e.target.querySelector('#centreFormErrors');
+                    box.innerHTML = Object.values(data.errors).flat().join('<br>');
+                    box.classList.remove('d-none');
+                }
+            });
+    });
+});
+</script>
+{% endblock %}

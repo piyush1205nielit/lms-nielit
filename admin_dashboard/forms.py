@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from accounts.models import User
 from user.models import LearnerProfile
+from .models import Centre
 
 TEXT_INPUT_CLASS = 'form-control'
 
@@ -57,3 +58,33 @@ class UserCredentialsForm(forms.ModelForm):
             if existing.exists():
                 raise ValidationError("Another account already uses this contact number.")
         return contact
+
+
+
+class CentreForm(forms.ModelForm):
+    class Meta:
+        model = Centre
+        fields = ['centre_name', 'centre_address', 'centre_email', 'centre_contact', 'centre_desc', 'is_active']
+        widgets = {
+            'centre_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'centre_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'centre_email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'centre_contact': forms.TextInput(attrs={'class': 'form-control'}),
+            'centre_desc': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class BulkUserUploadForm(forms.Form):
+    excel_file = forms.FileField(
+        label="Select Excel File (.xlsx)",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.xlsx'}),
+    )
+
+    def clean_excel_file(self):
+        file = self.cleaned_data['excel_file']
+        if not file.name.lower().endswith('.xlsx'):
+            raise forms.ValidationError("Only .xlsx files are accepted.")
+        if file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("File is too large (max 5MB).")
+        return file

@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import PasswordChangeForm as DjangoPasswordChangeForm
 from accounts.models import User
 from .models import LearnerProfile
-
+from admin_dashboard.models import Centre
 
 TEXT_INPUT_CLASS = 'form-control'
 
@@ -49,43 +49,61 @@ INDIAN_STATES_UTS = [
 ]
 
 
+
 class SignupForm(forms.Form):
+    full_name = forms.CharField(
+        max_length=150, required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your full name', 'id': 'id_full_name'}),
+    )
+    gender = forms.ChoiceField(
+        choices=LearnerProfile.Gender.choices, required=True,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_gender'}),
+    )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'you@example.com'})
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com', 'id': 'id_email'}),
     )
     contact = forms.CharField(
-        max_length=10, min_length=10,
-        widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': '10-digit mobile number'})
+        max_length=10, required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '10-digit mobile number', 'id': 'id_contact'}),
+    )
+    nielit_centre = forms.ModelChoiceField(
+        queryset=Centre.objects.filter(is_active=True).order_by('centre_name'),
+        required=True, empty_label="Select your NIELIT Centre",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_nielit_centre'}),
+    )
+    batch_code = forms.CharField(
+        max_length=30, required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'id': 'id_batch_code',
+            'placeholder': 'e.g. BATCH2026A', 'style': 'text-transform:uppercase;',
+        }),
     )
     password1 = forms.CharField(
-        label='Password',
-        widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'Create a password'})
+        min_length=8, required=True,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a password', 'id': 'id_password1'}),
     )
     password2 = forms.CharField(
-        label='Confirm Password',
-        widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'Re-enter your password'})
+        required=True,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Re-enter your password', 'id': 'id_password2'}),
     )
 
     def clean_email(self):
-        email = self.cleaned_data['email'].lower().strip()
+        email = self.cleaned_data['email'].strip().lower()
         if User.objects.filter(email=email).exists():
             raise ValidationError("An account with this email already exists.")
         return email
 
     def clean_contact(self):
         contact = self.cleaned_data['contact'].strip()
-        if not contact.isdigit():
-            raise ValidationError("Contact number must contain digits only.")
-        if len(contact) != 10:
-            raise ValidationError("Enter a valid 10-digit Indian mobile number.")
+        if not contact.isdigit() or len(contact) != 10:
+            raise ValidationError("Enter a valid 10-digit mobile number.")
         if User.objects.filter(contact=contact).exists():
             raise ValidationError("An account with this contact number already exists.")
         return contact
 
-    def clean_password1(self):
-        password1 = self.cleaned_data.get('password1')
-        validate_password(password1)   # runs AUTH_PASSWORD_VALIDATORS from settings
-        return password1
+    def clean_batch_code(self):
+        return self.cleaned_data['batch_code'].strip().upper().replace(' ', '')
 
     def clean(self):
         cleaned_data = super().clean()
@@ -94,7 +112,6 @@ class SignupForm(forms.Form):
         if password1 and password2 and password1 != password2:
             self.add_error('password2', "Passwords do not match.")
         return cleaned_data
-
 
 class UserLoginForm(forms.Form):
     identifier = forms.CharField(

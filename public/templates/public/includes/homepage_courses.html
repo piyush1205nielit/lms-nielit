@@ -7,9 +7,9 @@
         </div>
 
         {% if featured_courses %}
-        <div class="row g-3">
+        <div class="row g-4">
             {% for course in featured_courses %}
-            <div class="col-md-4 col-lg-2">
+            <div class="col-12 col-sm-6 col-md-4">
                 {% include 'course/course_card.html' with course=course %}
             </div>
             {% endfor %}
@@ -28,3 +28,72 @@
         {% endif %}
     </div>
 </section>
+
+<style>
+    .home-section-alt {
+        padding: 64px 0;
+        background: linear-gradient(180deg, #f8f9fc 0%, #f2f4fa 100%);
+        border-top: 1px solid #eef1f6;
+        border-bottom: 1px solid #eef1f6;
+    }
+
+    .section-header {
+        text-align: center;
+        max-width: 620px;
+        margin: 0 auto 40px;
+    }
+    .section-eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #172281;
+        background: #eef1f8;
+        border: 1px solid #d7dceb;
+        padding: 5px 14px;
+        border-radius: 20px;
+        margin-bottom: 14px;
+    }
+    .section-title {
+        font-size: clamp(1.5rem, 2.5vw, 2rem);
+        font-weight: 800;
+        color: #101828;
+        margin: 0 0 10px;
+        position: relative;
+        display: inline-block;
+    }
+    .section-desc {
+        font-size: 0.95rem;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .btn-view-all {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #172281;
+        background: #ffffff;
+        border: 1.5px solid #172281;
+        padding: 10px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .btn-view-all:hover {
+        background: #172281;
+        color: #ffffff;
+        box-shadow: 0 6px 16px rgba(23, 34, 129, 0.25);
+        transform: translateY(-2px);
+    }
+    .btn-view-all:active { transform: translateY(0); }
+
+    @media (max-width: 576px) {
+        .home-section-alt { padding: 44px 0; }
+        .section-header { margin-bottom: 28px; }
+    }
+</style>

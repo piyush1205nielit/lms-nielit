@@ -181,12 +181,21 @@ class Enrollment(models.Model):
         COMPLETED = 'completed', 'Completed'
         DROPPED = 'dropped', 'Dropped'
 
+    class AccessStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending Approval'
+        GRANTED = 'granted', 'Granted'
+        HOLD = 'hold', 'On Hold'
+        REVOKED = 'revoked', 'Revoked'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    access_status = models.CharField(max_length=10, choices=AccessStatus.choices, default=AccessStatus.PENDING)
+    access_status_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'course_enrollment'

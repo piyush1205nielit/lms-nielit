@@ -43,6 +43,8 @@ class LearnerProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    notifications_last_seen_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         db_table = 'user_learnerprofile'
         indexes = [

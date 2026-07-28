@@ -1,0 +1,107 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}Edit Profile - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --border: #e2e8f0; --text-muted: #64748b; }
+    .edit-wrap { padding: 32px 0 60px; background: #f8fafc; min-height: 70vh; }
+    .edit-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 28px; max-width: 720px; margin: 0 auto; }
+    .edit-card h4 { font-size: 1.15rem; font-weight: 700; color: #0e1b2e; margin: 0 0 4px; }
+    .edit-card p.sub { color: var(--text-muted); font-size: 0.86rem; margin-bottom: 22px; }
+    .section-label {
+        font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        color: #172281; margin: 22px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #eef2f9;
+    }
+    .section-label:first-of-type { margin-top: 0; }
+    .form-label { font-size: 0.83rem; font-weight: 600; color: #374151; }
+    .locked-field-note {
+        background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
+        padding: 12px 16px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .locked-field-note i { color: #94a3b8; }
+    .btn-save-profile {
+        background: #172281; color: white; font-weight: 600; border: none;
+        padding: 11px 28px; border-radius: 10px; font-size: 0.9rem;
+    }
+    .btn-save-profile:hover { background: #0f2b6d; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-wrap">
+    <div class="container">
+        <div class="edit-card">
+            <h4><i class="fas fa-user-edit me-2" style="color:#172281;"></i>Edit Profile</h4>
+            <p class="sub">Keep your details up to date. Fields marked with an asterisk are required to complete your profile.</p>
+
+            <div class="locked-field-note">
+                <i class="fas fa-lock"></i>
+                <span>Email (<strong>{{ request.user.email }}</strong>) and contact number are login credentials and cannot be edited here.</span>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="section-label">Personal Details</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name *</label>
+                        {{ form.full_name }}
+                        {% if form.full_name.errors %}<div class="text-danger small mt-1">{{ form.full_name.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Gender *</label>
+                        {{ form.gender }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date of Birth *</label>
+                        {{ form.date_of_birth }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Highest Qualification</label>
+                        {{ form.highest_qualification }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Aadhar Number</label>
+                        {{ form.aadhar_number }}
+                    </div>
+                </div>
+
+                <div class="section-label">Address</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Address *</label>
+                        {{ form.address }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">City *</label>
+                        {{ form.city }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">State *</label>
+                        {{ form.state }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">PIN Code *</label>
+                        {{ form.pin_code }}
+                    </div>
+                </div>
+
+                <div class="section-label">Profile Photo</div>
+                {{ form.profile_image }}
+                {% if profile.profile_image %}
+                    <div class="form-text mt-1">Current: <a href="{{ profile.profile_image.url }}" target="_blank">view photo</a></div>
+                {% endif %}
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn-save-profile"><i class="fas fa-check me-1"></i> Save Changes</button>
+                    <a href="{% url 'user_dashboard:profile' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

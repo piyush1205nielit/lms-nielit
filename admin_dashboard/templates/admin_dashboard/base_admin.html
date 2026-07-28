@@ -419,6 +419,17 @@
         /* Alerts */
         .alert { border-radius: 10px; font-size: 0.88rem; border: none; }
 
+        .sidebar .nav-link .nav-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
+        body.sidebar-collapsed .sidebar .nav-link .nav-badge { display: none; }
+
         /* ═══════════════ Mobile ═══════════════ */
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.2s; width: var(--sidebar-width) !important; }
@@ -479,67 +490,102 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- ═══════════════ Sidebar ═══════════════ -->
-    <nav class="sidebar" id="sidebarNav">
+<nav class="sidebar" id="sidebarNav">
 
-        <div class="sidebar-section-label"><span class="label-text">Overview</span></div>
-        <a href="{% url 'admin_dashboard:home' %}"
-           class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" title="Dashboard">
-            <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
-            <span class="nav-label">Dashboard</span>
-        </a>
+    <div class="sidebar-section-label"><span class="label-text">Overview</span></div>
+    <a href="{% url 'admin_dashboard:home' %}"
+       class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" title="Dashboard">
+        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+        <span class="nav-label">Dashboard</span>
+    </a>
 
-        <div class="sidebar-section-label"><span class="label-text">Content Management</span></div>
-        <a href="{% url 'course:domain_list' %}"
-           class="nav-link {% if active_page == 'domains' %}active{% endif %}" title="Manage Domains">
-            <span class="nav-icon"><i class="bi bi-tags-fill"></i></span>
-            <span class="nav-label">Manage Domains</span>
-        </a>
-        <a href="{% url 'course:manage_list' %}"
-           class="nav-link {% if active_page == 'courses' %}active{% endif %}" title="Manage Courses">
-            <span class="nav-icon"><i class="bi bi-journal-bookmark-fill"></i></span>
-            <span class="nav-label">Manage Courses</span>
-        </a>
-        <a href="{% url 'announcement:manage_list' %}"
-           class="nav-link {% if active_page == 'announcements' %}active{% endif %}" title="Announcements">
-            <span class="nav-icon"><i class="bi bi-megaphone-fill"></i></span>
-            <span class="nav-label">Announcements</span>
-        </a>
+    <div class="sidebar-section-label"><span class="label-text">Content Management</span></div>
+    <a href="{% url 'course:domain_list' %}"
+       class="nav-link {% if active_page == 'domains' %}active{% endif %}" title="Manage Domains">
+        <span class="nav-icon"><i class="bi bi-tags-fill"></i></span>
+        <span class="nav-label">Manage Domains</span>
+    </a>
+    <a href="{% url 'course:manage_list' %}"
+       class="nav-link {% if active_page == 'courses' %}active{% endif %}" title="Manage Courses">
+        <span class="nav-icon"><i class="bi bi-journal-bookmark-fill"></i></span>
+        <span class="nav-label">Manage Courses</span>
+    </a>
+    <a href="{% url 'announcement:manage_list' %}"
+       class="nav-link {% if active_page == 'announcements' %}active{% endif %}" title="Announcements">
+        <span class="nav-icon"><i class="bi bi-megaphone-fill"></i></span>
+        <span class="nav-label">Announcements</span>
+    </a>
+    <a href="{% url 'event:event_list' %}"
+       class="nav-link {% if active_page == 'events' %}active{% endif %}" title="Event Cards">
+        <span class="nav-icon"><i class="bi bi-images"></i></span>
+        <span class="nav-label">Event Cards</span>
+    </a>
 
-        <a href="{% url 'event:event_list' %}"
-           class="nav-link {% if active_page == 'events' %}active{% endif %}" title="Event Cards">
-            <span class="nav-icon"><i class="bi bi-images"></i></span>
-            <span class="nav-label">Event Cards</span>
-        </a>
-
-        <div class="sidebar-section-label"><span class="label-text">User Management</span></div>
-        <a href="{% url 'admin_dashboard:registered_users' %}"
-           class="nav-link {% if active_page == 'users' %}active{% endif %}" title="Registered Users">
-            <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
-            <span class="nav-label">Registered Users</span>
-        </a>
-
-        <a href="{% url 'assignment:manage_list' %}"
-           class="nav-link {% if active_page == 'assignments' %}active{% endif %}" title="Assignments">
-            <span class="nav-icon"> <i class="bi bi-clipboard-check-fill"></i>  </span>
+    <div class="sidebar-section-label"><span class="label-text">Academic Management</span></div>
+    <a href="{% url 'assignment:manage_list' %}"
+       class="nav-link {% if active_page == 'assignments' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="Assignments">
+        <span class="d-flex align-items-center gap-2">
+            <span class="nav-icon"><i class="bi bi-clipboard-check-fill"></i></span>
             <span class="nav-label">Assignments</span>
-        </a>
+        </span>
+        {% if pending_grading_count %}<span class="nav-badge">{{ pending_grading_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'course:enrollment_management' %}"
+       class="nav-link {% if active_page == 'enrollments' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="Manage Course Enrollments">
+        <span class="d-flex align-items-center gap-2">
+            <span class="nav-icon"><i class="bi bi-journal-check"></i></span>
+            <span class="nav-label">Course Enrollments</span>
+        </span>
+        {% if pending_enrollment_count %}<span class="nav-badge">{{ pending_enrollment_count }}</span>{% endif %}
+    </a>
 
-      
-        <a href="{% url 'accounts:admin_list' %}"
-           class="nav-link {% if active_page == 'admins' %}active{% endif %}" title="Admin Management">
-            <span class="nav-icon"><i class="bi bi-person-badge-fill"></i></span>
-            <span class="nav-label">Admin Management</span>
-        </a>
+    <div class="sidebar-section-label"><span class="label-text">User Management</span></div>
+    <a href="{% url 'admin_dashboard:registration_requests' %}"
+       class="nav-link {% if active_page == 'registrations' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="New Registrations">
+        <span class="d-flex align-items-center gap-2">
+            <span class="nav-icon"><i class="bi bi-person-plus-fill"></i></span>
+            <span class="nav-label">New Registrations</span>
+        </span>
+        {% if pending_registration_count %}<span class="nav-badge">{{ pending_registration_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'admin_dashboard:registered_users' %}"
+       class="nav-link {% if active_page == 'users' %}active{% endif %}" title="Registered Users">
+        <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
+        <span class="nav-label">Registered Users</span>
+    </a>
+    <a href="{% url 'admin_dashboard:user_access_management' %}"
+       class="nav-link {% if active_page == 'user_access' %}active{% endif %}" title="Manage User Account Access">
+        <span class="nav-icon"><i class="bi bi-shield-lock-fill"></i></span>
+        <span class="nav-label">Account Access Control</span>
+    </a>
+    <a href="{% url 'admin_dashboard:bulk_user_upload' %}"
+       class="nav-link {% if active_page == 'bulk_upload' %}active{% endif %}" title="Bulk Upload Students">
+        <span class="nav-icon"><i class="bi bi-file-earmark-spreadsheet-fill"></i></span>
+        <span class="nav-label">Bulk Upload Students</span>
+    </a>
+    <a href="{% url 'admin_dashboard:centre_list' %}"
+       class="nav-link {% if active_page == 'centres' %}active{% endif %}" title="Manage Centres">
+        <span class="nav-icon"><i class="bi bi-building"></i></span>
+        <span class="nav-label">Manage Centres</span>
+    </a>
+    <a href="{% url 'accounts:admin_list' %}"
+       class="nav-link {% if active_page == 'admins' %}active{% endif %}" title="Admin Management">
+        <span class="nav-icon"><i class="bi bi-person-badge-fill"></i></span>
+        <span class="nav-label">Admin Management</span>
+    </a>
 
-        <div class="nav-divider"></div>
+    <div class="nav-divider"></div>
 
-        <div class="sidebar-section-label"><span class="label-text">System</span></div>
-        <a href="{% url 'public:home' %}" target="_blank" rel="noopener"
-           class="nav-link sidebar-external-link" title="View Public Site">
-            <span class="nav-icon"><i class="bi bi-box-arrow-up-right"></i></span>
-            <span class="nav-label">View Public Site</span>
-        </a>
-    </nav>
+    <div class="sidebar-section-label"><span class="label-text">System</span></div>
+    <a href="{% url 'public:home' %}" target="_blank" rel="noopener"
+       class="nav-link sidebar-external-link" title="View Public Site">
+        <span class="nav-icon"><i class="bi bi-box-arrow-up-right"></i></span>
+        <span class="nav-label">View Public Site</span>
+    </a>
+</nav>
 
     <!-- ═══════════════ Main content ═══════════════ -->
     <main class="main-content">

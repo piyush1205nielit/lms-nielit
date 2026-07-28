@@ -17,4 +17,6 @@ urlpatterns = [
     path('forgot-password/otp/', views.forgot_password_otp_view, name='forgot_password_otp'),
     path('forgot-password/resend-otp/', views.forgot_password_resend_otp_view, name='forgot_password_resend_otp'),
     path('forgot-password/reset/', views.reset_password_view, name='reset_password'),
+
+    path('pending-approval/', views.pending_approval_view, name='pending_approval'),
 ]

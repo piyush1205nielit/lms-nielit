@@ -30,4 +30,10 @@ urlpatterns = [
 
     path('manage/<uuid:course_id>/overview/', views.course_overview_view, name='overview'),
     path('manage/<uuid:course_id>/students/', views.course_students_view, name='students'),
+
+    path('manage/enrollments/', views.enrollment_management_view, name='enrollment_management'),
+    path('manage/enrollments/bulk-grant/', views.bulk_grant_enrollment_view, name='bulk_grant_enrollment'),
+    path('manage/enrollments/bulk-hold/', views.bulk_hold_enrollment_view, name='bulk_hold_enrollment'),
+    path('manage/enrollments/bulk-revoke/', views.bulk_revoke_enrollment_view, name='bulk_revoke_enrollment'),
+    path('manage/enrollments/bulk-deny/', views.bulk_deny_enrollment_view, name='bulk_deny_enrollment'),
 ]

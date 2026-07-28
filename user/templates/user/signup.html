@@ -46,7 +46,7 @@
         display: flex;
         gap: 22px;
         width: 100%;
-        max-width: 940px;
+        max-width: 980px;
         align-items: stretch;
     }
 
@@ -121,6 +121,9 @@
     .auth-card p.subtitle { color: #64748b; font-size: 0.86rem; opacity: 0; transform: translateY(8px); animation: fadeUp 0.5s 0.38s ease forwards; }
     @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
+    .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 480px) { .form-row-2col { grid-template-columns: 1fr; } }
+
     .field-group {
         margin-bottom: 16px;
         position: relative;
@@ -128,14 +131,19 @@
         transform: translateY(10px);
         animation: fadeUp 0.5s ease forwards;
     }
-    .field-group:nth-of-type(1) { animation-delay: 0.42s; }
-    .field-group:nth-of-type(2) { animation-delay: 0.46s; }
-    .field-group:nth-of-type(3) { animation-delay: 0.5s; }
-    .field-group:nth-of-type(4) { animation-delay: 0.54s; }
+    .field-group:nth-of-type(1) { animation-delay: 0.40s; }
+    .field-group:nth-of-type(2) { animation-delay: 0.43s; }
+    .field-group:nth-of-type(3) { animation-delay: 0.46s; }
+    .field-group:nth-of-type(4) { animation-delay: 0.49s; }
+    .field-group:nth-of-type(5) { animation-delay: 0.52s; }
+    .field-group:nth-of-type(6) { animation-delay: 0.55s; }
+    .field-group:nth-of-type(7) { animation-delay: 0.58s; }
+    .field-group:nth-of-type(8) { animation-delay: 0.61s; }
 
     .auth-card .form-label { font-size: 0.83rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
 
-    .auth-card .form-control {
+    .auth-card .form-control,
+    .auth-card .form-select {
         border-radius: 10px;
         border: 1.5px solid #e2e8f0;
         padding: 10px 14px;
@@ -144,7 +152,8 @@
         background: #fbfcfe;
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.15s ease;
     }
-    .auth-card .form-control:focus {
+    .auth-card .form-control:focus,
+    .auth-card .form-select:focus {
         border-color: #172281;
         box-shadow: 0 0 0 4px rgba(23,34,129,0.1);
         background: white;
@@ -152,7 +161,8 @@
         transform: translateY(-1px);
     }
     .field-group.is-valid .form-control { border-color: #10b981; }
-    .field-group.has-error .form-control {
+    .field-group.has-error .form-control,
+    .field-group.has-error .form-select {
         border-color: #ef4444;
         animation: shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
     }
@@ -217,15 +227,12 @@
     .pwd-strength.strong .pwd-strength-bar span { background: #10b981; }
     .pwd-strength.strong .pwd-strength-label { color: #10b981; }
 
-    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 480px) { .row-2col { grid-template-columns: 1fr; } }
-
     .btn-auth-primary {
         background: #172281; border: none; color: white;
         font-weight: 600; font-size: 0.94rem; padding: 11px; border-radius: 10px;
         display: flex; align-items: center; justify-content: center; gap: 8px;
         transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-        opacity: 0; animation: fadeUp 0.5s 0.62s ease forwards;
+        opacity: 0; animation: fadeUp 0.5s 0.68s ease forwards;
         width: 100%;
     }
     .btn-auth-primary:hover { background: #0f2b6d; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15,43,109,0.3); color: white; }
@@ -233,7 +240,7 @@
 
     .auth-footer-link {
         text-align: center; font-size: 0.86rem; color: #64748b; margin-top: 1.15rem;
-        opacity: 0; animation: fadeUp 0.5s 0.68s ease forwards;
+        opacity: 0; animation: fadeUp 0.5s 0.74s ease forwards;
     }
     .auth-footer-link a { color: #172281; font-weight: 600; text-decoration: none; }
     .auth-footer-link a:hover { text-decoration: underline; }
@@ -253,8 +260,10 @@
     .review-modal {
         background: white;
         border-radius: 16px;
-        width: 100%; max-width: 440px;
+        width: 100%; max-width: 460px;
         padding: 28px 26px;
+        max-height: 88vh;
+        overflow-y: auto;
         box-shadow: 0 30px 70px rgba(0,0,0,0.4);
         opacity: 0; transform: translateY(20px) scale(0.97);
         animation: modalIn 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
@@ -333,12 +342,12 @@
                 <h6><i class="fas fa-circle-info"></i> Before You Register</h6>
                 <ul>
                     <li><i class="fas fa-check-circle"></i> Provide your own valid email address and mobile number — these will be used for all official NIELIT communication.</li>
-                    <li><i class="fas fa-check-circle"></i> Details entered here should exactly match your identity documents used later during course/exam registration.</li>
-                    <li><i class="fas fa-check-circle"></i> Do not share your login credentials with anyone else.</li>
+                    <li><i class="fas fa-check-circle"></i> Select your correct NIELIT Centre and Batch Code — these determine which courses and centre-specific updates you receive.</li>
+                    <li><i class="fas fa-check-circle"></i> Your account requires admin approval before you can log in and enroll in courses.</li>
                 </ul>
             </div>
             <div class="guide-block">
-                <h6><i class="fas fa-shield-halush"></i> Password Guidelines</h6>
+                <h6><i class="fas fa-shield-halved"></i> Password Guidelines</h6>
                 <ul class="pwd-rules">
                     <li><i class="fas fa-check-circle"></i> Minimum 8 characters required</li>
                     <li><i class="fas fa-check-circle"></i> Adding uppercase, numbers &amp; special characters is recommended for a stronger password, but not mandatory</li>
@@ -346,10 +355,10 @@
                 </ul>
             </div>
             <div class="guide-block">
-                <h6><i class="fas fa-envelope-open-text"></i> Communication</h6>
+                <h6><i class="fas fa-envelope-open-text"></i> After You Submit</h6>
                 <ul>
-                    <li><i class="fas fa-check-circle"></i> Admit cards, results, and course updates will be sent only to your registered email/mobile.</li>
-                    <li><i class="fas fa-check-circle"></i> Keep your credentials safe — NIELIT will never ask for your password over call or email.</li>
+                    <li><i class="fas fa-check-circle"></i> Your registration request will be sent to the admin for approval.</li>
+                    <li><i class="fas fa-check-circle"></i> You'll be notified by email once your account is approved and ready to use.</li>
                 </ul>
             </div>
         </aside>
@@ -359,7 +368,7 @@
             <div class="text-center mb-4">
                 <div class="auth-icon-wrap"><i class="fas fa-user-plus"></i></div>
                 <h4>Create Your Account</h4>
-                <p class="subtitle">Start learning with NIELIT LMS</p>
+                <p class="subtitle">Register for NIELIT LMS — subject to admin approval</p>
             </div>
 
             <form method="post" novalidate id="signupForm">
@@ -372,6 +381,29 @@
                     </div>
                 {% endif %}
 
+                <div class="field-group {% if form.full_name.errors %}has-error{% endif %}" id="fullNameGroup">
+                    <label class="form-label"><i class="fas fa-user text-muted" style="font-size:0.72rem;"></i> Full Name</label>
+                    {{ form.full_name }}
+                    <i class="fas fa-check field-status-icon icon-valid"></i>
+                    <i class="fas fa-xmark field-status-icon icon-error"></i>
+                    <div class="field-error" id="fullNameError">{% if form.full_name.errors %}{{ form.full_name.errors|join:", " }}{% endif %}</div>
+                </div>
+
+                <div class="form-row-2col">
+                    <div class="field-group {% if form.gender.errors %}has-error{% endif %}" id="genderGroup">
+                        <label class="form-label">Gender</label>
+                        {{ form.gender }}
+                        <div class="field-error" id="genderError">{% if form.gender.errors %}{{ form.gender.errors|join:", " }}{% endif %}</div>
+                    </div>
+                    <div class="field-group {% if form.contact.errors %}has-error{% endif %}" id="contactGroup">
+                        <label class="form-label"><i class="fas fa-phone text-muted" style="font-size:0.72rem;"></i> Mobile Number</label>
+                        {{ form.contact }}
+                        <i class="fas fa-check field-status-icon icon-valid"></i>
+                        <i class="fas fa-xmark field-status-icon icon-error"></i>
+                        <div class="field-error" id="contactError">{% if form.contact.errors %}{{ form.contact.errors|join:", " }}{% endif %}</div>
+                    </div>
+                </div>
+
                 <div class="field-group {% if form.email.errors %}has-error{% endif %}" id="emailGroup">
                     <label class="form-label"><i class="fas fa-envelope text-muted" style="font-size:0.72rem;"></i> Email Address</label>
                     {{ form.email }}
@@ -380,12 +412,17 @@
                     <div class="field-error" id="emailError">{% if form.email.errors %}{{ form.email.errors|join:", " }}{% endif %}</div>
                 </div>
 
-                <div class="field-group {% if form.contact.errors %}has-error{% endif %}" id="contactGroup">
-                    <label class="form-label"><i class="fas fa-phone text-muted" style="font-size:0.72rem;"></i> Mobile Number</label>
-                    {{ form.contact }}
-                    <i class="fas fa-check field-status-icon icon-valid"></i>
-                    <i class="fas fa-xmark field-status-icon icon-error"></i>
-                    <div class="field-error" id="contactError">{% if form.contact.errors %}{{ form.contact.errors|join:", " }}{% endif %}</div>
+                <div class="form-row-2col">
+                    <div class="field-group {% if form.nielit_centre.errors %}has-error{% endif %}" id="centreGroup">
+                        <label class="form-label"><i class="fas fa-building text-muted" style="font-size:0.72rem;"></i> NIELIT Centre</label>
+                        {{ form.nielit_centre }}
+                        <div class="field-error" id="centreError">{% if form.nielit_centre.errors %}{{ form.nielit_centre.errors|join:", " }}{% endif %}</div>
+                    </div>
+                    <div class="field-group {% if form.batch_code.errors %}has-error{% endif %}" id="batchGroup">
+                        <label class="form-label"><i class="fas fa-hashtag text-muted" style="font-size:0.72rem;"></i> Batch Code</label>
+                        {{ form.batch_code }}
+                        <div class="field-error" id="batchError">{% if form.batch_code.errors %}{{ form.batch_code.errors|join:", " }}{% endif %}</div>
+                    </div>
                 </div>
 
                 <div class="field-group {% if form.password1.errors %}has-error{% endif %}" id="pwd1Group">
@@ -427,30 +464,25 @@
 <div class="review-modal-overlay" id="reviewModalOverlay">
     <div class="review-modal">
         <h5><i class="fas fa-clipboard-check"></i> Confirm Your Details</h5>
-        <p class="review-sub">Please verify the information below before creating your account.</p>
+        <p class="review-sub">Please verify the information below. This will be sent to the admin for approval.</p>
 
         <div class="review-detail-list">
-            <div class="review-detail-row">
-                <span class="rd-label">Email Address</span>
-                <span class="rd-value" id="reviewEmail">—</span>
-            </div>
-            <div class="review-detail-row">
-                <span class="rd-label">Mobile Number</span>
-                <span class="rd-value" id="reviewContact">—</span>
-            </div>
-            <div class="review-detail-row">
-                <span class="rd-label">Password</span>
-                <span class="rd-value">•••••••• (set)</span>
-            </div>
+            <div class="review-detail-row"><span class="rd-label">Full Name</span><span class="rd-value" id="reviewFullName">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">Gender</span><span class="rd-value" id="reviewGender">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">Email Address</span><span class="rd-value" id="reviewEmail">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">Mobile Number</span><span class="rd-value" id="reviewContact">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">NIELIT Centre</span><span class="rd-value" id="reviewCentre">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">Batch Code</span><span class="rd-value" id="reviewBatch">—</span></div>
+            <div class="review-detail-row"><span class="rd-label">Password</span><span class="rd-value">•••••••• (set)</span></div>
         </div>
 
         <div class="ack-box">
             <input type="checkbox" id="ackCheckbox">
             <label for="ackCheckbox">
                 I confirm that the details provided by me are correct to the best of my knowledge.
-                I understand that the email address and mobile number given above will be used by
-                NIELIT Delhi for all official communication, including admit cards, results, course
-                updates, and account-related notifications. I am solely responsible for the accuracy
+                I understand my account will remain <strong>pending admin approval</strong> until
+                verified, and that the email address and mobile number given above will be used by
+                NIELIT Delhi for all official communication. I am solely responsible for the accuracy
                 of this information and for keeping my login credentials confidential.
             </label>
         </div>
@@ -461,7 +493,7 @@
             </button>
             <button type="button" class="btn-modal-confirm" id="modalConfirmBtn">
                 <span class="btn-spinner"></span>
-                <i class="fas fa-check"></i> Confirm &amp; Create Account
+                <i class="fas fa-check"></i> Confirm &amp; Submit Request
             </button>
         </div>
     </div>
@@ -471,20 +503,39 @@
 (function () {
     const form = document.getElementById('signupForm');
 
-    const emailGroup   = document.getElementById('emailGroup');
-    const contactGroup = document.getElementById('contactGroup');
-    const pwd1Group    = document.getElementById('pwd1Group');
-    const pwd2Group    = document.getElementById('pwd2Group');
+    const fullNameGroup = document.getElementById('fullNameGroup');
+    const genderGroup   = document.getElementById('genderGroup');
+    const emailGroup    = document.getElementById('emailGroup');
+    const contactGroup  = document.getElementById('contactGroup');
+    const centreGroup   = document.getElementById('centreGroup');
+    const batchGroup    = document.getElementById('batchGroup');
+    const pwd1Group     = document.getElementById('pwd1Group');
+    const pwd2Group     = document.getElementById('pwd2Group');
 
-    const emailInput   = emailGroup.querySelector('input');
-    const contactInput = contactGroup.querySelector('input');
-    const pwd1Input    = pwd1Group.querySelector('input');
-    const pwd2Input    = pwd2Group.querySelector('input');
+    const fullNameInput = fullNameGroup.querySelector('input');
+    const genderInput   = genderGroup.querySelector('select');
+    const emailInput    = emailGroup.querySelector('input');
+    const contactInput  = contactGroup.querySelector('input');
+    const centreInput   = centreGroup.querySelector('select');
+    const batchInput    = batchGroup.querySelector('input');
+    const pwd1Input     = pwd1Group.querySelector('input');
+    const pwd2Input     = pwd2Group.querySelector('input');
 
-    const emailError   = document.getElementById('emailError');
-    const contactError = document.getElementById('contactError');
-    const pwd1Error     = document.getElementById('pwd1Error');
-    const pwd2Error     = document.getElementById('pwd2Error');
+    const fullNameError = document.getElementById('fullNameError');
+    const genderError   = document.getElementById('genderError');
+    const emailError    = document.getElementById('emailError');
+    const contactError  = document.getElementById('contactError');
+    const centreError   = document.getElementById('centreError');
+    const batchError    = document.getElementById('batchError');
+    const pwd1Error      = document.getElementById('pwd1Error');
+    const pwd2Error      = document.getElementById('pwd2Error');
+
+    // ── Batch code: force uppercase, strip spaces, live ──
+    batchInput.addEventListener('input', function (e) {
+        const cursorPos = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase().replace(/\s+/g, '');
+        e.target.setSelectionRange(cursorPos, cursorPos);
+    });
 
     // ── Password show/hide toggles ──
     function wireToggle(btnId, input) {
@@ -503,13 +554,26 @@
     function setState(group, errEl, ok, msg) {
         group.classList.remove('has-error', 'is-valid');
         errEl.textContent = '';
-        if (ok === null) return; // untouched / empty, no state shown
+        if (ok === null) return;
         if (ok) {
             group.classList.add('is-valid');
         } else {
             group.classList.add('has-error');
             errEl.textContent = msg;
         }
+    }
+
+    function validateFullName(showEmpty) {
+        const val = fullNameInput.value.trim();
+        const ok = val.length >= 2;
+        setState(fullNameGroup, fullNameError, val ? ok : (showEmpty ? false : null), 'Enter your full name.');
+        return ok;
+    }
+
+    function validateGender(showEmpty) {
+        const ok = !!genderInput.value;
+        setState(genderGroup, genderError, ok ? true : (showEmpty ? false : null), 'Please select your gender.');
+        return ok;
     }
 
     function validateEmail(showEmpty) {
@@ -528,13 +592,26 @@
         return ok;
     }
 
+    function validateCentre(showEmpty) {
+        const ok = !!centreInput.value;
+        setState(centreGroup, centreError, ok ? true : (showEmpty ? false : null), 'Please select your NIELIT Centre.');
+        return ok;
+    }
+
+    function validateBatch(showEmpty) {
+        const val = batchInput.value.trim();
+        const ok = val.length > 0;
+        setState(batchGroup, batchError, val ? ok : (showEmpty ? false : null), 'Batch code is required.');
+        return ok;
+    }
+
     function pwdStrengthScore(val) {
         let score = 0;
         if (val.length >= 8) score++;
         if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score++;
         if (/\d/.test(val)) score++;
         if (/[^A-Za-z0-9]/.test(val)) score++;
-        return score; // 0-4
+        return score;
     }
 
     const strengthWrap  = document.getElementById('pwdStrength');
@@ -548,15 +625,12 @@
             strengthLabel.textContent = '';
             return false;
         }
-
-        // Strength is informational only — does not block submission
         const score = pwdStrengthScore(val);
         strengthWrap.classList.remove('weak', 'medium', 'strong');
         if (score <= 1) { strengthWrap.classList.add('weak'); strengthLabel.textContent = 'Weak — consider adding numbers, symbols or capital letters'; }
         else if (score <= 3) { strengthWrap.classList.add('medium'); strengthLabel.textContent = 'Good password strength'; }
         else { strengthWrap.classList.add('strong'); strengthLabel.textContent = 'Strong password'; }
 
-        // Only mandatory rule: minimum 8 characters
         const ok = val.length >= 8;
         setState(pwd1Group, pwd1Error, ok, 'Password must be at least 8 characters long.');
         return ok;
@@ -570,11 +644,16 @@
         return ok;
     }
 
-    // live validation as user types (debounced-ish via input event) + on blur
+    fullNameInput.addEventListener('input', () => validateFullName(false));
+    fullNameInput.addEventListener('blur', () => validateFullName(true));
+    genderInput.addEventListener('change', () => validateGender(true));
     emailInput.addEventListener('input', () => validateEmail(false));
     emailInput.addEventListener('blur', () => validateEmail(true));
     contactInput.addEventListener('input', () => validateContact(false));
     contactInput.addEventListener('blur', () => validateContact(true));
+    centreInput.addEventListener('change', () => validateCentre(true));
+    batchInput.addEventListener('input', () => validateBatch(false));
+    batchInput.addEventListener('blur', () => validateBatch(true));
     pwd1Input.addEventListener('input', () => { validatePwd1(false); if (pwd2Input.value) validatePwd2(false); });
     pwd1Input.addEventListener('blur', () => validatePwd1(true));
     pwd2Input.addEventListener('input', () => validatePwd2(false));
@@ -583,26 +662,38 @@
     // ── Review modal flow ──
     const reviewBtn      = document.getElementById('reviewBtn');
     const overlay        = document.getElementById('reviewModalOverlay');
+    const reviewFullName = document.getElementById('reviewFullName');
+    const reviewGender   = document.getElementById('reviewGender');
     const reviewEmail    = document.getElementById('reviewEmail');
     const reviewContact  = document.getElementById('reviewContact');
+    const reviewCentre   = document.getElementById('reviewCentre');
+    const reviewBatch    = document.getElementById('reviewBatch');
     const ackCheckbox    = document.getElementById('ackCheckbox');
     const confirmBtn     = document.getElementById('modalConfirmBtn');
     const editBtn        = document.getElementById('modalEditBtn');
 
     reviewBtn.addEventListener('click', function () {
-        const okEmail   = validateEmail(true);
-        const okContact = validateContact(true);
-        const okPwd1    = validatePwd1(true);
-        const okPwd2    = validatePwd2(true);
+        const okFullName = validateFullName(true);
+        const okGender   = validateGender(true);
+        const okEmail    = validateEmail(true);
+        const okContact  = validateContact(true);
+        const okCentre   = validateCentre(true);
+        const okBatch    = validateBatch(true);
+        const okPwd1     = validatePwd1(true);
+        const okPwd2     = validatePwd2(true);
 
-        if (!(okEmail && okContact && okPwd1 && okPwd2)) {
+        if (!(okFullName && okGender && okEmail && okContact && okCentre && okBatch && okPwd1 && okPwd2)) {
             const firstError = document.querySelector('.field-group.has-error');
             if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
+        reviewFullName.textContent = fullNameInput.value.trim();
+        reviewGender.textContent = genderInput.options[genderInput.selectedIndex].text;
         reviewEmail.textContent = emailInput.value.trim();
         reviewContact.textContent = contactInput.value.trim();
+        reviewCentre.textContent = centreInput.options[centreInput.selectedIndex].text;
+        reviewBatch.textContent = batchInput.value.trim();
         ackCheckbox.checked = false;
         confirmBtn.classList.remove('visible');
         overlay.classList.add('show');

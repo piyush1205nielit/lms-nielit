@@ -1,147 +1,353 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
-
 {% block title %}Event Cards - Admin{% endblock %}
+{% block page_title %}Event Cards{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 fw-bold text-dark mb-0">
-            <i class="fas fa-calendar-star text-primary me-2"></i>Event Cards
-        </h1>
-        <a href="{% url 'event:event_create' %}" class="btn btn-success">
-            <i class="fas fa-plus me-2"></i>Create New Event
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-stars"></i> Event Cards</h2>
+        <p>Manage promotional event cards shown on the public homepage.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'event:event_create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> Create New Event
         </a>
     </div>
+</div>
 
-    <div class="section-card mb-4">
-        <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span><i class="fas fa-tv me-2"></i>Homepage Display Mode</span>
-            <span class="badge bg-light text-dark border">
-                Currently: <strong>{{ display_settings.get_display_mode_display }}</strong>
-            </span>
-        </div>
-        <div class="p-3">
-            <div class="d-flex gap-2 flex-wrap mb-3">
-                <form method="post" action="{% url 'event:event_set_display_mode' 'stacked' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'stacked' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                        <i class="fas fa-bars me-1"></i>Stacked
-                    </button>
-                </form>
-                <form method="post" action="{% url 'event:event_set_display_mode' 'carousel' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'carousel' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                        <i class="fas fa-images me-1"></i>Carousel
-                    </button>
-                </form>
-                <form method="post" action="{% url 'event:event_set_display_mode' 'hidden' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm {% if display_settings.display_mode == 'hidden' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-                        <i class="fas fa-eye-slash me-1"></i>Hide from Homepage
-                    </button>
-                </form>
-            </div>
-
-            {% if display_settings.display_mode == 'hidden' %}
-                <div class="alert alert-warning small mb-0">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Events are currently hidden from the homepage, even if individually marked active.
-                </div>
-            {% elif active_events %}
-                <div class="border rounded" style="overflow: hidden;">
-                    {% include 'public/includes/event_cards_display.html' with events=active_events display_mode=display_settings.display_mode %}
-                </div>
-            {% else %}
-                <p class="text-muted mb-0">No active events yet — activate one below to see it here.</p>
-            {% endif %}
-        </div>
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-3">
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-calendar-star"></i></div>
+        <div><div class="stat-mini-value">{{ events|length }}</div><div class="stat-mini-label">Total Events</div></div>
     </div>
-
-    <div class="row">
-        {% for event in events %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-header text-white d-flex justify-content-between align-items-center"
-                     style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
-                    <h5 class="mb-0 text-truncate" style="max-width: 75%;">{{ event.title }}</h5>
-                    {% if event.is_active %}
-                        <span class="badge bg-success"><i class="fas fa-circle-check me-1"></i>Live</span>
-                    {% else %}
-                        <span class="badge bg-secondary"><i class="fas fa-eye-slash me-1"></i>Hidden</span>
-                    {% endif %}
-                </div>
-
-                <div class="card-body">
-                    {% if event.subtitle %}
-                    <p class="small text-muted mb-2">
-                        <i class="fas fa-align-left me-1"></i>{{ event.subtitle|truncatechars:60 }}
-                    </p>
-                    {% endif %}
-                    <p class="small text-muted mb-2">
-                        <i class="fas fa-calendar-alt me-1"></i>
-                        {% if event.event_date %}{{ event.event_date|date:"d M Y" }}{% else %}No date set{% endif %}
-                    </p>
-                    <p class="small text-muted mb-2">
-                        <i class="fas fa-images me-1"></i>
-                        Logo Position: {{ event.get_logo_position_display }}
-                    </p>
-                    <p class="small text-muted mb-3">
-                        <i class="fas fa-tags me-1"></i>
-                        {% with kw=event.get_keywords_list %}
-                            {% if kw %}{{ kw|length }} keyword{{ kw|length|pluralize }}{% else %}No keywords{% endif %}
-                        {% endwith %}
-                    </p>
-
-                    <div class="border p-2 text-center bg-light rounded d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                        <span class="small text-muted">Theme:</span>
-                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.gradient_start }};border:1px solid #ddd;" title="Gradient start"></span>
-                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.gradient_end }};border:1px solid #ddd;" title="Gradient end"></span>
-                        <span class="rounded-circle d-inline-block" style="width:18px;height:18px;background:{{ event.accent_color }};border:1px solid #ddd;" title="Accent"></span>
-                        <span class="small text-muted ms-1">{{ event.get_card_width_display }} · {{ event.get_corner_style_display }}</span>
-                    </div>
-                </div>
-
-                <div class="card-footer bg-white">
-                    <div class="btn-group w-100 mb-2">
-                        <a href="{% url 'event:event_preview' event.id %}" class="btn btn-sm btn-info" target="_blank">
-                            <i class="fas fa-eye"></i> Preview
-                        </a>
-                        <a href="{% url 'event:event_update' event.id %}" class="btn btn-sm btn-warning">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <a href="{% url 'event:event_delete' event.id %}" class="btn btn-sm btn-danger">
-                            <i class="bi bi-trash-fill"></i>
-                        </a>
-                    </div>
-
-                    <form method="post" action="{% url 'event:event_toggle_active' event.id %}">
-                        {% csrf_token %}
-                        {% if event.is_active %}
-                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
-                            <i class="fas fa-eye-slash me-1"></i>Remove from Homepage
-                        </button>
-                        {% else %}
-                        <button type="submit" class="btn btn-sm btn-primary w-100">
-                            <i class="fas fa-star me-1"></i>Set Active / Feature on Homepage
-                        </button>
-                        {% endif %}
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info text-center">
-                <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
-                <h4>No Events Yet</h4>
-                <p>Create your first event card to feature it on the homepage.</p>
-                <a href="{% url 'event:event_create' %}" class="btn btn-primary mt-2">
-                    <i class="fas fa-plus me-2"></i>Create Event
-                </a>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-broadcast"></i></div>
+        <div><div class="stat-mini-value">{{ active_events|length }}</div><div class="stat-mini-label">Live on Homepage</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-tv-fill"></i></div>
+        <div><div class="stat-mini-value">{{ display_settings.get_display_mode_display }}</div><div class="stat-mini-label">Display Mode</div></div>
     </div>
 </div>
+
+<!-- ═══ Homepage display mode control ═══ -->
+<div class="card-panel form-section-card">
+    <div class="form-section-header">
+        <div class="form-section-icon icon-purple"><i class="bi bi-tv-fill"></i></div>
+        <div><h6>Homepage Display Mode</h6><p>Controls how active event cards appear to visitors.</p></div>
+    </div>
+    <div class="form-section-body">
+        <div class="display-mode-switcher">
+            <form method="post" action="{% url 'event:event_set_display_mode' 'stacked' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'stacked' %}mode-active{% endif %}">
+                    <i class="bi bi-layers-fill"></i>
+                    <span>Stacked</span>
+                </button>
+            </form>
+            <form method="post" action="{% url 'event:event_set_display_mode' 'carousel' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'carousel' %}mode-active{% endif %}">
+                    <i class="bi bi-images"></i>
+                    <span>Carousel</span>
+                </button>
+            </form>
+            <form method="post" action="{% url 'event:event_set_display_mode' 'hidden' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn mode-btn-danger {% if display_settings.display_mode == 'hidden' %}mode-active-danger{% endif %}">
+                    <i class="bi bi-eye-slash-fill"></i>
+                    <span>Hide from Homepage</span>
+                </button>
+            </form>
+        </div>
+
+        {% if display_settings.display_mode == 'hidden' %}
+            <div class="alert-banner alert-banner-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Events are currently hidden from the homepage, even if individually marked active.</span>
+            </div>
+        {% elif active_events %}
+            <div class="live-preview-frame">
+                <div class="live-preview-label"><i class="bi bi-eye-fill"></i> Live Preview</div>
+                <div class="live-preview-box">
+                    {% include 'public/includes/event_cards_display.html' with events=active_events display_mode=display_settings.display_mode %}
+                </div>
+            </div>
+        {% else %}
+            <div class="no-active-note">
+                <i class="bi bi-info-circle"></i> No active events yet — activate one below to see it here.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ═══ Event cards grid ═══ -->
+<div class="event-section-label"><i class="bi bi-grid-3x3-gap-fill"></i> All Events</div>
+
+<div class="event-cards-grid">
+    {% for event in events %}
+    <div class="event-card {% if event.is_active %}event-card-live{% endif %}">
+        <div class="event-card-header" style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
+            <span class="event-card-title">{{ event.title }}</span>
+            {% if event.is_active %}
+                <span class="event-live-badge"><i class="bi bi-circle-fill pulse-dot"></i> Live</span>
+            {% else %}
+                <span class="event-hidden-badge"><i class="bi bi-eye-slash-fill"></i> Hidden</span>
+            {% endif %}
+        </div>
+
+        <div class="event-card-body">
+            {% if event.subtitle %}
+            <div class="event-info-row">
+                <i class="bi bi-text-left"></i>
+                <span>{{ event.subtitle|truncatechars:60 }}</span>
+            </div>
+            {% endif %}
+            <div class="event-info-row">
+                <i class="bi bi-calendar-event"></i>
+                <span>{% if event.event_date %}{{ event.event_date|date:"d M Y" }}{% else %}<span class="text-muted">No date set</span>{% endif %}</span>
+            </div>
+            <div class="event-info-row">
+                <i class="bi bi-layout-text-window"></i>
+                <span>Logo Position: {{ event.get_logo_position_display }}</span>
+            </div>
+            <div class="event-info-row">
+                <i class="bi bi-tags-fill"></i>
+                {% with kw=event.get_keywords_list %}
+                    {% if kw %}
+                        <span class="keyword-count-tag">{{ kw|length }} keyword{{ kw|length|pluralize }}</span>
+                    {% else %}
+                        <span class="text-muted">No keywords</span>
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="theme-swatch-box">
+                <span class="theme-swatch-label">Theme</span>
+                <span class="theme-swatch" style="background:{{ event.gradient_start }};" title="Gradient start"></span>
+                <span class="theme-swatch" style="background:{{ event.gradient_end }};" title="Gradient end"></span>
+                <span class="theme-swatch" style="background:{{ event.accent_color }};" title="Accent"></span>
+                <span class="theme-style-tag">{{ event.get_card_width_display }} &middot; {{ event.get_corner_style_display }}</span>
+            </div>
+        </div>
+
+        <div class="event-card-footer">
+            <div class="event-actions-row">
+                <a href="{% url 'event:event_preview' event.id %}" target="_blank" class="btn-admin-labeled btn-label-view" title="Preview">
+                    <i class="bi bi-eye"></i><span class="btn-label-text">Preview</span>
+                </a>
+                <a href="{% url 'event:event_update' event.id %}" class="btn-admin-labeled btn-label-toggle" title="Edit">
+                    <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+                </a>
+                <a href="{% url 'event:event_delete' event.id %}" class="btn-admin-labeled btn-label-delete" title="Delete">
+                    <i class="bi bi-trash3"></i>
+                </a>
+            </div>
+
+            <form method="post" action="{% url 'event:event_toggle_active' event.id %}">
+                {% csrf_token %}
+                {% if event.is_active %}
+                <button type="submit" class="event-toggle-btn toggle-remove">
+                    <i class="bi bi-eye-slash me-1"></i> Remove from Homepage
+                </button>
+                {% else %}
+                <button type="submit" class="event-toggle-btn toggle-feature">
+                    <i class="bi bi-star-fill me-1"></i> Set Active / Feature on Homepage
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div class="event-empty-state">
+        <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
+        <div class="empty-state-title">No Events Yet</div>
+        <div class="empty-state-sub">Create your first event card to feature it on the homepage.</div>
+        <a href="{% url 'event:event_create' %}" class="btn-admin-primary mt-3">
+            <i class="bi bi-plus-lg me-1"></i> Create Event
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 700px) { .stat-grid-3 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.25rem; font-weight: 800; color: #0f172a; line-height: 1.15; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+
+    /* ═══ Section card (shared language) ═══ */
+    .form-section-card { margin-bottom: 1.5rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .form-section-header { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .form-section-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .icon-purple { background: #ede9fe; color: #7c3aed; }
+    .form-section-header h6 { font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+    .form-section-header p { font-size: 0.77rem; color: #64748b; margin: 0; }
+    .form-section-body { padding: 1.25rem 1.2rem; }
+
+    /* ═══ Display mode switcher ═══ */
+    .display-mode-switcher {
+        display: flex; gap: 8px; flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        background: #f1f5f9; padding: 6px; border-radius: 12px;
+        border: 1.5px solid #e2e8f0;
+    }
+    .mode-btn {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 16px; border-radius: 8px; border: none;
+        background: transparent; color: #64748b;
+        font-size: 0.84rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mode-btn:hover { background: rgba(255,255,255,0.6); color: #172281; }
+    .mode-active { background: white; color: #2563eb; box-shadow: 0 2px 6px rgba(15,23,42,0.1); }
+    .mode-btn-danger:hover { color: #b91c1c; }
+    .mode-active-danger { background: white; color: #dc2626; box-shadow: 0 2px 6px rgba(220,38,38,0.15); }
+
+    /* ═══ Alerts / notes ═══ */
+    .alert-banner { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 10px; font-size: 0.85rem; }
+    .alert-banner-warning { background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; }
+    .alert-banner-warning i { flex-shrink: 0; }
+
+    .no-active-note { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.85rem; padding: 10px 0; }
+
+    /* ═══ Live preview frame ═══ */
+    .live-preview-frame {
+        border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1rem;
+        background: #fafbfd;
+    }
+    .live-preview-label {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 0.74rem; font-weight: 700; color: #7c3aed;
+        text-transform: uppercase; letter-spacing: 0.04em;
+        margin-bottom: 0.75rem;
+    }
+    .live-preview-box { border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white; }
+
+    /* ═══ Event grid section label ═══ */
+    .event-section-label {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        color: #64748b; margin-bottom: 1rem;
+    }
+    .event-section-label i { color: #2563eb; }
+
+    /* ═══ Event cards grid ═══ */
+    .event-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .event-card {
+        background: white; border: 1.5px solid #cbd5e1; border-radius: 14px;
+        overflow: hidden; display: flex; flex-direction: column;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .event-card:hover { box-shadow: 0 10px 26px rgba(15,23,42,0.1); transform: translateY(-2px); }
+    .event-card-live { border-color: #86efac; }
+
+    .event-card-header {
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        padding: 14px 16px; color: white;
+    }
+    .event-card-title { font-size: 0.98rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68%; }
+
+    .event-live-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(255,255,255,0.22); backdrop-filter: blur(4px);
+        font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+        flex-shrink: 0;
+    }
+    .pulse-dot { font-size: 0.5rem; animation: pulseDot 1.6s ease-in-out infinite; }
+    @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .event-hidden-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(255,255,255,0.18);
+        font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+        flex-shrink: 0;
+    }
+
+    .event-card-body { padding: 14px 16px; flex: 1; }
+    .event-info-row { display: flex; align-items: center; gap: 8px; font-size: 0.79rem; color: #64748b; margin-bottom: 8px; }
+    .event-info-row i { color: #94a3b8; font-size: 0.78rem; width: 14px; text-align: center; flex-shrink: 0; }
+    .event-info-row:last-of-type { margin-bottom: 12px; }
+
+    .keyword-count-tag {
+        font-size: 0.7rem; font-weight: 700; color: #2563eb;
+        background: #eff6ff; border: 1px solid #dbeafe;
+        padding: 2px 9px; border-radius: 999px;
+    }
+
+    .theme-swatch-box {
+        display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+        background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px;
+        padding: 9px 12px;
+    }
+    .theme-swatch-label { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
+    .theme-swatch { width: 17px; height: 17px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px #e2e8f0; flex-shrink: 0; }
+    .theme-style-tag { font-size: 0.72rem; color: #64748b; margin-left: auto; }
+
+    .event-card-footer { padding: 12px 16px 16px; border-top: 1.5px solid #eef1f6; background: #fafbfd; }
+    .event-actions-row { display: flex; gap: 6px; margin-bottom: 8px; }
+
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid transparent;
+        font-size: 0.76rem; font-weight: 600; white-space: nowrap; text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        flex: 1; justify-content: center;
+    }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-view   { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view:hover { background: #e0f2fe; color: #075985; }
+    .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-label-toggle:hover { background: #fef3c7; color: #92400e; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; flex: 0 0 auto; width: 34px; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    .event-toggle-btn {
+        width: 100%; height: 36px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+        transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .toggle-feature { background: #172281; border: none; color: white; }
+    .toggle-feature:hover { background: #0f2b6d; }
+    .toggle-remove { background: white; border: 1.5px solid #cbd5e1; color: #64748b; }
+    .toggle-remove:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+
+    /* ═══ Empty state ═══ */
+    .event-empty-state {
+        grid-column: 1 / -1;
+        display: flex; flex-direction: column; align-items: center;
+        padding: 3.5rem 1rem; text-align: center;
+        background: white; border: 1.5px dashed #cbd5e1; border-radius: 14px;
+    }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
 {% endblock %}

@@ -1,78 +1,352 @@
-{% extends "user_dashboard/base_user.html" %}
+{% extends "public/base.html" %}
+{% load static %}
 {% block title %}Edit Profile{% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #172281;
+        --primary-dark: #0a1440;
+        --primary-mid: #2338a8;
+        --accent: #f59e0b;
+        --accent-dark: #d97706;
+        --text: #0e1b2e;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* ── Compact header strip ── */
+    .profile-page-header {
+        position: relative;
+        background:
+            radial-gradient(ellipse 900px 300px at 15% -10%, rgba(245,158,11,0.20), transparent 60%),
+            radial-gradient(ellipse 700px 400px at 100% 100%, rgba(76,95,217,0.35), transparent 65%),
+            linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-mid) 100%);
+        padding: 20px 0;
+        color: white;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(10,20,64,0.22);
+        border-bottom: 3px solid var(--accent);
+    }
+    .profile-page-header::after {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .profile-page-header .container { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    .profile-page-header .header-icon {
+        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--accent), #fbbf24);
+        color: var(--primary-dark);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        box-shadow: 0 3px 10px rgba(245,158,11,0.35);
+    }
+    .profile-page-header h2 { font-size: 1.2rem; font-weight: 700; margin: 0; line-height: 1.2; }
+    .profile-page-header p { font-size: 0.8rem; color: rgba(255,255,255,0.78); margin: 2px 0 0; }
+
+    /* ── Page shell ── */
+    .profile-page-body { padding: 22px 0 40px; background: #f8fafc; min-height: calc(100vh - 260px); }
+    .profile-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+
+    /* ── Left: summary card ── */
+    .profile-summary-card {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        padding: 20px; text-align: center;
+        box-shadow: 0 4px 20px rgba(15,23,42,0.08);
+        border-top: 4px solid var(--accent);
+        position: sticky; top: 90px;
+    }
+    .avatar-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 12px; }
+    .avatar-preview {
+        width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+        border: 3px solid white; box-shadow: 0 0 0 3px var(--primary-light, #eaf1fb), 0 4px 14px rgba(23,34,129,0.18);
+        background: linear-gradient(135deg, #eaf1fb, #dbe4fb);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--primary); font-size: 2.1rem;
+    }
+    .avatar-edit-btn {
+        position: absolute; bottom: 0; right: 0;
+        width: 30px; height: 30px; border-radius: 50%;
+        background: var(--primary); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; border: 2px solid white; cursor: pointer;
+        box-shadow: 0 2px 6px rgba(23,34,129,0.35);
+    }
+    .avatar-edit-btn:hover { background: var(--primary-dark); }
+    #id_profile_image { display: none; }
+
+    .summary-name { font-size: 1rem; font-weight: 700; color: var(--text); margin: 4px 0 2px; }
+    .summary-meta { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; }
+    .summary-divider { border-top: 1px dashed var(--border); margin: 14px 0; }
+    .summary-note {
+        font-size: 0.76rem; color: var(--text-muted); line-height: 1.6; text-align: left;
+        background: #f8fafc; border-radius: 8px; padding: 10px 12px;
+        display: flex; gap: 8px; align-items: flex-start;
+    }
+    .summary-note i { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Right: form card ── */
+    .card-glow {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06);
+        padding: 22px 26px;
+    }
+
+    .profile-info-banner {
+        display: flex; align-items: flex-start; gap: 10px;
+        background: linear-gradient(135deg, #eef1ff, #e6eaff);
+        border: 1px solid #dde3fb; border-left: 4px solid var(--primary);
+        border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
+        font-size: 0.8rem; color: var(--primary-dark); line-height: 1.5;
+    }
+    .profile-info-banner i { color: var(--primary); font-size: 0.95rem; margin-top: 1px; flex-shrink: 0; }
+
+    .form-section { margin-bottom: 18px; }
+    .form-section:last-of-type { margin-bottom: 14px; }
+    .form-section-title {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        color: var(--primary); margin-bottom: 12px;
+        padding-bottom: 7px; border-bottom: 1px solid var(--border);
+    }
+    .form-section-title i { color: var(--accent-dark); font-size: 0.85rem; }
+
+    .form-label {
+        font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 4px; display: inline-block;
+    }
+    .field-group { margin-bottom: 12px; }
+
+    /* Compact grid rows for fields */
+    .field-row { display: grid; gap: 12px; margin-bottom: 12px; }
+    .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .field-row.cols-3 { grid-template-columns: 1.4fr 1fr 1fr; }
+
+    /* ── Uniform input styling ── */
+    .card-glow form input[type="text"],
+    .card-glow form input[type="email"],
+    .card-glow form input[type="tel"],
+    .card-glow form input[type="number"],
+    .card-glow form input[type="date"],
+    .card-glow form input:not([type]),
+    .card-glow form select,
+    .card-glow form textarea {
+        width: 100%;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        color: var(--text);
+        background: #fbfcfe;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .card-glow form input:focus,
+    .card-glow form select:focus,
+    .card-glow form textarea:focus {
+        outline: none;
+        border-color: var(--primary-mid);
+        box-shadow: 0 0 0 3px rgba(35,56,168,0.12);
+        background: white;
+    }
+    .card-glow form textarea { min-height: 56px; resize: vertical; }
+
+    .field-error {
+        font-size: 0.74rem; color: #dc2626; margin-top: 4px;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Buttons ── */
+    .form-actions {
+        display: flex; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .btn-save {
+        background: linear-gradient(135deg, var(--primary), var(--primary-mid));
+        color: white; border: none; font-weight: 600; font-size: 0.87rem;
+        padding: 10px 22px; border-radius: 9px;
+        box-shadow: 0 4px 12px rgba(23,34,129,0.3);
+        transition: box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .btn-save:hover { color: white; box-shadow: 0 6px 16px rgba(23,34,129,0.4); transform: translateY(-1px); }
+    .btn-cancel {
+        border: 1.5px solid var(--border-strong); color: var(--text-muted);
+        font-weight: 600; font-size: 0.87rem; padding: 10px 20px; border-radius: 9px;
+        text-decoration: none; display: inline-flex; align-items: center;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-cancel:hover { background: #f8fafc; border-color: var(--text-muted); color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 991px) {
+        .profile-layout { grid-template-columns: 1fr; }
+        .profile-summary-card { position: static; }
+        .field-row.cols-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 576px) {
+        .profile-page-header { padding: 16px 0; }
+        .profile-page-header h2 { font-size: 1.05rem; }
+        .card-glow { padding: 16px 18px; }
+        .field-row.cols-2, .field-row.cols-3 { grid-template-columns: 1fr; }
+        .form-actions { flex-direction: column; }
+        .btn-save, .btn-cancel { width: 100%; text-align: center; justify-content: center; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header mb-4">
-    <h2>Edit Profile</h2>
-    <p>Update your personal details below.</p>
-</div>
-
-<div class="card-glow p-4" style="max-width: 640px;">
-    <div class="alert alert-info small mb-4">
-        <i class="bi bi-info-circle me-1"></i>
-        Your email and mobile number cannot be changed here. Contact an administrator if these need updating.
+<section class="profile-page-header">
+    <div class="container">
+        <div class="header-icon"><i class="bi bi-person-gear"></i></div>
+        <div>
+            <h2>Edit Profile</h2>
+            <p>Update your personal details below</p>
+        </div>
     </div>
+</section>
 
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
+<section class="profile-page-body">
+    <div class="container">
+        <div class="profile-layout">
 
-        <div class="mb-3">
-            <label class="form-label">Full Name</label>
-            {{ form.full_name }}
-        </div>
+            <!-- Left: summary / photo -->
+            <aside class="profile-summary-card">
+                <div class="avatar-wrap">
+                    {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" alt="Profile photo" class="avatar-preview" id="avatarPreviewImg">
+                    {% else %}
+                        <div class="avatar-preview" id="avatarPreviewImg"><i class="bi bi-person-fill"></i></div>
+                    {% endif %}
+                    <label for="id_profile_image" class="avatar-edit-btn" title="Change photo">
+                        <i class="bi bi-camera-fill"></i>
+                    </label>
+                </div>
+                {% comment %} <div class="summary-name">{{ user.get_full_name|default:user.full_name|default:"Your Profile" }}</div> {% endcomment %}
+                <div class="summary-meta">{{ user.email }}</div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label class="form-label">Date of Birth</label>
-                {{ form.date_of_birth }}
+                <div class="summary-divider"></div>
+
+                <div class="summary-note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>Email and mobile number can't be changed here. Contact an administrator to update them.</span>
+                </div>
+            </aside>
+
+            <!-- Right: form -->
+            <div class="card-glow">
+                <form method="post" enctype="multipart/form-data" novalidate id="profileForm">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-person-vcard"></i>Personal Information</div>
+
+                        <div class="field-row cols-3">
+                            <div class="field-group">
+                                <label class="form-label">Full Name</label>
+                                {{ form.full_name }}
+                            </div>
+                            <div class="field-group">
+                                <label class="form-label">Date of Birth</label>
+                                {{ form.date_of_birth }}
+                            </div>
+                            <div class="field-group">
+                                <label class="form-label">Gender</label>
+                                {{ form.gender }}
+                            </div>
+                        </div>
+
+                        {# profile_image field rendered here (hidden input), triggered via avatar edit button #}
+                        <div style="display:none;">{{ form.profile_image }}</div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-geo-alt"></i>Address</div>
+
+                        <div class="field-group">
+                            <label class="form-label">Address</label>
+                            {{ form.address }}
+                        </div>
+
+                        <div class="field-row cols-3" style="margin-top:12px;">
+                            <div class="field-group">
+                                <label class="form-label">City</label>
+                                {{ form.city }}
+                            </div>
+                            <div class="field-group">
+                                <label class="form-label">State</label>
+                                {{ form.state }}
+                            </div>
+                            <div class="field-group">
+                                <label class="form-label">PIN Code</label>
+                                {{ form.pin_code }}
+                                {% if form.pin_code.errors %}
+                                    <div class="field-error"><i class="bi bi-exclamation-circle-fill"></i>{{ form.pin_code.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="bi bi-mortarboard"></i>Identity &amp; Education</div>
+
+                        <div class="field-row cols-2">
+                            <div class="field-group">
+                                <label class="form-label">Aadhar Number</label>
+                                {{ form.aadhar_number }}
+                                {% if form.aadhar_number.errors %}
+                                    <div class="field-error"><i class="bi bi-exclamation-circle-fill"></i>{{ form.aadhar_number.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="field-group">
+                                <label class="form-label">Highest Qualification</label>
+                                {{ form.highest_qualification }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save">
+                            <i class="bi bi-check-lg me-1"></i> Save Changes
+                        </button>
+                        <a href="{% url 'user_dashboard:home' %}" class="btn-cancel">Cancel</a>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Gender</label>
-                {{ form.gender }}
-            </div>
         </div>
+    </div>
+</section>
+{% endblock %}
 
-        <div class="mb-3">
-            <label class="form-label">Profile Photo</label>
-            {{ form.profile_image }}
-        </div>
+{% block extra_js %}
+<script>
+    // Live avatar preview when a new photo is selected via the camera button
+    document.addEventListener('DOMContentLoaded', function () {
+        var fileInput = document.getElementById('id_profile_image');
+        var preview = document.getElementById('avatarPreviewImg');
+        if (!fileInput || !preview) return;
 
-        <div class="mb-3">
-            <label class="form-label">Aadhar Number</label>
-            {{ form.aadhar_number }}
-            {% if form.aadhar_number.errors %}<div class="text-danger small mt-1">{{ form.aadhar_number.errors|join:", " }}</div>{% endif %}
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Address</label>
-            {{ form.address }}
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-md-4">
-                <label class="form-label">City</label>
-                {{ form.city }}
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">State</label>
-                {{ form.state }}
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">PIN Code</label>
-                {{ form.pin_code }}
-                {% if form.pin_code.errors %}<div class="text-danger small mt-1">{{ form.pin_code.errors|join:", " }}</div>{% endif %}
-            </div>
-        </div>
-
-        <div class="mb-4">
-            <label class="form-label">Highest Qualification</label>
-            {{ form.highest_qualification }}
-        </div>
-
-        <button type="submit" class="btn text-white" style="background: linear-gradient(90deg, #4facfe, #00f2fe); font-weight: 600;">
-            <i class="bi bi-check-lg me-1"></i> Save Changes
-        </button>
-        <a href="{% url 'user_dashboard:home' %}" class="btn btn-outline-secondary">Cancel</a>
-    </form>
-</div>
+        fileInput.addEventListener('change', function () {
+            var file = fileInput.files && fileInput.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'avatar-preview';
+                    img.id = 'avatarPreviewImg';
+                    img.alt = 'Profile photo';
+                    preview.replaceWith(img);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
 {% endblock %}

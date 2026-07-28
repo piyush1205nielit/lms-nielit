@@ -9,15 +9,9 @@ from django.conf import settings as django_settings
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum
 from django.views.decorators.http import require_POST
-
-
-
-# ... (all the admin-side views from before stay exactly as they are) ...
-
-# admin_dashboard/views.py (or course/views.py, your call — fits either)
-
-from .models import Course, Module, Lesson, Enrollment, Domain
-from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm, DomainForm
+from accounts.models import User
+from admin_dashboard.notifications import notify_users
+from django.http import JsonResponse
 
 
 # ── Admin: domain management ──────────────────────────────
@@ -359,7 +353,9 @@ def course_detail_view(request, slug):
 
     is_enrolled = False
     if request.user.is_authenticated and request.user.role == 'user':
-        is_enrolled = Enrollment.objects.filter(user=request.user, course=course).exists()
+        is_enrolled = is_enrolled = Enrollment.objects.filter(
+            user=request.user, course=course, access_status=Enrollment.AccessStatus.GRANTED
+            ).exists()
 
     total_lessons = sum(module.lessons.count() for module in modules)
 
@@ -375,20 +371,15 @@ def course_detail_view(request, slug):
 def course_enroll_view(request, slug):
     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
 
-    if request.user.role != 'user':
-        messages.error(request, "Only learner accounts can enroll in courses.")
-        return redirect('course:detail', slug=slug)
-
-    if request.method != 'POST':
-        # enrollment is a state-changing action — don't allow it via a bare GET link
+    if request.user.account_status != User.AccountStatus.ACTIVE:
+        messages.error(request, "Your account access must be approved by an admin before you can enroll in courses.")
         return redirect('course:detail', slug=slug)
 
     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
     if created:
-        messages.success(request, f"You're enrolled in {course.course_name}! You can find it in My Courses.")
+        messages.success(request, "Enrollment request submitted. You'll get access once approved by an admin.")
     else:
-        messages.info(request, "You're already enrolled in this course.")
-
+        messages.info(request, f"You already have a {enrollment.get_access_status_display().lower()} enrollment for this course.")
     return redirect('course:detail', slug=slug)
 
 
@@ -486,3 +477,71 @@ def course_overview_view(request, course_id):
         'completed_count': completed_count,
         'active_page': 'courses',
     })
+
+
+@admin_required
+def enrollment_management_view(request):
+    enrollments = Enrollment.objects.select_related('user', 'course').order_by('-enrolled_at')
+
+    course_id = request.GET.get('course', '').strip()
+    if course_id:
+        enrollments = enrollments.filter(course_id=course_id)
+
+    status_filter = request.GET.get('access_status', '').strip()
+    if status_filter:
+        enrollments = enrollments.filter(access_status=status_filter)
+
+    return render(request, 'course/enrollment_management.html', {
+        'enrollments': enrollments,
+        'all_courses': Course.objects.filter(status=Course.Status.ACTIVE).order_by('course_name'),
+        'selected_course': course_id,
+        'selected_status': status_filter,
+        'active_page': 'enrollments',
+    })
+
+
+def _bulk_update_enrollment_status(request, new_status, title, message_template):
+    enrollment_ids = request.POST.getlist('enrollment_ids[]')
+    enrollments = list(Enrollment.objects.filter(id__in=enrollment_ids).select_related('user', 'course'))
+    Enrollment.objects.filter(id__in=[e.id for e in enrollments]).update(
+        access_status=new_status, access_status_updated_at=timezone.now()
+    )
+    users = [e.user for e in enrollments]
+    notify_users(users, title=title, message=message_template, created_by=request.user)
+    return JsonResponse({'success': True, 'count': len(enrollments)})
+
+
+@admin_required
+@require_POST
+def bulk_grant_enrollment_view(request):
+    return _bulk_update_enrollment_status(
+        request, Enrollment.AccessStatus.GRANTED,
+        "Course Access Granted", "Your enrollment request has been approved. You can now access the course content.",
+    )
+
+
+@admin_required
+@require_POST
+def bulk_hold_enrollment_view(request):
+    return _bulk_update_enrollment_status(
+        request, Enrollment.AccessStatus.HOLD,
+        "Course Access On Hold", "Your access to a course has been temporarily put on hold by an administrator.",
+    )
+
+
+@admin_required
+@require_POST
+def bulk_revoke_enrollment_view(request):
+    return _bulk_update_enrollment_status(
+        request, Enrollment.AccessStatus.REVOKED,
+        "Course Access Revoked", "Your access to a course has been revoked by an administrator.",
+    )
+
+
+@admin_required
+@require_POST
+def bulk_deny_enrollment_view(request):
+    enrollment_ids = request.POST.getlist('enrollment_ids[]')
+    count = Enrollment.objects.filter(id__in=enrollment_ids).count()
+    Enrollment.objects.filter(id__in=enrollment_ids).delete()
+    return JsonResponse({'success': True, 'count': count})

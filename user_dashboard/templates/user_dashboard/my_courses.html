@@ -1,0 +1,119 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}My Courses - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --dash-blue: #2563eb; --border: #e2e8f0; --text-muted: #64748b; }
+    .mycourses-wrap { padding: 32px 0 60px; background: #f8fafc; min-height: 70vh; }
+    .mycourses-header { margin-bottom: 24px; }
+    .mycourses-header h2 { font-size: 1.4rem; font-weight: 700; color: #0e1b2e; }
+    .mycourses-header p { color: var(--text-muted); font-size: 0.88rem; }
+
+    .course-item-card {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        padding: 20px; margin-bottom: 16px;
+        display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+    }
+    .course-item-banner {
+        width: 90px; height: 64px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+        background: #eff6ff;
+    }
+    .course-item-body { flex: 1; min-width: 220px; }
+    .course-item-body h5 { font-size: 0.98rem; font-weight: 700; color: #0e1b2e; margin: 0 0 6px; }
+    .course-item-domains { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .course-item-domain-tag { font-size: 0.66rem; font-weight: 700; padding: 2px 9px; border-radius: 10px; background: #eaf1fb; color: #172281; }
+
+    .status-pill { font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+    .status-pill.granted { background: #d1fae5; color: #065f46; }
+    .status-pill.pending { background: #fef3c7; color: #92400e; }
+    .status-pill.hold { background: #e2e8f0; color: #475569; }
+    .status-pill.revoked { background: #fee2e2; color: #991b1b; }
+
+    .mini-progress-wrap { min-width: 160px; }
+    .mini-progress-top { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 5px; }
+    .mini-progress-bar { height: 7px; background: #eef2f9; border-radius: 5px; overflow: hidden; }
+    .mini-progress-fill { height: 100%; background: linear-gradient(90deg, var(--dash-blue), #60a5fa); border-radius: 5px; }
+
+    .btn-continue-course {
+        background: #172281; color: white; font-weight: 600; font-size: 0.82rem;
+        padding: 9px 18px; border-radius: 8px; text-decoration: none; white-space: nowrap;
+    }
+    .btn-continue-course:hover { background: #0f2b6d; color: white; }
+    .btn-locked-course {
+        background: #f1f5f9; color: #94a3b8; font-weight: 600; font-size: 0.82rem;
+        padding: 9px 18px; border-radius: 8px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); background: white; border-radius: 14px; border: 1px solid var(--border); }
+    .empty-state i { font-size: 2.2rem; color: #cbd5e1; margin-bottom: 10px; display: block; }
+
+    @media (max-width: 700px) {
+        .course-item-card { flex-direction: column; align-items: flex-start; }
+        .course-item-banner { width: 100%; height: 120px; }
+        .mini-progress-wrap { width: 100%; }
+        .btn-continue-course, .btn-locked-course { width: 100%; text-align: center; justify-content: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mycourses-wrap">
+    <div class="container">
+        <div class="mycourses-header">
+            <h2><i class="fas fa-graduation-cap me-2" style="color:#2563eb;"></i>My Courses</h2>
+            <p>{{ course_data|length }} enrolled course{{ course_data|length|pluralize }}</p>
+        </div>
+
+        {% for item in course_data %}
+            <div class="course-item-card">
+                {% if item.enrollment.course.course_banner %}
+                    <img src="{{ item.enrollment.course.course_banner.url }}" class="course-item-banner" alt="">
+                {% else %}
+                    <div class="course-item-banner d-flex align-items-center justify-content-center">
+                        <i class="fas fa-book" style="color:#2563eb; opacity:0.4; font-size:1.4rem;"></i>
+                    </div>
+                {% endif %}
+
+                <div class="course-item-body">
+                    <h5>{{ item.enrollment.course.course_name }}</h5>
+                    {% if item.enrollment.course.domains.all %}
+                    <div class="course-item-domains">
+                        {% for domain in item.enrollment.course.domains.all|slice:":3" %}
+                            <span class="course-item-domain-tag">{{ domain.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if item.enrollment.access_status == 'granted' %}
+                        <span class="status-pill granted"><i class="fas fa-check-circle me-1"></i>Access Granted</span>
+                    {% elif item.enrollment.access_status == 'pending' %}
+                        <span class="status-pill pending"><i class="fas fa-hourglass-half me-1"></i>Awaiting Approval</span>
+                    {% elif item.enrollment.access_status == 'hold' %}
+                        <span class="status-pill hold"><i class="fas fa-pause-circle me-1"></i>On Hold</span>
+                    {% else %}
+                        <span class="status-pill revoked"><i class="fas fa-times-circle me-1"></i>Access Revoked</span>
+                    {% endif %}
+                </div>
+
+                {% if item.enrollment.access_status == 'granted' %}
+                <div class="mini-progress-wrap">
+                    <div class="mini-progress-top"><span>{{ item.completed }}/{{ item.total }} lessons</span><span>{{ item.percent }}%</span></div>
+                    <div class="mini-progress-bar"><div class="mini-progress-fill" style="width:{{ item.percent }}%;"></div></div>
+                </div>
+                <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-continue-course">
+                    {% if item.percent > 0 %}Continue{% else %}Start Learning{% endif %} <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+                {% else %}
+                <span class="btn-locked-course"><i class="fas fa-lock"></i> Not Yet Accessible</span>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p class="mb-2">You haven't enrolled in any courses yet.</p>
+                <a href="{% url 'public:courses' %}" class="btn btn-primary btn-sm">Browse Courses</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

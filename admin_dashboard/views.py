@@ -7,11 +7,17 @@ from django.db.models import Q, Count, Prefetch
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from accounts.decorators import admin_required, superadmin_required
+from django.views.decorators.http import require_POST
 from user.models import LearnerProfile
 from accounts.models import User
 from .forms import AdminUserProfileEditForm, UserCredentialsForm
 from course.models import Course, Domain, Enrollment, Progress
-from user.forms import ProfileEditForm  # or a dedicated AdminStudentEditForm, see note below
+from user.forms import ProfileEditForm  
+from .models import Centre
+from .forms import CentreForm
+from django.utils import timezone
+from .notifications import notify_users
+
 
 
 @admin_required
@@ -195,3 +201,206 @@ def student_delete_view(request, user_id):
         student.delete()
         return JsonResponse({'success': True, 'message': f"Account for {email} deleted."})
     return JsonResponse({'success': False}, status=405)
+
+
+@admin_required
+def centre_list_view(request):
+    centres = Centre.objects.annotate(user_count=Count('users')).order_by('centre_name')
+    return render(request, 'admin_dashboard/centre_manage.html', {
+        'centres': centres, 'active_page': 'centres',
+    })
+
+
+@admin_required
+def centre_modal_view(request, centre_id=None):
+    centre = get_object_or_404(Centre, id=centre_id) if centre_id else None
+
+    if request.method == 'POST':
+        form = CentreForm(request.POST, instance=centre)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    form = CentreForm(instance=centre)
+    html = render_to_string('admin_dashboard/includes/centre_form_modal.html', {
+        'form': form, 'centre': centre,
+    }, request=request)
+    return JsonResponse({'html': html})
+
+
+@admin_required
+@require_POST
+def centre_delete_view(request, centre_id):
+    centre = get_object_or_404(Centre, id=centre_id)
+    if centre.users.exists():
+        return JsonResponse({'success': False, 'message': 'Cannot delete — students are still linked to this centre.'}, status=400)
+    centre.delete()
+    return JsonResponse({'success': True})
+
+@admin_required
+def registration_requests_view(request):
+    users = User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.PENDING).select_related('nielit_centre').order_by('-date_joined')
+    return render(request, 'admin_dashboard/registration_requests.html', {
+        'users': users, 'active_page': 'registrations',
+    })
+
+
+@admin_required
+@require_POST
+def bulk_approve_registrations_view(request):
+    user_ids = request.POST.getlist('user_ids[]')
+    users = list(User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING))
+
+    User.objects.filter(id__in=[u.id for u in users]).update(
+        account_status=User.AccountStatus.ACTIVE, is_active=True, account_status_updated_at=timezone.now()
+    )
+    notify_users(
+        users,
+        title="Your account has been approved",
+        message="Your NIELIT LMS account has been approved. You can now log in and enroll in courses.",
+        created_by=request.user,
+    )
+    return JsonResponse({'success': True, 'count': len(users)})
+
+
+@admin_required
+@require_POST
+def bulk_deny_registrations_view(request):
+    user_ids = request.POST.getlist('user_ids[]')
+    count = User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).count()
+    User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).delete()
+    return JsonResponse({'success': True, 'count': count})
+
+@admin_required
+def user_access_management_view(request):
+    users = User.objects.filter(role=User.Role.USER).select_related('nielit_centre').order_by('-date_joined')
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        users = users.filter(account_status=status_filter)
+    return render(request, 'admin_dashboard/user_access_management.html', {
+        'users': users, 'selected_status': status_filter, 'active_page': 'user_access',
+    })
+
+
+def _bulk_update_account_status(request, new_status, is_active_flag, title, message_template):
+    user_ids = request.POST.getlist('user_ids[]')
+    users = list(User.objects.filter(id__in=user_ids, role=User.Role.USER))
+    User.objects.filter(id__in=[u.id for u in users]).update(
+        account_status=new_status, is_active=is_active_flag, account_status_updated_at=timezone.now()
+    )
+    notify_users(users, title=title, message=message_template, created_by=request.user)
+    return JsonResponse({'success': True, 'count': len(users)})
+
+
+@admin_required
+@require_POST
+def bulk_grant_access_view(request):
+    return _bulk_update_account_status(
+        request, User.AccountStatus.ACTIVE, True,
+        "Account Access Granted", "Your account access has been granted. You can now log in.",
+    )
+
+
+@superadmin_required
+@require_POST
+def bulk_revoke_access_view(request):
+    return _bulk_update_account_status(
+        request, User.AccountStatus.REVOKED, False,
+        "Account Access Revoked", "Your account access has been revoked. Contact the administrator for details.",
+    )
+
+
+@superadmin_required
+@require_POST
+def bulk_disable_access_view(request):
+    return _bulk_update_account_status(
+        request, User.AccountStatus.DISABLED, False,
+        "Account Temporarily Disabled", "Your account has been temporarily disabled by an administrator.",
+    )
+
+
+@superadmin_required
+@require_POST
+def bulk_delete_accounts_view(request):
+    user_ids = request.POST.getlist('user_ids[]')
+    count = User.objects.filter(id__in=user_ids, role=User.Role.USER).count()
+    User.objects.filter(id__in=user_ids, role=User.Role.USER).delete()
+    return JsonResponse({'success': True, 'count': count})
+
+from django.http import HttpResponse
+from .forms import BulkUserUploadForm
+from .utils import build_upload_template, parse_and_validate_upload, create_users_from_rows
+from .notifications import notify_users
+
+
+@admin_required
+def bulk_user_upload_view(request):
+    form = BulkUserUploadForm(request.POST or None, request.FILES or None)
+    errors = []
+    created_count = 0
+
+    if request.method == 'POST' and form.is_valid():
+        valid_rows, errors = parse_and_validate_upload(form.cleaned_data['excel_file'])
+
+        if not errors:
+            created_users, common_password = create_users_from_rows(valid_rows, created_by=request.user)
+            created_count = len(created_users)
+
+            _send_credential_emails(created_users, common_password)
+            notify_users(
+                created_users,
+                title="Your NIELIT LMS account has been created",
+                message=(
+                    f"An account has been created for you on NIELIT LMS.\n\n"
+                    f"Login using your registered email or contact number with the password "
+                    f"sent to your email. Please complete your profile after logging in to "
+                    f"access courses."
+                ),
+                created_by=request.user,
+            )
+            messages.success(request, f"{created_count} student account(s) created and notified successfully.")
+            return redirect('admin_dashboard:bulk_user_upload')
+
+    return render(request, 'admin_dashboard/bulk_user_upload.html', {
+        'form': form,
+        'errors': errors,
+        'active_page': 'bulk_upload',
+    })
+
+
+@admin_required
+def download_upload_template_view(request):
+    buffer = build_upload_template()
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="student_upload_template.xlsx"'
+    return response
+
+
+def _send_credential_emails(users, common_password):
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    for user in users:
+        try:
+            send_mail(
+                subject="Your NIELIT LMS Login Credentials",
+                message=(
+                    f"Your NIELIT LMS account has been created.\n\n"
+                    f"Login Email: {user.email}\n"
+                    f"Login Contact: {user.contact}\n"
+                    f"Password: {common_password}\n\n"
+                    f"Log in at the LMS portal using either your email or contact number, "
+                    f"along with the password above. For security, we recommend completing "
+                    f"your profile immediately after your first login.\n\n"
+                    f"Note: this is a shared initial password. Please do not share it further."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass

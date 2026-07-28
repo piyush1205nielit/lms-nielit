@@ -16,10 +16,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         ADMIN = 'admin', 'Admin'
         USER = 'user', 'User'
 
+    class AccountStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending Approval'
+        ACTIVE = 'active', 'Active'
+        REVOKED = 'revoked', 'Revoked'
+        DISABLED = 'disabled', 'Temporarily Disabled'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     contact = models.CharField(max_length=10, unique=True, null=True, blank=True, validators=[phone_validator])
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.USER)
+
+    nielit_centre = models.ForeignKey(
+        'admin_dashboard.Centre', on_delete=models.SET_NULL, null=True, blank=True, related_name='users'
+    )
+    batch_code = models.CharField(max_length=30, blank=True)
+    account_status = models.CharField(max_length=10, choices=AccountStatus.choices, default=AccountStatus.PENDING)
+    account_status_updated_at = models.DateTimeField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)   # True for admin + superadmin
@@ -39,6 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=['email']),
             models.Index(fields=['contact']),
             models.Index(fields=['role']),
+            models.Index(fields=['account_status']),
         ]
 
     def __str__(self):

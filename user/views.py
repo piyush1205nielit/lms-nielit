@@ -14,42 +14,95 @@ from django.contrib.auth import update_session_auth_hash
 from .forms import *
 from .models import PasswordResetOTP
 from .utils import generate_otp
+from accounts.models import User
+
+
+from django.utils import timezone
+from accounts.models import User
+from user.models import LearnerProfile
+from .forms import SignupForm
 
 
 def signup_view(request):
     form = SignupForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = User.objects.create_user(
-            email=form.cleaned_data['email'],
-            contact=form.cleaned_data['contact'],
-            password=form.cleaned_data['password1'],
+        data = form.cleaned_data
+
+        user = User(
+            email=data['email'],
+            contact=data['contact'],
             role=User.Role.USER,
+            nielit_centre=data['nielit_centre'],
+            batch_code=data['batch_code'],
+            account_status=User.AccountStatus.PENDING,
+            is_active=False,
+            account_status_updated_at=timezone.now(),
         )
+        user.set_password(data['password1'])
+        user.save()
+
         LearnerProfile.objects.create(
             user=user,
-            enrollment_number=generate_enrollment_number(),
+            full_name=data['full_name'],
+            gender=data['gender'],
+            profile_completed=False,
         )
-        login(request, user, backend='accounts.backends.EmailOrPhoneBackend')
-        return redirect('user:complete_profile')
+
+        return redirect('user:pending_approval')
 
     return render(request, 'user/signup.html', {'form': form})
 
 
-def user_login_view(request):
-    if request.user.is_authenticated and request.user.role == 'user':
-        return redirect('user_dashboard:home')
+def pending_approval_view(request):
+    return render(request, 'user/pending_approval.html')
 
+
+# def user_login_view(request):
+#     if request.user.is_authenticated and request.user.role == 'user':
+#         return redirect('user_dashboard:home')
+
+#     form = UserLoginForm(request.POST or None)
+#     if request.method == 'POST' and form.is_valid():
+#         identifier = form.cleaned_data['identifier']
+#         password = form.cleaned_data['password']
+#         user = authenticate(request, username=identifier, password=password)
+
+#         if user is not None and user.role == 'user':
+#             login(request, user)
+#             return redirect('user_dashboard:home')
+
+#         messages.error(request, "Invalid credentials.")
+
+#     return render(request, 'user/login.html', {'form': form})
+
+def user_login_view(request):
     form = UserLoginForm(request.POST or None)
+
     if request.method == 'POST' and form.is_valid():
-        identifier = form.cleaned_data['identifier']
+        identifier = form.cleaned_data['identifier'].strip()
         password = form.cleaned_data['password']
+
         user = authenticate(request, username=identifier, password=password)
 
-        if user is not None and user.role == 'user':
+        if user is not None:
             login(request, user)
-            return redirect('user_dashboard:home')
+            return redirect(request.GET.get('next') or 'user_dashboard:home')
 
-        messages.error(request, "Invalid credentials.")
+        # authenticate() returns None for inactive users too (ModelBackend blocks
+        # them) — look the account up directly so we can give an accurate reason
+        existing_user = User.objects.filter(
+            models.Q(email=identifier) | models.Q(contact=identifier)
+        ).first()
+
+        if existing_user and existing_user.check_password(password):
+            status_messages = {
+                User.AccountStatus.PENDING: "Your account is still pending admin approval.",
+                User.AccountStatus.REVOKED: "Your account access has been revoked. Contact the administrator.",
+                User.AccountStatus.DISABLED: "Your account has been temporarily disabled. Contact the administrator.",
+            }
+            messages.error(request, status_messages.get(existing_user.account_status, "Unable to log in."))
+        else:
+            messages.error(request, "Invalid email/contact or password.")
 
     return render(request, 'user/login.html', {'form': form})
 

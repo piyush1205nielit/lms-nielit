@@ -1,0 +1,286 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Bulk Upload Students{% endblock %}
+{% block page_title %}Bulk Upload Students{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-file-earmark-spreadsheet-fill"></i> Bulk Upload Students</h2>
+        <p>Create multiple student accounts at once from an Excel file.</p>
+    </div>
+</div>
+
+<div class="bulk-upload-grid">
+
+    <!-- ═══════════ LEFT: step-by-step guide + upload ═══════════ -->
+    <div class="bulk-upload-main">
+
+        <!-- Step 1 -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="step-number-badge">1</div>
+                <div><h6>Download the Template</h6><p>Includes required column headers, an example row, instructions, and valid centre names.</p></div>
+            </div>
+            <div class="form-section-body">
+                <a href="{% url 'admin_dashboard:download_upload_template' %}" class="btn-admin-labeled btn-label-view">
+                    <i class="bi bi-download"></i><span class="btn-label-text">Download Excel Template</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="step-number-badge">2</div>
+                <div><h6>Excel Format Preview</h6><p>Your file's first sheet must look exactly like this — headers in row 1, one student per row after.</p></div>
+            </div>
+            <div class="form-section-body">
+                <div class="table-responsive excel-preview-wrap">
+                    <table class="table excel-preview-table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="excel-corner"></th>
+                                <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="excel-header-row">
+                                <td class="excel-row-num">1</td>
+                                <td>Email</td>
+                                <td>Contact</td>
+                                <td>NIELIT Centre</td>
+                                <td>Batch Code</td>
+                                <td>Full Name</td>
+                                <td>Gender</td>
+                            </tr>
+                            <tr>
+                                <td class="excel-row-num">2</td>
+                                <td>ravi.kumar@example.com</td>
+                                <td>9876543210</td>
+                                <td>NIELIT Delhi Centre</td>
+                                <td>BATCH2026A</td>
+                                <td>Ravi Kumar</td>
+                                <td>Male</td>
+                            </tr>
+                            <tr>
+                                <td class="excel-row-num">3</td>
+                                <td>priya.sharma@example.com</td>
+                                <td>9123456780</td>
+                                <td>NIELIT Delhi Centre</td>
+                                <td>BATCH2026A</td>
+                                <td>Priya Sharma</td>
+                                <td>Female</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="format-note">
+                    <i class="bi bi-info-circle"></i> Row 1 is fixed — do not rename, reorder, or remove any column header.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="step-number-badge">3</div>
+                <div><h6>Fill In Student Data</h6><p>Follow these rules for every row to avoid validation errors.</p></div>
+            </div>
+            <div class="form-section-body">
+                <ul class="rules-list">
+                    <li><i class="bi bi-check-circle-fill"></i> All six columns are <strong>mandatory</strong> for every row: Email, Contact, NIELIT Centre, Batch Code, Full Name, Gender.</li>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>Email</strong> must be a valid, unique address — not already registered.</li>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>Contact</strong> must be a unique 10-digit number.</li>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>NIELIT Centre</strong> must exactly match a centre name already created in <a href="{% url 'admin_dashboard:centre_list' %}">Manage Centres</a> — check the template's "Valid Centres" sheet.</li>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>Batch Code</strong> is automatically uppercased and stripped of spaces (e.g. "batch 26 a" &rarr; "BATCH26A").</li>
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>Gender</strong> must be Male, Female, or Other.</li>
+                </ul>
+                <div class="format-note format-note-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i> If <strong>any</strong> row fails validation, no accounts are created — fix all errors shown and re-upload.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="card-panel form-section-card">
+            <div class="form-section-header">
+                <div class="step-number-badge">4</div>
+                <div><h6>Upload the Completed File</h6><p>Once your file matches the format above, upload it here.</p></div>
+            </div>
+            <div class="form-section-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <div class="field-block field-block-last">
+                        <div class="file-upload-dropzone">
+                            <i class="bi bi-file-earmark-excel-fill dropzone-icon"></i>
+                            <div class="dropzone-title">Choose your completed Excel file</div>
+                            <div class="dropzone-sub">.xlsx format, matching the template exactly</div>
+                            {{ form.excel_file }}
+                        </div>
+                        {% if form.excel_file.errors %}<div class="text-danger small mt-2">{{ form.excel_file.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <button type="submit" class="btn-admin-primary btn-form-submit mt-3">
+                        <i class="bi bi-upload me-1"></i> Upload &amp; Create Accounts
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ RIGHT: sticky results + info sidebar ═══════════ -->
+    <aside class="bulk-upload-sidebar">
+
+        {% if errors %}
+        <div class="card-panel sidebar-panel error-results-panel">
+            <div class="sidebar-panel-title error-title">
+                <i class="bi bi-exclamation-triangle-fill"></i> Upload Failed — {{ errors|length }} error{{ errors|length|pluralize }}
+            </div>
+            <p class="error-results-note">No accounts were created. Fix the issues below in your Excel file and re-upload.</p>
+            <div class="table-responsive error-table-wrap">
+                <table class="table table-admin error-list-table mb-0">
+                    <thead><tr><th style="width:56px;">Row</th><th>Issue</th></tr></thead>
+                    <tbody>
+                        {% for error in errors %}
+                        <tr><td class="error-row-num">{{ error.row }}</td><td class="error-message">{{ error.message }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="card-panel sidebar-panel results-placeholder-panel">
+            <div class="placeholder-icon"><i class="bi bi-info-circle"></i></div>
+            <p>Validation results and any errors will appear here after you upload a file.</p>
+        </div>
+        {% endif %}
+
+        <div class="card-panel sidebar-panel password-panel">
+            <div class="sidebar-panel-title password-title"><i class="bi bi-key-fill"></i> Shared Initial Password</div>
+            <p class="password-note">
+                Every account created this way shares the password <code>NIELIT{% now "Y" %}delhi123</code>,
+                emailed individually to each student along with their login email/contact. Students should
+                complete their profile immediately after logging in.
+            </p>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+
+    /* ═══ Grid layout ═══ */
+    .bulk-upload-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 1050px) { .bulk-upload-grid { grid-template-columns: 1fr; } }
+    .bulk-upload-sidebar { position: sticky; top: calc(var(--topbar-height) + 1.25rem); display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ═══ Section cards ═══ */
+    .form-section-card { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .form-section-card:last-child { margin-bottom: 0; }
+    .form-section-header { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .step-number-badge {
+        width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+        background: #2563eb; color: white; font-weight: 700; font-size: 0.92rem;
+        display: flex; align-items: center; justify-content: center;
+        margin-top: 1px;
+    }
+    .form-section-header h6 { font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+    .form-section-header p { font-size: 0.77rem; color: #64748b; margin: 0; }
+    .form-section-body { padding: 1.25rem 1.2rem; }
+
+    /* ═══ Excel preview table ═══ */
+    .excel-preview-wrap { border: 1.5px solid #cbd5e1; border-radius: 8px; overflow: hidden; }
+    .excel-preview-table { margin-bottom: 0; font-size: 0.78rem; border-collapse: collapse; }
+    .excel-preview-table th, .excel-preview-table td { border: 1px solid #dbe2ea; padding: 6px 10px; white-space: nowrap; }
+    .excel-preview-table thead th { background: #f1f5f9; color: #64748b; font-weight: 700; text-align: center; font-size: 0.72rem; border-bottom: 2px solid #94a3b8; }
+    .excel-preview-table th.excel-corner { background: #e2e8f0; width: 30px; }
+    .excel-preview-table td.excel-row-num { background: #f1f5f9; color: #64748b; font-weight: 700; text-align: center; width: 30px; }
+    .excel-preview-table tr.excel-header-row td { background: #172281; color: #fff; font-weight: 700; }
+    .excel-preview-table tr.excel-header-row td.excel-row-num { background: #0f1a5f; color: #fff; }
+
+    .format-note {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.79rem; color: #64748b;
+        margin-top: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px;
+    }
+    .format-note-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .format-note-warning i { color: #d97706; }
+
+    /* ═══ Rules list ═══ */
+    .rules-list { list-style: none; padding: 0; margin: 0; }
+    .rules-list li {
+        display: flex; align-items: flex-start; gap: 9px;
+        font-size: 0.83rem; color: #475569; line-height: 1.6;
+        padding-bottom: 10px; margin-bottom: 10px;
+        border-bottom: 1px solid #eef1f6;
+    }
+    .rules-list li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .rules-list li i { color: #16a34a; font-size: 0.85rem; margin-top: 3px; flex-shrink: 0; }
+
+    /* ═══ File upload dropzone ═══ */
+    .file-upload-dropzone {
+        border: 2px dashed #cbd5e1; border-radius: 12px;
+        padding: 1.75rem 1.5rem; text-align: center; background: #f8fafc;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        position: relative;
+    }
+    .file-upload-dropzone:hover { border-color: #2563eb; background: #f0f7ff; }
+    .dropzone-icon { font-size: 2rem; color: #86efac; margin-bottom: 8px; display: block; color: #16a34a; }
+    .dropzone-title { font-size: 0.92rem; font-weight: 700; color: #1e293b; }
+    .dropzone-sub { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
+    .file-upload-dropzone input[type="file"] { max-width: 340px; margin: 12px auto 0; display: block; }
+
+    .field-block-last { margin: 0; }
+    .btn-form-submit { padding: 0.62rem 1.5rem; font-size: 0.9rem; }
+
+    /* ═══ Sidebar panels ═══ */
+    .sidebar-panel { padding: 1.1rem 1.15rem; border: 1.5px solid #cbd5e1 !important; }
+    .sidebar-panel-title { font-size: 0.82rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 0.75rem; padding-bottom: 0.7rem; border-bottom: 2px solid #e2e8f0; }
+
+    /* ═══ Error results panel ═══ */
+    .error-results-panel { background: #fef2f2; border-color: #fecaca !important; }
+    .error-title { border-bottom-color: #fecaca; color: #b91c1c; }
+    .error-title i { color: #dc2626; }
+    .error-results-note { font-size: 0.79rem; color: #991b1b; margin-bottom: 12px; }
+    .error-table-wrap { max-height: 380px; overflow-y: auto; border: 1.5px solid #fecaca; border-radius: 8px; background: white; }
+    .error-list-table { font-size: 0.79rem; }
+    .error-list-table thead th { background: #fef2f2; color: #b91c1c; border-bottom: 2px solid #fecaca !important; padding: 8px 10px; }
+    .error-list-table tbody td { padding: 8px 10px; border-bottom: 1px solid #fee2e2; vertical-align: top; }
+    .error-list-table tbody tr:last-child td { border-bottom: none; }
+    .error-list-table tbody tr:nth-of-type(even) { background: #fef8f8; }
+    .error-row-num { font-weight: 700; color: #b91c1c; text-align: center; }
+    .error-message { color: #7f1d1d; }
+
+    /* ═══ Placeholder panel ═══ */
+    .results-placeholder-panel { text-align: center; padding: 2rem 1.2rem; }
+    .placeholder-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: #f1f5f9; color: #94a3b8;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; margin: 0 auto 12px;
+    }
+    .results-placeholder-panel p { font-size: 0.82rem; color: #94a3b8; margin: 0; }
+
+    /* ═══ Password panel ═══ */
+    .password-panel { background: #fffbeb; border-color: #fde68a !important; }
+    .password-title { border-bottom-color: #fde68a; color: #92400e; }
+    .password-title i { color: #d97706; }
+    .password-note { font-size: 0.79rem; color: #92400e; line-height: 1.6; margin: 0; }
+    .password-note code { background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+
+    /* ═══ Buttons ═══ */
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 7px;
+        height: 36px; padding: 0 16px; border-radius: 9px; border: 1px solid transparent;
+        font-size: 0.84rem; font-weight: 600; white-space: nowrap; text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-view { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-view:hover { background: #dbeafe; color: #1e40af; }
+</style>
+{% endblock %}

@@ -1,68 +1,210 @@
-{% extends "user_dashboard/base_user.html" %}
-{% block title %}My Dashboard{% endblock %}
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}My Dashboard - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --dash-blue: #2563eb; --dash-blue-bg: #eff6ff;
+        --dash-purple: #7c3aed; --dash-purple-bg: #f5f3ff;
+        --dash-amber: #d97706; --dash-amber-bg: #fffbeb;
+        --dash-green: #059669; --dash-green-bg: #ecfdf5;
+        --dash-slate: #475569; --dash-slate-bg: #f8fafc;
+        --border: #e2e8f0; --text-muted: #64748b;
+    }
+    .dash-wrap { padding: 32px 0 60px; background: #f8fafc; min-height: 70vh; }
+    .dash-header { margin-bottom: 26px; }
+    .dash-header h2 { font-size: 1.5rem; font-weight: 700; color: #0e1b2e; margin: 0 0 4px; }
+    .dash-header p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    @media (max-width: 991px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+        background: white; border-radius: 14px; padding: 20px;
+        border: 1px solid var(--border); display: flex; align-items: center; gap: 14px;
+        border-left: 4px solid transparent;
+    }
+    .stat-card.c-blue { border-left-color: var(--dash-blue); }
+    .stat-card.c-purple { border-left-color: var(--dash-purple); }
+    .stat-card.c-amber { border-left-color: var(--dash-amber); }
+    .stat-card.c-green { border-left-color: var(--dash-green); }
+
+    .stat-icon {
+        width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .stat-icon.c-blue { background: var(--dash-blue-bg); color: var(--dash-blue); }
+    .stat-icon.c-purple { background: var(--dash-purple-bg); color: var(--dash-purple); }
+    .stat-icon.c-amber { background: var(--dash-amber-bg); color: var(--dash-amber); }
+    .stat-icon.c-green { background: var(--dash-green-bg); color: var(--dash-green); }
+
+    .stat-value { font-size: 1.5rem; font-weight: 800; color: #0e1b2e; line-height: 1.1; }
+    .stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+
+    .dash-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+    @media (max-width: 991px) { .dash-row { grid-template-columns: 1fr; } }
+
+    .dash-panel { background: white; border-radius: 14px; border: 1px solid var(--border); padding: 22px; margin-bottom: 20px; }
+    .dash-panel h5 { font-size: 0.98rem; font-weight: 700; color: #0e1b2e; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+    .dash-panel h5 i { color: var(--dash-blue); }
+
+    .course-progress-row { margin-bottom: 16px; }
+    .course-progress-row:last-child { margin-bottom: 0; }
+    .cpr-top { display: flex; justify-content: space-between; font-size: 0.86rem; margin-bottom: 6px; }
+    .cpr-top .cpr-name { font-weight: 600; color: #0e1b2e; }
+    .cpr-top .cpr-pct { color: var(--dash-blue); font-weight: 700; }
+    .cpr-bar { height: 8px; background: #eef2f9; border-radius: 6px; overflow: hidden; }
+    .cpr-bar-fill { height: 100%; background: linear-gradient(90deg, var(--dash-blue), #60a5fa); border-radius: 6px; }
+
+    .overall-ring-wrap { display: flex; align-items: center; justify-content: center; padding: 10px 0 20px; }
+    .overall-ring { position: relative; width: 140px; height: 140px; }
+    .overall-ring svg { transform: rotate(-90deg); }
+    .overall-ring-label {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+    }
+    .overall-ring-label .big { font-size: 1.6rem; font-weight: 800; color: #0e1b2e; }
+    .overall-ring-label .small-txt { font-size: 0.72rem; color: var(--text-muted); }
+
+    .announce-mini-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.84rem; }
+    .announce-mini-item:last-child { border-bottom: none; }
+    .announce-mini-item .ami-title { font-weight: 600; color: #0e1b2e; }
+    .announce-mini-item .ami-body { color: var(--text-muted); font-size: 0.8rem; margin: 2px 0; }
+    .announce-mini-item .ami-date { font-size: 0.72rem; color: #94a3b8; }
+
+    .dash-empty { text-align: center; padding: 30px 10px; color: #94a3b8; }
+    .dash-empty i { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+
+    .quick-link-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .quick-link-btn {
+        flex: 1; min-width: 140px; text-align: center;
+        padding: 14px 10px; border-radius: 12px; text-decoration: none;
+        font-size: 0.82rem; font-weight: 600; transition: transform 0.15s ease;
+    }
+    .quick-link-btn:hover { transform: translateY(-2px); }
+    .quick-link-btn i { display: block; font-size: 1.3rem; margin-bottom: 6px; }
+    .quick-link-btn.ql-blue { background: var(--dash-blue-bg); color: var(--dash-blue); }
+    .quick-link-btn.ql-purple { background: var(--dash-purple-bg); color: var(--dash-purple); }
+    .quick-link-btn.ql-amber { background: var(--dash-amber-bg); color: var(--dash-amber); }
+    .quick-link-btn.ql-slate { background: var(--dash-slate-bg); color: var(--dash-slate); }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="page-header mb-4">
-    <h2>Welcome, {{ profile.full_name|default:request.user.email }} 👋</h2>
-    <p>Here's your profile summary.</p>
-</div>
+<div class="dash-wrap">
+    <div class="container">
+        <div class="dash-header">
+            <h2>Welcome back, {{ profile.full_name|default:request.user.email }} 👋</h2>
+            <p>Here's a snapshot of your learning progress.</p>
+        </div>
 
-<div class="card-glow p-4">
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="text-muted small">Enrollment Number</label>
-            <p class="fw-semibold">{{ profile.enrollment_number }}</p>
+        <div class="stat-grid">
+            <div class="stat-card c-blue">
+                <div class="stat-icon c-blue"><i class="fas fa-book"></i></div>
+                <div><div class="stat-value">{{ total_courses }}</div><div class="stat-label">Enrolled Courses</div></div>
+            </div>
+            <div class="stat-card c-green">
+                <div class="stat-icon c-green"><i class="fas fa-check-circle"></i></div>
+                <div><div class="stat-value">{{ completed_courses }}</div><div class="stat-label">Completed Courses</div></div>
+            </div>
+            <div class="stat-card c-purple">
+                <div class="stat-icon c-purple"><i class="fas fa-clipboard-list"></i></div>
+                <div><div class="stat-value">{{ pending_assignments }}</div><div class="stat-label">Pending Assignments</div></div>
+            </div>
+            <div class="stat-card c-amber">
+                <div class="stat-icon c-amber"><i class="fas fa-clock"></i></div>
+                <div><div class="stat-value">{{ total_hours_learned }}h</div><div class="stat-label">Hours Learned</div></div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Full Name</label>
-            <p class="fw-semibold">{{ profile.full_name|default:"—" }}</p>
+
+        <div class="quick-link-row mb-4">
+            <a href="{% url 'user_dashboard:my_courses' %}" class="quick-link-btn ql-blue"><i class="fas fa-graduation-cap"></i>My Courses</a>
+            <a href="{% url 'assignment:my_assignments' %}" class="quick-link-btn ql-purple"><i class="fas fa-clipboard-check"></i>Assignments</a>
+            <a href="{% url 'announcement:my_announcements' %}" class="quick-link-btn ql-amber"><i class="fas fa-bullhorn"></i>Announcements</a>
+            <a href="{% url 'user_dashboard:profile' %}" class="quick-link-btn ql-slate"><i class="fas fa-user"></i>My Profile</a>
         </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Email</label>
-            <p class="fw-semibold">{{ request.user.email }}</p>
-        </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Contact Number</label>
-            <p class="fw-semibold">{{ request.user.contact|default:"—" }}</p>
-        </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Date of Birth</label>
-            <p class="fw-semibold">{{ profile.date_of_birth|default:"—" }}</p>
-        </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Gender</label>
-            <p class="fw-semibold">{{ profile.get_gender_display|default:"—" }}</p>
-        </div>
-        <div class="col-md-6">
-            <label class="text-muted small">City / State</label>
-            <p class="fw-semibold">{{ profile.city|default:"—" }}{% if profile.state %}, {{ profile.state }}{% endif %}</p>
-        </div>
-        <div class="col-md-6">
-            <label class="text-muted small">Highest Qualification</label>
-            <p class="fw-semibold">{{ profile.highest_qualification|default:"—" }}</p>
+
+        <div class="dash-row">
+            <div>
+                <div class="dash-panel">
+                    <h5><i class="fas fa-chart-line"></i> Course Progress</h5>
+                    {% for cp in course_progress %}
+                        <div class="course-progress-row">
+                            <div class="cpr-top">
+                                <span class="cpr-name">{{ cp.course.course_name }}</span>
+                                <span class="cpr-pct">{{ cp.percent }}%</span>
+                            </div>
+                            <div class="cpr-bar"><div class="cpr-bar-fill" style="width:{{ cp.percent }}%;"></div></div>
+                        </div>
+                    {% empty %}
+                        <div class="dash-empty"><i class="fas fa-book-open"></i><p class="mb-0 small">No enrolled courses yet.</p></div>
+                    {% endfor %}
+                </div>
+
+                <div class="dash-panel">
+                    <h5><i class="fas fa-star" style="color: var(--dash-amber);"></i> Assignment Performance</h5>
+                    {% if graded_count %}
+                        <div class="d-flex align-items-center gap-4">
+                            <div>
+                                <div class="stat-value" style="color: var(--dash-purple);">{{ graded_count }}</div>
+                                <div class="stat-label">Graded Assignments</div>
+                            </div>
+                            {% if avg_score_pct is not None %}
+                            <div>
+                                <div class="stat-value" style="color: var(--dash-green);">{{ avg_score_pct }}%</div>
+                                <div class="stat-label">Average Score</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="dash-empty"><i class="fas fa-clipboard"></i><p class="mb-0 small">No graded assignments yet.</p></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div class="dash-panel">
+                    <h5><i class="fas fa-circle-notch"></i> Overall Progress</h5>
+                    <div class="overall-ring-wrap">
+                        <div class="overall-ring">
+                            <svg width="140" height="140" viewBox="0 0 140 140">
+                                <circle cx="70" cy="70" r="60" fill="none" stroke="#eef2f9" stroke-width="12"></circle>
+                                <circle cx="70" cy="70" r="60" fill="none" stroke="url(#gradProgress)" stroke-width="12"
+                                        stroke-linecap="round"
+                                        stroke-dasharray="{{ overall_progress|floatformat:0 }} 100"
+                                        pathLength="100"></circle>
+                                <defs>
+                                    <linearGradient id="gradProgress" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#2563eb"/>
+                                        <stop offset="100%" stop-color="#60a5fa"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="overall-ring-label">
+                                <span class="big">{{ overall_progress }}%</span>
+                                <span class="small-txt">Complete</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-panel">
+                    <h5><i class="fas fa-bullhorn" style="color: var(--dash-amber);"></i> Recent Announcements</h5>
+                    {% for a in recent_announcements %}
+                        <div class="announce-mini-item">
+                            <div class="ami-title">{{ a.title }}</div>
+                            <div class="ami-body">{{ a.message|truncatewords:12 }}</div>
+                            <div class="ami-date">{{ a.publish_at|date:"d M Y" }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="dash-empty"><i class="fas fa-bell-slash"></i><p class="mb-0 small">No announcements yet.</p></div>
+                    {% endfor %}
+                    <a href="{% url 'announcement:my_announcements' %}" class="small d-block mt-2" style="color: var(--dash-blue); text-decoration:none;">View all &rarr;</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-{% if my_announcements %}
-<div class="card-glow p-4 mt-4">
-    <h5 class="fw-bold mb-3"><i class="bi bi-megaphone-fill me-2"></i>Announcements</h5>
-    {% for a in my_announcements %}
-        <div class="dashboard-announcement {% if a.is_pinned %}pinned{% endif %}">
-            {% if a.is_pinned %}<span class="badge bg-warning text-dark mb-1">Pinned</span>{% endif %}
-            <strong>{{ a.title }}</strong>
-            <p class="mb-1">{{ a.message|truncatewords:30 }}</p>
-            <span class="text-muted small">{{ a.publish_at|date:"d M Y, g:i A" }}</span>
-        </div>
-    {% endfor %}
-    <a href="{% url 'announcement:my_announcements' %}" class="small">View all announcements &rarr;</a>
-</div>
-
-<style>
-    .dashboard-announcement { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-    .dashboard-announcement:last-of-type { border-bottom: none; }
-    .dashboard-announcement.pinned { background: #eaf1fb; padding: 12px; border-radius: 8px; border-bottom: none; margin-bottom: 8px; }
-</style>
-{% endif %}
-
 {% endblock %}

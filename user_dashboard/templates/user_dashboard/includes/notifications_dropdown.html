@@ -1,0 +1,17 @@
+{% if items %}
+    {% for item in items %}
+        <a href="{{ item.url }}" class="notif-item {% if item.is_pinned %}pinned{% endif %}">
+            <span class="notif-icon notif-icon-{{ item.type }}"><i class="fas {{ item.icon }}"></i></span>
+            <div class="notif-text">
+                <div class="notif-title">{{ item.title }}</div>
+                <div class="notif-body">{{ item.body|truncatewords:14 }}</div>
+                <div class="notif-time">{{ item.timestamp|date:"d M, g:i A" }}</div>
+            </div>
+        </a>
+    {% endfor %}
+{% else %}
+    <div class="notif-empty">
+        <i class="fas fa-bell-slash"></i>
+        <p>No notifications yet</p>
+    </div>
+{% endif %}

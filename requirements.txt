@@ -9,8 +9,10 @@ Django==5.2.16
 django-environ==0.14.0
 django-storages==1.14.6
 environ==1.0
+et_xmlfile==2.0.0
 idna==3.18
 jmespath==1.1.0
+openpyxl==3.1.5
 pillow==12.3.0
 pycparser==3.0
 python-dateutil==2.9.0.post0

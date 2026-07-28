@@ -5,95 +5,202 @@
 {% block extra_css %}
 <style>
     :root {
-        --primary2: #172281;
+        --primary: #172281;
+        --primary-dark: #0a1440;
+        --primary-mid: #2338a8;
         --accent: #f59e0b;
+        --accent-dark: #d97706;
+        --text: #0e1b2e;
         --text-muted: #64748b;
         --border: #e2e8f0;
+        --border-strong: #cbd5e1;
     }
-    .catalog-header {
-        background: linear-gradient(135deg, #0a1f4f, #172281);
-        padding: 44px 0 36px;
-        color: white;
-    }
-    .catalog-header h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 8px; }
-    .catalog-header p { color: rgba(255,255,255,0.75); font-size: 0.92rem; margin: 0 0 20px; }
 
-    .catalog-search-form { display: flex; gap: 10px; max-width: 560px; }
+    * { box-sizing: border-box; }
+
+    /* ── Header: layered gradient + glow, icon inline with heading ── */
+    .catalog-header {
+        position: relative;
+        background:
+            radial-gradient(ellipse 900px 400px at 15% -10%, rgba(245,158,11,0.20), transparent 60%),
+            radial-gradient(ellipse 700px 500px at 100% 100%, rgba(76,95,217,0.35), transparent 65%),
+            linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-mid) 100%);
+        padding: 36px 0 32px;
+        color: white;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(10,20,64,0.25);
+        border-bottom: 3px solid var(--accent);
+    }
+    .catalog-header::after {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .catalog-header .container { position: relative; z-index: 1; }
+
+    .header-top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+    .catalog-header .header-icon {
+        width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--accent), #fbbf24);
+        color: var(--primary-dark);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.15rem;
+        box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+    }
+    .catalog-header h1 {
+        font-size: 1.6rem; font-weight: 700; margin: 0; line-height: 1.2;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+    .catalog-header p {
+        color: rgba(255,255,255,0.82); font-size: 0.9rem;
+        margin: 0 0 20px 60px;
+    }
+
+    .catalog-search-form { display: flex; gap: 10px; max-width: 560px; margin-left: 60px; }
     .catalog-search-form input {
         flex: 1; border: none; border-radius: 10px;
         padding: 12px 16px; font-size: 0.9rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     }
+    .catalog-search-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
     .catalog-search-form button {
-        background: var(--accent); border: none; color: #0a1f4f;
+        background: linear-gradient(135deg, var(--accent), #fbbf24);
+        border: none; color: var(--primary-dark);
         font-weight: 700; padding: 12px 22px; border-radius: 10px;
         font-size: 0.9rem;
+        box-shadow: 0 3px 10px rgba(245,158,11,0.4);
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
     }
+    .catalog-search-form button:hover { box-shadow: 0 5px 14px rgba(245,158,11,0.5); transform: translateY(-1px); }
 
-    .catalog-body { padding: 32px 0 60px; }
-    .catalog-layout { display: flex; gap: 28px; align-items: flex-start; }
+    /* ── Body ── */
+    .catalog-body { padding: 30px 0 60px; background: #f8fafc; }
+    .catalog-layout { display: flex; gap: 24px; align-items: flex-start; }
 
+    /* ── Filter sidebar ── */
     .filter-sidebar {
         width: 240px; flex-shrink: 0;
         background: white; border: 1px solid var(--border); border-radius: 14px;
-        padding: 20px; position: sticky; top: 100px;
+        padding: 20px; position: sticky; top: 90px;
+        box-shadow: 0 4px 20px rgba(15,23,42,0.08);
+        border-top: 4px solid var(--accent);
     }
-    .filter-sidebar h6 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 14px; }
+    .filter-sidebar h6 {
+        font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-muted); margin-bottom: 12px;
+        padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
     .filter-domain-link {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 8px 10px; border-radius: 8px;
+        padding: 9px 12px; border-radius: 8px;
         font-size: 0.86rem; color: #374151; text-decoration: none;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
+        border-left: 3px solid transparent;
+        transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .filter-domain-link:hover { background: #f0f4ff; color: var(--primary2); }
-    .filter-domain-link.active { background: #eaf1fb; color: var(--primary2); font-weight: 700; }
-    .filter-domain-link .count { font-size: 0.72rem; color: #94a3b8; }
-    .filter-domain-link.active .count { color: var(--primary2); }
+    .filter-domain-link:hover { background: #f0f4ff; color: var(--primary); }
+    .filter-domain-link.active {
+        background: linear-gradient(135deg, #eef1ff, #e6eaff);
+        color: var(--primary); font-weight: 700;
+        border-left-color: var(--primary);
+        box-shadow: 0 1px 4px rgba(23,34,129,0.1);
+    }
+    .filter-domain-link .count {
+        font-size: 0.7rem; color: #94a3b8; font-weight: 600;
+        background: #f1f5f9; padding: 1px 8px; border-radius: 10px;
+    }
+    .filter-domain-link.active .count { color: white; background: var(--primary); }
 
-    .catalog-results { flex: 1; }
+    /* ── Results ── */
+    .catalog-results { flex: 1; min-width: 0; }
     .catalog-results-header {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+        background: white; border: 1px solid var(--border); border-radius: 12px;
+        padding: 12px 18px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.05);
     }
-    .catalog-results-header p { font-size: 0.86rem; color: var(--text-muted); margin: 0; }
+    .catalog-results-header p { font-size: 0.86rem; color: var(--text-muted); margin: 0; font-weight: 500; }
+    .catalog-results-header p strong { color: var(--text); }
     .active-filter-chip {
         display: inline-flex; align-items: center; gap: 8px;
-        background: #eaf1fb; color: var(--primary2);
-        padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+        background: linear-gradient(135deg, #eef1ff, #e6eaff);
+        color: var(--primary);
+        padding: 6px 8px 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+        border: 1px solid #dde3fb;
     }
-    .active-filter-chip a { color: var(--primary2); text-decoration: none; font-weight: 700; }
+    .active-filter-chip a {
+        color: white; text-decoration: none; font-weight: 700;
+        background: var(--primary); width: 20px; height: 20px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        line-height: 1; font-size: 0.85rem;
+    }
+    .active-filter-chip a:hover { background: var(--primary-dark); }
 
     .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-    .empty-state i { font-size: 2.5rem; color: #cbd5e1; margin-bottom: 12px; display: block; }
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center; padding: 60px 30px; color: var(--text-muted);
+        background: white; border: 1px dashed var(--border-strong); border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .empty-state i {
+        font-size: 2.2rem; color: var(--primary); margin-bottom: 14px; display: block;
+        background: #eaf1fb; width: 64px; height: 64px; border-radius: 50%;
+        line-height: 64px; margin-left: auto; margin-right: auto;
+    }
+    .empty-state p { font-size: 0.9rem; margin: 0 0 12px; }
 
-    .catalog-pagination { display: flex; justify-content: center; gap: 6px; margin-top: 40px; }
+    /* ── Pagination ── */
+    .catalog-pagination { display: flex; justify-content: center; gap: 6px; margin-top: 36px; flex-wrap: wrap; }
     .catalog-pagination a, .catalog-pagination span {
         display: inline-flex; align-items: center; justify-content: center;
-        min-width: 38px; height: 38px;
+        min-width: 38px; height: 38px; padding: 0 6px;
         border-radius: 8px;
         font-size: 0.85rem; font-weight: 600;
         text-decoration: none;
         border: 1px solid var(--border);
-        color: var(--primary2);
+        color: var(--primary);
+        background: white;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        transition: background 0.15s ease, box-shadow 0.15s ease;
     }
-    .catalog-pagination a:hover { background: #f0f4ff; }
-    .catalog-pagination .active { background: var(--primary2); color: white; border-color: var(--primary2); }
-    .catalog-pagination .disabled { color: #cbd5e1; pointer-events: none; }
+    .catalog-pagination a:hover { background: #eef2ff; box-shadow: 0 2px 6px rgba(23,34,129,0.12); }
+    .catalog-pagination .active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-mid));
+        color: white; border-color: var(--primary);
+        box-shadow: 0 3px 10px rgba(23,34,129,0.3);
+    }
+    .catalog-pagination .disabled { color: #cbd5e1; pointer-events: none; background: #f8fafc; }
 
     @media (max-width: 991px) {
         .catalog-layout { flex-direction: column; }
         .filter-sidebar { width: 100%; position: static; }
         .course-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 576px) { .course-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 576px) {
+        .course-grid { grid-template-columns: 1fr; }
+        .catalog-header { padding: 26px 0 24px; }
+        .catalog-header .header-icon { width: 38px; height: 38px; font-size: 1rem; }
+        .catalog-header h1 { font-size: 1.25rem; }
+        .catalog-header p, .catalog-search-form { margin-left: 0; }
+        .catalog-header p { font-size: 0.8rem; margin-top: 6px; }
+        .catalog-results-header { flex-direction: column; align-items: flex-start; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="catalog-header">
     <div class="container">
-        <h1><i class="fas fa-book me-2"></i>All Courses</h1>
+        <div class="header-top">
+            <div class="header-icon"><i class="fas fa-book"></i></div>
+            <h1>All Courses</h1>
+        </div>
         <p>Browse NSQF-aligned courses offered by NIELIT Delhi. Sign in to enroll and access video content.</p>
 
         <form method="get" action="{% url 'public:courses' %}" class="catalog-search-form">
@@ -111,7 +218,7 @@
                 <h6>Filter by Domain</h6>
                 <a href="{% url 'public:courses' %}{% if query %}?q={{ query }}{% endif %}"
                    class="filter-domain-link {% if not selected_domain_slug %}active{% endif %}">
-                    All Domains
+                    <span><i class="fas fa-th-large me-1"></i>All Domains</span>
                 </a>
                 {% for domain in all_domains %}
                     <a href="?domain={{ domain.slug }}{% if query %}&q={{ query }}{% endif %}"
@@ -124,7 +231,7 @@
 
             <div class="catalog-results">
                 <div class="catalog-results-header">
-                    <p>{{ courses.paginator.count }} course{{ courses.paginator.count|pluralize }} found</p>
+                    <p><strong>{{ courses.paginator.count }}</strong> course{{ courses.paginator.count|pluralize }} found</p>
 
                     {% if selected_domain_slug or query %}
                         <span class="active-filter-chip">

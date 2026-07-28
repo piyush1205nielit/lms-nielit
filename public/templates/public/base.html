@@ -256,6 +256,62 @@
             transition: all 0.2s ease;
             z-index: 1100;
         }
+        /* ── Notification bell ─────────────────────────────── */
+.notif-bell-wrap { position: relative; }
+.notif-bell-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    color: white; font-size: 1rem;
+    cursor: pointer; position: relative;
+    transition: background 0.2s ease;
+}
+.notif-bell-btn:hover { background: rgba(255,255,255,0.16); }
+.notif-badge {
+    position: absolute; top: -3px; right: -3px;
+    background: #dc2626; color: white;
+    font-size: 0.62rem; font-weight: 700;
+    min-width: 17px; height: 17px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px; border: 2px solid var(--primary-dark);
+}
+.notif-dropdown {
+    position: absolute; top: calc(100% + 10px); right: 0;
+    background: white; border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    width: 340px; max-height: 420px; overflow-y: auto;
+    padding: 8px;
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: all 0.2s ease; z-index: 1100;
+}
+.notif-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.notif-dropdown-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 4px;
+}
+.notif-dropdown-header span { font-size: 0.88rem; font-weight: 700; color: var(--primary-dark); }
+.notif-item {
+    display: flex; gap: 10px; padding: 10px; border-radius: 8px;
+    text-decoration: none; color: inherit;
+    transition: background 0.15s ease;
+}
+.notif-item:hover { background: #f0f4ff; }
+.notif-item.pinned { background: #fffbeb; }
+.notif-icon {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.notif-icon-announcement { background: #eaf1fb; color: #172281; }
+.notif-icon-assignment { background: #d1fae5; color: #059669; }
+.notif-title { font-size: 0.84rem; font-weight: 700; color: #0e1b2e; }
+.notif-body { font-size: 0.78rem; color: #64748b; margin: 2px 0; }
+.notif-time { font-size: 0.7rem; color: #94a3b8; }
+.notif-empty { text-align: center; padding: 30px 10px; color: #94a3b8; }
+.notif-empty i { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+.notif-loading { text-align: center; padding: 30px; }
+
         .user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
         .user-dropdown .dd-header {
             padding: 10px 12px 8px;
@@ -279,67 +335,7 @@
         .user-dropdown a.logout-item i { color: #dc2626; }
         .user-dropdown a.logout-item:hover { background: #fef2f2; }
         .nav-user-wrap, .nav-guest-wrap { position: relative; }
-        .nav-guest-wrap { display: none; } /* shown only on mobile-floating, see media query */
-
-        /* ── Mobile hamburger ─────────────────────────────── */
-        #mobileMenuBtn { background: none; border: none; color: white; padding: 6px 10px; transition: opacity 0.2s ease; }
-        #mobileMenuBtn i { font-size: 1.4rem; color: white; }
-
-        /* ── Mobile Menu drawer (used only in the non-floating/top state) ── */
-        .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; display: none; }
-        .mobile-overlay.active { display: block; }
-
-        .mobile-menu {
-            position: fixed; top: 0; right: -100%;
-            width: min(80%, 360px); height: 100vh;
-            background: white; z-index: 1050;
-            overflow-y: auto;
-            transition: right 0.3s ease;
-            box-shadow: -4px 0 16px rgba(0,0,0,0.12);
-        }
-        .mobile-menu.active { right: 0; }
-
-        .mobile-menu-header {
-            background: var(--nav-gradient);
-            color: white; padding: 18px 20px;
-            position: sticky; top: 0; z-index: 10;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .mobile-menu-header h5 { margin: 0; font-size: 1rem; font-weight: 600; }
-
-        .mobile-user-card {
-            display: flex; align-items: center; gap: 12px;
-            padding: 16px 20px;
-            background: #f0f4ff;
-            border-bottom: 1px solid #e5e9f5;
-        }
-        .mobile-user-card .user-avatar { width: 42px; height: 42px; font-size: 1rem; }
-        .mobile-user-card .mu-name { font-size: 0.9rem; font-weight: 600; color: var(--primary-dark); }
-        .mobile-user-card .mu-email { font-size: 0.76rem; color: #6b7280; }
-
-        .mobile-menu-body .nav-link {
-            display: flex; align-items: center; gap: 10px;
-            padding: 13px 20px;
-            font-size: 0.95rem; font-weight: 500;
-            color: #374151 !important;
-            border-bottom: 1px solid #f3f4f6;
-            text-decoration: none;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        .mobile-menu-body .nav-link:hover { background: #f0f4ff; color: var(--primary) !important; }
-        .mobile-menu-body .nav-link.logout-item { color: #dc2626 !important; }
-        .mobile-menu-body .nav-link.logout-item i { color: #dc2626; }
-
-        .mobile-auth-actions {
-            display: flex; flex-direction: column; gap: 10px;
-            padding: 16px 20px;
-        }
-        .mobile-auth-actions a {
-            text-align: center; padding: 11px; border-radius: 10px;
-            font-size: 0.9rem; font-weight: 600; text-decoration: none;
-        }
-        .mobile-auth-actions .mob-login { border: 1.5px solid var(--primary); color: var(--primary); }
-        .mobile-auth-actions .mob-signup { background: var(--primary); color: white; }
+        .nav-guest-wrap { display: none; } /* shown only on mobile, see media query */
 
         /* ── Dropdown (generic bootstrap-esque) ──────────── */
         .dropdown-menu { border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px; padding: 6px 0; min-width: 180px; }
@@ -351,30 +347,25 @@
 
         /* ── Responsive collapse rules ────────────────────── */
         @media (max-width: 991px) {
-            /* Default mobile (top / non-scrolled) state: hamburger drawer, no inline nav */
-            .nav-links, .nav-auth { display: none; }
+            /* Icon-only nav is shown at all times on mobile — same look whether floating or not */
+            .nav-links, .nav-auth { display: flex; }
 
-            /* Scrolled / floating pill on mobile: show icon-only nav directly, hide hamburger */
-            .main-nav.floating .nav-links,
-            .main-nav.floating .nav-auth { display: flex; }
-            .main-nav.floating #mobileMenuBtn { display: none; }
-
-            .main-nav.floating .nav-inner { gap: 2px; padding-left: 12px; padding-right: 12px; }
+            .nav-inner { gap: 2px; padding-left: 12px; padding-right: 12px; }
 
             /* Icon-only nav links */
-            .main-nav.floating .nav-link { padding: 8px 9px; }
-            .main-nav.floating .nav-link .link-text { display: none; }
-            .main-nav.floating .nav-link i { margin: 0 !important; font-size: 1.05rem; }
+            .nav-link { padding: 8px 9px; }
+            .nav-link .link-text { display: none; }
+            .nav-link i { margin: 0 !important; font-size: 1.05rem; }
 
             /* Guest icon replaces text Login/Sign Up buttons */
-            .main-nav.floating .btn-nav-login,
-            .main-nav.floating .btn-nav-signup { display: none; }
-            .main-nav.floating .nav-guest-wrap { display: flex; }
+            .btn-nav-login,
+            .btn-nav-signup { display: none; }
+            .nav-guest-wrap { display: flex; }
 
             /* User icon: avatar only, name/chevron hidden, dropdown still works */
-            .main-nav.floating .user-menu-toggle { padding: 4px; gap: 0; }
-            .main-nav.floating .user-menu-toggle .user-name,
-            .main-nav.floating .user-menu-toggle i.chev { display: none; }
+            .user-menu-toggle { padding: 4px; gap: 0; }
+            .user-menu-toggle .user-name,
+            .user-menu-toggle i.chev { display: none; }
 
             .user-dropdown { right: -8px; min-width: 230px; }
         }
@@ -523,33 +514,54 @@
                 </div>
 
                 <div class="nav-auth">
+                {% if user.is_authenticated %}
+<div class="notif-bell-wrap">
+    <button type="button" class="notif-bell-btn" id="notifBellToggle" title="Notifications">
+        <i class="fas fa-bell"></i>
+        {% if unread_notification_count > 0 %}
+            <span class="notif-badge" id="notifBadge">{% if unread_notification_count > 9 %}9+{% else %}{{ unread_notification_count }}{% endif %}</span>
+        {% endif %}
+    </button>
+    <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-dropdown-header">
+            <span>Notifications</span>
+            <a href="{% url 'announcement:my_announcements' %}" class="small text-decoration-none">View all</a>
+        </div>
+        <div id="notifDropdownBody">
+            <div class="notif-loading"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+        </div>
+    </div>
+</div>
+{% endif %}
                     {% if user.is_authenticated %}
                         <div class="nav-user-wrap">
-                            <button type="button" class="user-menu-toggle" id="userMenuToggle" title="Account">
-                                {% if user.learner_profile.profile_image %}
-                                    <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
-                                {% else %}
-                                    <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
-                                {% endif %}
-                                <span class="user-name">{{ user.learner_profile.full_name|default:user.email }}</span>
-                                <i class="fas fa-chevron-down chev"></i>
-                            </button>
-                            <div class="user-dropdown" id="userDropdown">
-                                <div class="dd-header">
-                                    <div class="dd-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
-                                    <div class="dd-email">{{ user.email }}</div>
-                                </div>
-                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-th-large"></i> My Dashboard</a>
-                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-user"></i> My Profile</a>
-                                <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
-                                <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                            </div>
-                        </div>
+    <button type="button" class="user-menu-toggle" id="userMenuToggle" title="Account">
+        {% if user.learner_profile.profile_image %}
+            <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
+        {% else %}
+            <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
+        {% endif %}
+        <span class="user-name">{{ user.learner_profile.full_name|default:user.email }}</span>
+        <i class="fas fa-chevron-down chev"></i>
+    </button>
+    <div class="user-dropdown" id="userDropdown">
+        <div class="dd-header">
+            <div class="dd-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
+            <div class="dd-email">{{ user.email }}</div>
+        </div>
+        <a href="{% url 'user_dashboard:home' %}"><i class="fas fa-th-large"></i> My Dashboard</a>
+        <a href="{% url 'user:profile_edit' %}"><i class="fas fa-user-cog"></i> Profile Settings</a>
+        <a href="{% url 'course:my_courses' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
+        <a href="{% url 'assignment:my_assignments' %}"><i class="fas fa-clipboard-check"></i> Assignments</a>
+        <a href="{% url 'announcement:my_announcements' %}"><i class="fas fa-bullhorn"></i> Announcements</a>
+        <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+</div>
                     {% else %}
                         <a href="{% url 'user:login' %}" class="btn-nav-login">Login</a>
                         <a href="{% url 'user:signup' %}" class="btn-nav-signup">Sign Up</a>
 
-                        <!-- Icon-only guest menu, shown only on mobile in the scrolled/floating nav -->
+                        <!-- Icon-only guest menu, shown only on mobile -->
                         <div class="nav-guest-wrap">
                             <button type="button" class="user-menu-toggle" id="guestMenuToggle" title="Account">
                                 <span class="user-avatar guest-avatar"><i class="fas fa-user"></i></span>
@@ -563,55 +575,8 @@
                     {% endif %}
                 </div>
 
-                <button id="mobileMenuBtn" class="d-lg-none" aria-label="Open menu">
-                    <i class="fas fa-bars"></i>
-                </button>
-
             </div>
         </nav>
-    </div>
-
-    <!-- ── Mobile Menu drawer (top/non-scrolled state) ──── -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-    <div class="mobile-menu" id="mobileMenu">
-        <div class="mobile-menu-header">
-            <h5><i class="fas fa-bars me-2"></i>Menu</h5>
-            <button class="btn btn-sm btn-light" id="closeMobileMenu" aria-label="Close menu">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        {% if user.is_authenticated %}
-        <div class="mobile-user-card">
-            {% if user.learner_profile.profile_image %}
-                <img src="{{ user.learner_profile.profile_image.url }}" class="user-avatar" alt="Profile">
-            {% else %}
-                <span class="user-avatar">{{ user.email|slice:":1"|upper }}</span>
-            {% endif %}
-            <div>
-                <div class="mu-name">{{ user.learner_profile.full_name|default:"Student" }}</div>
-                <div class="mu-email">{{ user.email }}</div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="mobile-menu-body">
-            <a href="{% url 'public:home' %}" class="nav-link"><i class="fas fa-home fa-fw"></i>Home</a>
-            <a href="#" class="nav-link"><i class="fas fa-bullhorn fa-fw"></i>Announcements</a>
-            <a href="{% url 'public:courses' %}" class="nav-link"><i class="fas fa-book fa-fw"></i>Courses</a>
-            {% if user.is_authenticated %}
-                <a href="{% url 'user_dashboard:home' %}" class="nav-link"><i class="fas fa-th-large fa-fw"></i>My Dashboard</a>
-                <a href="{% url 'user_dashboard:home' %}" class="nav-link"><i class="fas fa-user fa-fw"></i>My Profile</a>
-                <a href="{% url 'user:logout' %}" class="nav-link logout-item"><i class="fas fa-sign-out-alt fa-fw"></i>Logout</a>
-            {% endif %}
-        </div>
-
-        {% if not user.is_authenticated %}
-        <div class="mobile-auth-actions">
-            <a href="{% url 'user:login' %}" class="mob-login">Login</a>
-            <a href="{% url 'user:signup' %}" class="mob-signup">Sign Up</a>
-        </div>
-        {% endif %}
     </div>
 
     <!-- ── Page Content ────────────────────────────────── -->
@@ -715,10 +680,10 @@
     <script>
     (function () {
         // ── Top header shrink + Main nav floating (evolves in place) ──
-        const topHeader = document.getElementById('topHeader');
-        const mainNav   = document.getElementById('mainNav');
-        const navWrapper = document.getElementById('navWrapper');
-        const THRESHOLD = 80;
+        const topHeader   = document.getElementById('topHeader');
+        const mainNav     = document.getElementById('mainNav');
+        const navWrapper  = document.getElementById('navWrapper');
+        const THRESHOLD   = 80;
 
         function handleScroll() {
             const scrolled = window.scrollY > THRESHOLD;
@@ -749,34 +714,44 @@
         wireDropdown('userMenuToggle', 'userDropdown');
         wireDropdown('guestMenuToggle', 'guestDropdown');
 
-        // ── Mobile menu drawer ──────────────────────────
-        const mobileMenu    = document.getElementById('mobileMenu');
-        const mobileOverlay = document.getElementById('mobileOverlay');
+        // ── Notification bell dropdown ──
+        (function () {
+            const bellToggle = document.getElementById('notifBellToggle');
+            const dropdown = document.getElementById('notifDropdown');
+            const dropdownBody = document.getElementById('notifDropdownBody');
+            const badge = document.getElementById('notifBadge');
+            if (!bellToggle || !dropdown) return;
 
-        function openMenu() {
-            mobileMenu.classList.add('active');
-            mobileOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeMenu() {
-            mobileMenu.classList.remove('active');
-            mobileOverlay.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        document.getElementById('mobileMenuBtn').addEventListener('click', openMenu);
-        document.getElementById('closeMobileMenu').addEventListener('click', closeMenu);
-        mobileOverlay.addEventListener('click', closeMenu);
-        window.addEventListener('resize', function () {
-            if (window.innerWidth >= 992) closeMenu();
-        });
-        // Close the drawer automatically if the user scrolls into the floating icon nav
-        window.addEventListener('scroll', function () {
-            if (window.scrollY > THRESHOLD) closeMenu();
-        }, { passive: true });
+            let loaded = false;
 
-        // ── Active nav link ────────────────────────────
+            bellToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('show');
+
+                if (dropdown.classList.contains('show') && !loaded) {
+                    fetch("{% url 'user_dashboard:notifications_dropdown' %}")
+                        .then(res => res.json())
+                        .then(data => {
+                            dropdownBody.innerHTML = data.html;
+                            loaded = true;
+                            if (badge) badge.remove();
+                        })
+                        .catch(() => {
+                            dropdownBody.innerHTML = '<div class="notif-empty"><p>Failed to load notifications.</p></div>';
+                        });
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!dropdown.contains(e.target) && !bellToggle.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        })();
+
+        // ── Active nav link ──
         const path = window.location.pathname;
-        document.querySelectorAll('.main-nav .nav-link, .mobile-menu-body .nav-link').forEach(function (link) {
+        document.querySelectorAll('.main-nav .nav-link').forEach(function (link) {
             const href = link.getAttribute('href');
             if (href && href !== '/' && href !== '#' && path.startsWith(href)) {
                 link.classList.add('active');
@@ -785,7 +760,7 @@
             }
         });
 
-        // ── Bootstrap tooltips ─────────────────────────
+        // ── Bootstrap tooltips ──
         document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
             new bootstrap.Tooltip(el);
         });

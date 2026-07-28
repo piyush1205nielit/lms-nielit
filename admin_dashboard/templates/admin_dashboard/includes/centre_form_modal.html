@@ -1,0 +1,113 @@
+<div class="modal-header modal-header-styled">
+    <h5 class="modal-title"><i class="bi bi-building"></i> {% if centre %}Edit Centre{% else %}Add Centre{% endif %}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form id="centreForm" method="post" action="{% if centre %}{% url 'admin_dashboard:centre_edit' centre.id %}{% else %}{% url 'admin_dashboard:centre_add' %}{% endif %}">
+    {% csrf_token %}
+    <div class="modal-body modal-body-styled">
+        <div id="centreFormErrors" class="alert-banner alert-banner-danger d-none"></div>
+
+        <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-info-circle-fill"></i> Centre Details</div>
+            <div class="field-block">
+                <label class="form-label">Centre Name <span class="required-star">*</span></label>
+                {{ form.centre_name }}
+            </div>
+            <div class="field-block field-block-last">
+                <label class="form-label">Address</label>
+                {{ form.centre_address }}
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-telephone-fill"></i> Contact Information</div>
+            <div class="row-2col field-block-last">
+                <div class="field-block">
+                    <label class="form-label">Email</label>
+                    {{ form.centre_email }}
+                </div>
+                <div class="field-block">
+                    <label class="form-label">Contact</label>
+                    {{ form.centre_contact }}
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section modal-section-last">
+            <div class="modal-section-title"><i class="bi bi-toggle-on"></i> Additional Details</div>
+            <div class="field-block">
+                <label class="form-label">Description <span class="optional-tag">Optional</span></label>
+                {{ form.centre_desc }}
+            </div>
+            <label class="visibility-toggle-row" for="{{ form.is_active.id_for_label }}">
+                <div>
+                    <div class="visibility-toggle-title">Active</div>
+                    <div class="visibility-toggle-sub">Visible in centre selection lists across the platform</div>
+                </div>
+                <div class="form-check form-switch fs-4 mb-0">{{ form.is_active }}</div>
+            </label>
+        </div>
+    </div>
+    <div class="modal-footer modal-footer-styled">
+        <button type="button" class="btn-admin-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn-admin-primary">
+            <i class="bi bi-check-lg me-1"></i> Save
+        </button>
+    </div>
+</form>
+
+<style>
+    .modal-header-styled { background: #f1f5f9; border-bottom: 2px solid #cbd5e1; padding: 1rem 1.25rem; }
+    .modal-header-styled .modal-title { font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 9px; }
+    .modal-header-styled .modal-title i { color: #2563eb; }
+    .modal-body-styled { padding: 1.4rem 1.25rem; }
+    .modal-footer-styled { border-top: 2px solid #e2e8f0; padding: 1rem 1.25rem; gap: 10px; }
+
+    .alert-banner { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 9px; font-size: 0.83rem; margin-bottom: 1.25rem; }
+    .alert-banner-danger { background: #fef2f2; border: 1.5px solid #fecaca; color: #b91c1c; }
+
+    .modal-section { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; }
+    .modal-section-last { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .modal-section-title {
+        font-size: 0.76rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+        color: #172281; display: flex; align-items: center; gap: 7px; margin-bottom: 1rem;
+    }
+
+    .field-block { margin-bottom: 1rem; }
+    .field-block-last { margin-bottom: 0; }
+    .field-block .form-label { font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .required-star { color: #ef4444; font-weight: 700; }
+    .optional-tag { font-size: 0.66rem; font-weight: 600; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
+
+    .field-block .form-control, .field-block .form-select {
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.87rem;
+    }
+    .field-block .form-control:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+    @media (max-width: 480px) { .row-2col { grid-template-columns: 1fr; } .row-2col .field-block { margin-bottom: 1rem; } }
+
+    .visibility-toggle-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        padding: 12px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        cursor: pointer; margin: 0;
+    }
+    .visibility-toggle-title { font-size: 0.87rem; font-weight: 700; color: #0f172a; }
+    .visibility-toggle-sub { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+    .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+
+    .btn-admin-secondary {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; border: 1.5px solid #cbd5e1; color: #374151;
+        font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1.1rem; border-radius: 8px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-admin-secondary:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+    .btn-admin-primary {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #2563eb; border: 1px solid #2563eb; color: #fff;
+        font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1.1rem; border-radius: 8px;
+        transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .btn-admin-primary:hover { background: #1d4ed8; color: #fff; transform: translateY(-1px); }
+</style>

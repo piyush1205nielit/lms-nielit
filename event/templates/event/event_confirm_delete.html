@@ -1,130 +1,187 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
-
 {% block title %}Delete Event - Admin{% endblock %}
+{% block page_title %}Delete Event{% endblock %}
 
 {% block extra_css %}
 <style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 1.75rem; }
+    .page-header h2 { display: flex; align-items: center; gap: 10px; }
+
+    .delete-confirm-shell { max-width: 640px; margin: 0 auto; }
+
     .delete-confirm-card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        border-radius: 14px;
+        border: 1.5px solid #fecaca;
+        box-shadow: 0 4px 16px rgba(220,38,38,0.06);
         overflow: hidden;
     }
     .delete-confirm-header {
         background: #fef2f2;
         border-bottom: 2px solid #fecaca;
-        padding: 24px 28px;
+        padding: 22px 26px;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 16px;
     }
     .delete-confirm-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
         background: #fee2e2;
         color: #dc2626;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         flex-shrink: 0;
     }
+    .delete-confirm-header h5 { font-size: 1.02rem; margin-bottom: 3px; }
+    .delete-confirm-header p { font-size: 0.82rem; margin: 0; }
+
+    .delete-confirm-body { padding: 1.5rem 1.6rem; }
+
+    .delete-section-label {
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        color: #94a3b8; margin-bottom: 0.75rem;
+    }
+
     .delete-event-preview {
         background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 16px 20px;
-        margin: 20px 0;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
         gap: 14px;
     }
     .delete-event-swatch {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 11px;
         flex-shrink: 0;
-        border: 1px solid rgba(0,0,0,.08);
+        border: 2px solid white;
+        box-shadow: 0 0 0 1px #e2e8f0;
     }
-    .delete-event-meta {
-        font-size: .8rem;
-        color: #64748b;
+    .delete-event-title { font-weight: 700; font-size: 0.95rem; color: #0f172a; }
+    .delete-event-meta { font-size: .8rem; color: #64748b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+    .delete-status-live { display: inline-flex; align-items: center; gap: 4px; color: #16a34a; font-weight: 600; }
+    .delete-status-hidden { display: inline-flex; align-items: center; gap: 4px; color: #94a3b8; font-weight: 600; }
+    .meta-sep { color: #cbd5e1; }
+
+    .alert-banner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 15px; border-radius: 10px; font-size: 0.83rem; margin-bottom: 1.25rem; }
+    .alert-banner-warning { background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; }
+    .alert-banner-warning i { margin-top: 2px; flex-shrink: 0; }
+
+    .delete-consequences {
+        background: #fafbfd; border: 1.5px dashed #e2e8f0; border-radius: 10px;
+        padding: 12px 15px; margin-bottom: 1.5rem;
     }
+    .delete-consequences ul { list-style: none; padding: 0; margin: 0; }
+    .delete-consequences li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.79rem; color: #64748b; margin-bottom: 7px; }
+    .delete-consequences li:last-child { margin-bottom: 0; }
+    .delete-consequences li i { color: #dc2626; font-size: 0.7rem; margin-top: 4px; flex-shrink: 0; }
+
+    .delete-actions-row {
+        display: flex; justify-content: flex-end; gap: 10px;
+        padding-top: 1.1rem; border-top: 1.5px solid #eef1f6;
+    }
+    .btn-delete-cancel {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; border: 1.5px solid #cbd5e1; color: #374151;
+        font-weight: 600; font-size: 0.87rem; padding: 0.55rem 1.2rem; border-radius: 9px;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-delete-cancel:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+    .btn-delete-confirm {
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #dc2626; border: 1px solid #dc2626; color: #fff;
+        font-weight: 600; font-size: 0.87rem; padding: 0.55rem 1.3rem; border-radius: 9px;
+        transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+    .btn-delete-confirm:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(220,38,38,0.25); color: #fff; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex align-items-center mb-4">
-        <a href="{% url 'event:event_list' %}" class="btn btn-outline-secondary me-3">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <h1 class="h3 fw-bold text-dark mb-0">
-            <i class="fas fa-trash text-danger me-2"></i>Delete Event
-        </h1>
-    </div>
+<div class="page-header">
+    <a href="{% url 'event:event_list' %}" class="btn-delete-cancel">
+        <i class="fas fa-arrow-left me-1"></i> Back
+    </a>
+    <h2><i class="fas fa-trash text-danger"></i> Delete Event</h2>
+</div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="delete-confirm-card">
+<div class="delete-confirm-shell">
+    <div class="delete-confirm-card">
 
-                <div class="delete-confirm-header">
-                    <div class="delete-confirm-icon">
-                        <i class="fas fa-triangle-exclamation"></i>
-                    </div>
-                    <div>
-                        <h5 class="mb-1 fw-bold text-dark">Are you sure you want to delete this event?</h5>
-                        <p class="mb-0 small text-muted">This action is permanent and cannot be undone.</p>
-                    </div>
-                </div>
-
-                <div class="p-4">
-                    <div class="delete-event-preview">
-                        <div class="delete-event-swatch"
-                             style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
-                        </div>
-                        <div>
-                            <div class="fw-bold text-dark">{{ event.title }}</div>
-                            <div class="delete-event-meta">
-                                {% if event.event_date %}
-                                    <i class="fas fa-calendar-alt me-1"></i>{{ event.event_date|date:"d M Y" }}
-                                {% else %}
-                                    No date set
-                                {% endif %}
-                                &nbsp;·&nbsp;
-                                {% if event.is_active %}
-                                    <span class="text-success"><i class="fas fa-circle-check me-1"></i>Currently Live</span>
-                                {% else %}
-                                    <span class="text-secondary"><i class="fas fa-eye-slash me-1"></i>Hidden</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if event.is_active %}
-                    <div class="alert alert-warning small mb-4">
-                        <i class="fas fa-info-circle me-1"></i>
-                        This event is currently <strong>active</strong> and visible on the homepage. Deleting it will remove it immediately.
-                    </div>
-                    {% endif %}
-
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'event:event_list' %}" class="btn btn-secondary">
-                                Cancel
-                            </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash me-2"></i>Yes, Delete Event
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
+        <div class="delete-confirm-header">
+            <div class="delete-confirm-icon">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold text-dark">Are you sure you want to delete this event?</h5>
+                <p class="text-muted">This action is permanent and cannot be undone.</p>
             </div>
         </div>
+
+        <div class="delete-confirm-body">
+            <div class="delete-section-label">Event Being Deleted</div>
+            <div class="delete-event-preview">
+                <div class="delete-event-swatch"
+                     style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
+                </div>
+                <div>
+                    <div class="delete-event-title">{{ event.title }}</div>
+                    <div class="delete-event-meta">
+                        <span>
+                            {% if event.event_date %}
+                                <i class="fas fa-calendar-alt"></i> {{ event.event_date|date:"d M Y" }}
+                            {% else %}
+                                No date set
+                            {% endif %}
+                        </span>
+                        <span class="meta-sep">&middot;</span>
+                        {% if event.is_active %}
+                            <span class="delete-status-live"><i class="fas fa-circle-check"></i> Currently Live</span>
+                        {% else %}
+                            <span class="delete-status-hidden"><i class="fas fa-eye-slash"></i> Hidden</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if event.is_active %}
+            <div class="alert-banner alert-banner-warning">
+                <i class="fas fa-info-circle"></i>
+                <span>This event is currently <strong>active</strong> and visible on the homepage. Deleting it will remove it immediately.</span>
+            </div>
+            {% endif %}
+
+            <div class="delete-consequences">
+                <div class="delete-section-label" style="margin-bottom: 0.6rem;">This will also remove</div>
+                <ul>
+                    <li><i class="fas fa-circle"></i> The uploaded logos and QR code associated with this event</li>
+                    <li><i class="fas fa-circle"></i> Its position in the homepage display order</li>
+                    <li><i class="fas fa-circle"></i> All saved styling (colors, layout, and card configuration)</li>
+                </ul>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="delete-actions-row">
+                    <a href="{% url 'event:event_list' %}" class="btn-delete-cancel">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-delete-confirm">
+                        <i class="fas fa-trash me-2"></i> Yes, Delete Event
+                    </button>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
 {% endblock %}

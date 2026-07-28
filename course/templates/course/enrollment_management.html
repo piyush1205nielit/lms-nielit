@@ -1,0 +1,395 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Manage Enrollment Access{% endblock %}
+{% block page_title %}Manage Enrollment Access{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-journal-check"></i> Manage Enrollment Access</h2>
+        <p>{{ enrollments.count }} enrollment{{ enrollments.count|pluralize }}</p>
+    </div>
+</div>
+
+<!-- ═══ Summary stat cards ═══ -->
+<div class="stat-grid stat-grid-4">
+    <div class="stat-mini-card stat-amber">
+        <div class="stat-mini-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div><div class="stat-mini-value">{{ pending_count|default:0 }}</div><div class="stat-mini-label">Pending</div></div>
+    </div>
+    <div class="stat-mini-card stat-green">
+        <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ granted_count|default:0 }}</div><div class="stat-mini-label">Granted</div></div>
+    </div>
+    <div class="stat-mini-card stat-gray">
+        <div class="stat-mini-icon"><i class="bi bi-pause-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ hold_count|default:0 }}</div><div class="stat-mini-label">On Hold</div></div>
+    </div>
+    <div class="stat-mini-card stat-red">
+        <div class="stat-mini-icon"><i class="bi bi-slash-circle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ revoked_count|default:0 }}</div><div class="stat-mini-label">Revoked</div></div>
+    </div>
+</div>
+
+<!-- ═══ Filter panel ═══ -->
+<div class="card-panel filter-panel">
+    <div class="filter-panel-header">
+        <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
+    </div>
+    <div class="filter-panel-body">
+        <div class="filter-grid">
+            <div class="filter-field">
+                <label class="form-label">Course</label>
+                <select id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="granted" {% if selected_status == 'granted' %}selected{% endif %}>Granted</option>
+                    <option value="hold" {% if selected_status == 'hold' %}selected{% endif %}>On Hold</option>
+                    <option value="revoked" {% if selected_status == 'revoked' %}selected{% endif %}>Revoked</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Bulk actions bar — always visible, disabled until rows selected ═══ -->
+<div class="card-panel bulk-actions-bar" id="bulkActionsBar">
+    <div class="bulk-bar-left">
+        <span class="bulk-count-badge" id="selectedCountLabel">0 selected</span>
+        <span class="bulk-hint">Select rows below to enable actions</span>
+    </div>
+    <div class="bulk-bar-actions">
+        <button type="button" class="btn-bulk btn-bulk-grant" id="grantBtn" disabled>
+            <i class="bi bi-check-circle-fill"></i> Grant
+        </button>
+        <button type="button" class="btn-bulk btn-bulk-hold" id="holdBtn" disabled>
+            <i class="bi bi-pause-circle-fill"></i> Hold
+        </button>
+        <button type="button" class="btn-bulk btn-bulk-revoke" id="revokeBtn" disabled>
+            <i class="bi bi-slash-circle-fill"></i> Revoke
+        </button>
+        <button type="button" class="btn-bulk btn-bulk-deny" id="denyBtn" disabled>
+            <i class="bi bi-trash3-fill"></i> Deny &amp; Delete
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Legend ═══ -->
+<div class="table-legend">
+    <span class="legend-item"><span class="legend-dot dot-green"></span> Granted</span>
+    <span class="legend-item"><span class="legend-dot dot-amber"></span> Pending</span>
+    <span class="legend-item"><span class="legend-dot dot-gray"></span> On Hold</span>
+    <span class="legend-item"><span class="legend-dot dot-red"></span> Revoked</span>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> Enrollment Requests</h5>
+        <span class="table-count-tag">{{ enrollments.count }} record{{ enrollments.count|pluralize }}</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-admin enrollment-access-table mb-0">
+            <thead>
+                <tr>
+                    <th class="col-status"></th>
+                    <th style="width:44px;"><input type="checkbox" id="selectAllCheckbox"></th>
+                    <th style="min-width: 220px;">Student</th>
+                    <th>Course</th>
+                    <th>Requested On</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody id="enrollmentsTableBody">
+                {% for enrollment in enrollments %}
+                <tr class="enrollment-row selectable-row
+                    {% if enrollment.access_status == 'granted' %}row-granted
+                    {% elif enrollment.access_status == 'pending' %}row-pending
+                    {% elif enrollment.access_status == 'hold' %}row-hold
+                    {% else %}row-revoked{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail
+                            {% if enrollment.access_status == 'granted' %}rail-granted
+                            {% elif enrollment.access_status == 'pending' %}rail-pending
+                            {% elif enrollment.access_status == 'hold' %}rail-hold
+                            {% else %}rail-revoked{% endif %}"></span>
+                    </td>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="row-checkbox" value="{{ enrollment.id }}">
+                    </td>
+                    <td class="student-email-cell">{{ enrollment.user.email }}</td>
+                    <td class="stat-cell-sm">{{ enrollment.course.course_name }}</td>
+                    <td class="stat-cell-sm">{{ enrollment.enrolled_at|date:"d M Y, g:i A" }}</td>
+                    <td class="text-center">
+                        {% if enrollment.access_status == 'granted' %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Granted</span>
+                        {% elif enrollment.access_status == 'pending' %}
+                            <span class="status-pill pill-scheduled"><i class="bi bi-hourglass-split"></i> Pending</span>
+                        {% elif enrollment.access_status == 'hold' %}
+                            <span class="status-pill pill-pending"><i class="bi bi-pause-circle-fill"></i> On Hold</span>
+                        {% else %}
+                            <span class="status-pill pill-failed"><i class="bi bi-slash-circle-fill"></i> Revoked</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-journal-x"></i></div>
+                            <div class="empty-state-title">No enrollment requests found</div>
+                            <div class="empty-state-sub">Try adjusting your filters.</div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+
+    /* ═══ Stat grid ═══ */
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid-4 { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+    }
+    .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+    .stat-gray  { border-left-color: #64748b; } .stat-gray  .stat-mini-icon { background: #f1f5f9; color: #64748b; }
+    .stat-red   { border-left-color: #dc2626; } .stat-red   .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+
+    /* ═══ Filter panel ═══ */
+    .filter-panel { margin-bottom: 1rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .filter-panel-header { padding: 0.9rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .filter-panel-header h5 i { color: #2563eb; }
+    .filter-panel-body { padding: 1.1rem 1.2rem; }
+    .filter-grid { display: grid; grid-template-columns: repeat(2, minmax(200px, 260px)); gap: 14px; }
+    @media (max-width: 560px) { .filter-grid { grid-template-columns: 1fr; } }
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .filter-field .form-select { border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; padding: 0.45rem 0.7rem; }
+    .filter-field .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
+
+    /* ═══ Bulk actions bar — always visible, disabled state ═══ */
+    .bulk-actions-bar {
+        display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+        padding: 0.9rem 1.2rem;
+        margin-bottom: 1rem;
+        border: 1.5px solid #cbd5e1 !important;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .bulk-actions-bar.has-selection {
+        background: #eff6ff;
+        border-color: #bfdbfe !important;
+    }
+    .bulk-bar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .bulk-count-badge {
+        font-size: 0.78rem; font-weight: 700; color: #64748b;
+        background: #f1f5f9; padding: 4px 12px; border-radius: 999px;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+    .bulk-actions-bar.has-selection .bulk-count-badge { background: #2563eb; color: white; }
+    .bulk-hint { font-size: 0.78rem; color: #94a3b8; }
+    .bulk-actions-bar.has-selection .bulk-hint { display: none; }
+
+    .bulk-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-bulk {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 34px; padding: 0 14px; border-radius: 8px; border: 1.5px solid;
+        font-size: 0.82rem; font-weight: 600;
+        transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+        cursor: pointer;
+    }
+    .btn-bulk:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    .btn-bulk:not(:disabled):hover { transform: translateY(-1px); }
+
+    .btn-bulk-grant  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .btn-bulk-grant:not(:disabled):hover { background: #dcfce7; }
+    .btn-bulk-hold   { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-bulk-hold:not(:disabled):hover { background: #fef3c7; }
+    .btn-bulk-revoke { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+    .btn-bulk-revoke:not(:disabled):hover { background: #e2e8f0; }
+    .btn-bulk-deny   { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-bulk-deny:not(:disabled):hover { background: #fee2e2; }
+
+    /* ═══ Legend ═══ */
+    .table-legend {
+        display: flex; flex-wrap: wrap; gap: 18px;
+        margin-bottom: 12px; padding: 10px 14px;
+        background: #f8fafc; border: 1px solid #eef1f6; border-radius: 9px;
+        font-size: 0.78rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-amber { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
+    .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
+    .dot-red   { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+
+    /* ═══ Panel header ═══ */
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    /* ═══ Table structure: dark division lines ═══ */
+    .enrollment-access-table { border-collapse: separate; border-spacing: 0; }
+    .enrollment-access-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .enrollment-access-table thead th:last-child { border-right: none; }
+    .enrollment-access-table thead th.col-status { border-right: none; padding: 0; }
+    .enrollment-access-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .enrollment-access-table tbody td:last-child { border-right: none; }
+    .enrollment-access-table tbody td.col-status { border-right: none; padding: 0; }
+    .enrollment-access-table tbody tr:last-child td { border-bottom: none; }
+
+    .enrollment-access-table tbody tr.enrollment-row:nth-of-type(even) { background: #fafbfd; }
+    .enrollment-access-table tbody tr.enrollment-row:hover { background: #eef4ff !important; cursor: pointer; }
+    .enrollment-row { transition: background 0.12s ease; }
+    .enrollment-row.row-selected { background: #dbeafe !important; }
+
+    /* status rail — 4 states */
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 54px; }
+    .rail-granted  { background: #16a34a; }
+    .rail-pending  { background: #d97706; }
+    .rail-hold     { background: #94a3b8; }
+    .rail-revoked  { background: #dc2626; }
+
+    tr.row-revoked td:not(.col-status) { color: #94a3b8; }
+    tr.row-hold td:not(.col-status) { color: #64748b; }
+
+    .checkbox-cell { text-align: center; }
+    .checkbox-cell input, #selectAllCheckbox { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
+    .student-email-cell { font-size: 0.87rem; font-weight: 600; color: #0f172a; }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
+    /* ═══ Status pills ═══ */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status-pill i { font-size: 0.72rem; }
+    .pill-ready      { background: #dcfce7; color: #15803d; }
+    .pill-scheduled  { background: #fef3c7; color: #b45309; }
+    .pill-pending    { background: #f1f5f9; color: #64748b; }
+    .pill-failed     { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Empty state ═══ */
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = "{{ csrf_token }}";
+    const selectAll = document.getElementById('selectAllCheckbox');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    const countLabel = document.getElementById('selectedCountLabel');
+    const tableBody = document.getElementById('enrollmentsTableBody');
+
+    const grantBtn  = document.getElementById('grantBtn');
+    const holdBtn   = document.getElementById('holdBtn');
+    const revokeBtn = document.getElementById('revokeBtn');
+    const denyBtn   = document.getElementById('denyBtn');
+    const bulkButtons = [grantBtn, holdBtn, revokeBtn, denyBtn];
+
+    function getChecked() { return document.querySelectorAll('.row-checkbox:checked'); }
+
+    function updateBar() {
+        const n = getChecked().length;
+        countLabel.textContent = `${n} selected`;
+        bulkBar.classList.toggle('has-selection', n > 0);
+        bulkButtons.forEach(btn => { btn.disabled = n === 0; });
+
+        // keep each row's visual "selected" highlight in sync with its checkbox
+        document.querySelectorAll('.row-checkbox').forEach(cb => {
+            cb.closest('tr').classList.toggle('row-selected', cb.checked);
+        });
+
+        // keep "select all" checkbox in sync (checked / indeterminate / unchecked)
+        const all = document.querySelectorAll('.row-checkbox');
+        selectAll.checked = all.length > 0 && n === all.length;
+        selectAll.indeterminate = n > 0 && n < all.length;
+    }
+
+    // ── Whole-row click toggles selection (checkbox click still works normally) ──
+    tableBody.addEventListener('click', function (e) {
+        const row = e.target.closest('tr.selectable-row');
+        if (!row) return;
+
+        // if the click was directly on the checkbox, let its native toggle happen,
+        // just refresh the bar afterward
+        if (e.target.classList.contains('row-checkbox')) {
+            updateBar();
+            return;
+        }
+
+        const checkbox = row.querySelector('.row-checkbox');
+        if (!checkbox) return;
+        checkbox.checked = !checkbox.checked;
+        updateBar();
+    });
+
+    selectAll.addEventListener('change', function () {
+        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = selectAll.checked);
+        updateBar();
+    });
+
+    function syncFilter(id, param) {
+        document.getElementById(id).addEventListener('change', function () {
+            const url = new URL(window.location);
+            this.value ? url.searchParams.set(param, this.value) : url.searchParams.delete(param);
+            window.location = url;
+        });
+    }
+    syncFilter('courseFilter', 'course');
+    syncFilter('statusFilter', 'access_status');
+
+    function postBulk(url, confirmMsg) {
+        const ids = Array.from(getChecked()).map(cb => cb.value);
+        if (ids.length === 0) return;
+        if (confirmMsg && !confirm(confirmMsg.replace('{n}', ids.length))) return;
+
+        const formData = new FormData();
+        ids.forEach(id => formData.append('enrollment_ids[]', id));
+        fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
+            .then(r => r.json())
+            .then(data => data.success ? location.reload() : alert('Action failed.'));
+    }
+
+    grantBtn.addEventListener('click', () =>
+        postBulk("{% url 'course:bulk_grant_enrollment' %}", "Grant course access to {n} enrollment(s)?"));
+    holdBtn.addEventListener('click', () =>
+        postBulk("{% url 'course:bulk_hold_enrollment' %}", "Put {n} enrollment(s) on hold?"));
+    revokeBtn.addEventListener('click', () =>
+        postBulk("{% url 'course:bulk_revoke_enrollment' %}", "Revoke access for {n} enrollment(s)?"));
+    denyBtn.addEventListener('click', () =>
+        postBulk("{% url 'course:bulk_deny_enrollment' %}", "Deny and permanently delete {n} enrollment request(s)?"));
+
+    updateBar();
+});
+</script>
+{% endblock %}
