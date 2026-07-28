@@ -8,6 +8,11 @@ from course.models import Enrollment, Progress, Lesson
 from assignment.models import Assignment, AssignmentSubmission
 from announcement.models import Announcement
 from user.forms import ProfileEditForm
+from accounts.models import User
+from .forms import StatusCheckForm
+from .services import *
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 
 
 @login_required(login_url='user:login')
@@ -54,7 +59,6 @@ def dashboard_home(request):
 
     recent_announcements = Announcement.objects.for_user(user)[:4]
 
-    total_watch_seconds = Progress.objects.filter(user=user).aggregate(total=Q())  # placeholder avoided below
     total_watch_seconds = Progress.objects.filter(user=user).values_list('watched_seconds', flat=True)
     total_hours_learned = round(sum(total_watch_seconds) / 3600, 1) if total_watch_seconds else 0
 
@@ -136,5 +140,51 @@ def notifications_dropdown_view(request):
     html = render_to_string(
         'user_dashboard/includes/notifications_dropdown.html', {'items': items}, request=request
     )
-    mark_notifications_seen(request.user)   # opening the dropdown = seen
     return JsonResponse({'html': html})
+
+
+
+def status_check_view(request):
+    form = StatusCheckForm(request.POST or None)
+    result = None
+    searched = False
+
+    if request.method == 'POST' and form.is_valid():
+        searched = True
+        identifier = form.cleaned_data['identifier'].strip()
+
+        user = User.objects.filter(
+            Q(email__iexact=identifier) | Q(contact=identifier),
+            role=User.Role.USER,
+        ).select_related('nielit_centre', 'learner_profile').first()
+
+        if user:
+            enrollments = Enrollment.objects.filter(user=user).select_related('course').order_by('-enrolled_at')
+            result = {
+                'found': True,
+                'email': user.email,
+                'contact': user.contact,
+                'full_name': getattr(user.learner_profile, 'full_name', None),
+                'centre': user.nielit_centre.centre_name if user.nielit_centre else None,
+                'batch_code': user.batch_code,
+                'account_status': user.account_status,
+                'account_status_display': user.get_account_status_display(),
+                'profile_completed': getattr(user.learner_profile, 'profile_completed', False),
+                'enrollments': [
+                    {
+                        'course_name': e.course.course_name,
+                        'access_status': e.access_status,
+                        'access_status_display': e.get_access_status_display(),
+                        'enrolled_at': e.enrolled_at,
+                    }
+                    for e in enrollments
+                ],
+            }
+        else:
+            result = {'found': False}
+
+    return render(request, 'user_dashboard/status_check.html', {
+        'form': form,
+        'result': result,
+        'searched': searched,
+    })

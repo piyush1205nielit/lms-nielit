@@ -5,100 +5,201 @@
 {% block extra_css %}
 <style>
     :root {
+        --primary: #172281;
+        --primary-dark: #0a1440;
+        --primary-mid: #2338a8;
+        --accent: #f59e0b;
+        --accent-dark: #d97706;
+
         --dash-blue: #2563eb; --dash-blue-bg: #eff6ff;
         --dash-purple: #7c3aed; --dash-purple-bg: #f5f3ff;
         --dash-amber: #d97706; --dash-amber-bg: #fffbeb;
         --dash-green: #059669; --dash-green-bg: #ecfdf5;
         --dash-slate: #475569; --dash-slate-bg: #f8fafc;
-        --border: #e2e8f0; --text-muted: #64748b;
-    }
-    .dash-wrap { padding: 32px 0 60px; background: #f8fafc; min-height: 70vh; }
-    .dash-header { margin-bottom: 26px; }
-    .dash-header h2 { font-size: 1.5rem; font-weight: 700; color: #0e1b2e; margin: 0 0 4px; }
-    .dash-header p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
 
-    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        --text: #0e1b2e;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* ═══ Welcome header ═══ */
+    .dash-header-strip {
+        position: relative;
+        background:
+            radial-gradient(ellipse 900px 400px at 15% -10%, rgba(245,158,11,0.20), transparent 60%),
+            radial-gradient(ellipse 700px 500px at 100% 100%, rgba(76,95,217,0.35), transparent 65%),
+            linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-mid) 100%);
+        padding: 30px 0 26px;
+        color: white;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(10,20,64,0.25);
+        border-bottom: 3px solid var(--accent);
+    }
+    .dash-header-strip::after {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .dash-header-strip .container { position: relative; z-index: 1; }
+    .dash-header-strip h2 { font-size: 1.45rem; font-weight: 700; margin: 0 0 4px; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+    .dash-header-strip p { color: rgba(255,255,255,0.82); font-size: 0.9rem; margin: 0; }
+
+    /* ═══ Body ═══ */
+    .dash-wrap { padding: 26px 0 56px; background: #f8fafc; min-height: 50vh; }
+
+    /* ═══ Stat cards ═══ */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
     @media (max-width: 991px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
 
     .stat-card {
-        background: white; border-radius: 14px; padding: 20px;
+        background: white; border-radius: 14px; padding: 18px 20px;
         border: 1px solid var(--border); display: flex; align-items: center; gap: 14px;
         border-left: 4px solid transparent;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 14px rgba(15,23,42,0.04);
+        transition: box-shadow 0.2s ease, transform 0.15s ease;
     }
+    .stat-card:hover { box-shadow: 0 4px 8px rgba(15,23,42,0.08), 0 10px 24px rgba(15,23,42,0.07); transform: translateY(-2px); }
     .stat-card.c-blue { border-left-color: var(--dash-blue); }
     .stat-card.c-purple { border-left-color: var(--dash-purple); }
     .stat-card.c-amber { border-left-color: var(--dash-amber); }
     .stat-card.c-green { border-left-color: var(--dash-green); }
 
     .stat-icon {
-        width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+        width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
     }
-    .stat-icon.c-blue { background: var(--dash-blue-bg); color: var(--dash-blue); }
-    .stat-icon.c-purple { background: var(--dash-purple-bg); color: var(--dash-purple); }
-    .stat-icon.c-amber { background: var(--dash-amber-bg); color: var(--dash-amber); }
-    .stat-icon.c-green { background: var(--dash-green-bg); color: var(--dash-green); }
+    .stat-icon.c-blue { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: var(--dash-blue); }
+    .stat-icon.c-purple { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: var(--dash-purple); }
+    .stat-icon.c-amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: var(--dash-amber); }
+    .stat-icon.c-green { background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: var(--dash-green); }
 
-    .stat-value { font-size: 1.5rem; font-weight: 800; color: #0e1b2e; line-height: 1.1; }
-    .stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+    .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .stat-label { font-size: 0.76rem; color: var(--text-muted); font-weight: 500; }
 
+    /* ═══ Quick links ═══ */
+    .quick-link-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+    .quick-link-btn {
+        flex: 1; min-width: 140px; text-align: center;
+        padding: 16px 10px; border-radius: 12px; text-decoration: none;
+        font-size: 0.83rem; font-weight: 700;
+        border: 1px solid transparent;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .quick-link-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(15,23,42,0.1); }
+    .quick-link-btn i {
+        display: flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; border-radius: 10px;
+        font-size: 1.15rem; margin: 0 auto 8px; background: rgba(255,255,255,0.6);
+    }
+    .quick-link-btn.ql-blue { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: var(--dash-blue); }
+    .quick-link-btn.ql-purple { background: linear-gradient(135deg, #f5f3ff, #ede9fe); color: var(--dash-purple); }
+    .quick-link-btn.ql-amber { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: var(--dash-amber); }
+    .quick-link-btn.ql-slate { background: linear-gradient(135deg, #f8fafc, #eef1f4); color: var(--dash-slate); }
+
+    /* ═══ Panel layout ═══ */
     .dash-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
     @media (max-width: 991px) { .dash-row { grid-template-columns: 1fr; } }
 
-    .dash-panel { background: white; border-radius: 14px; border: 1px solid var(--border); padding: 22px; margin-bottom: 20px; }
-    .dash-panel h5 { font-size: 0.98rem; font-weight: 700; color: #0e1b2e; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
-    .dash-panel h5 i { color: var(--dash-blue); }
+    .dash-panel {
+        background: white; border-radius: 14px; border: 1px solid var(--border);
+        padding: 20px 22px; margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 14px rgba(15,23,42,0.04);
+    }
+    .dash-panel h5 {
+        font-size: 0.94rem; font-weight: 700; color: var(--text); margin: 0 0 16px;
+        display: flex; align-items: center; gap: 8px;
+        padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .dash-panel h5 i { color: var(--dash-blue); font-size: 0.95rem; }
 
+    /* ═══ Course progress ═══ */
     .course-progress-row { margin-bottom: 16px; }
     .course-progress-row:last-child { margin-bottom: 0; }
-    .cpr-top { display: flex; justify-content: space-between; font-size: 0.86rem; margin-bottom: 6px; }
-    .cpr-top .cpr-name { font-weight: 600; color: #0e1b2e; }
+    .cpr-top { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
+    .cpr-top .cpr-name { font-weight: 600; color: var(--text); }
     .cpr-top .cpr-pct { color: var(--dash-blue); font-weight: 700; }
     .cpr-bar { height: 8px; background: #eef2f9; border-radius: 6px; overflow: hidden; }
-    .cpr-bar-fill { height: 100%; background: linear-gradient(90deg, var(--dash-blue), #60a5fa); border-radius: 6px; }
+    .cpr-bar-fill { height: 100%; background: linear-gradient(90deg, var(--dash-blue), #60a5fa); border-radius: 6px; transition: width 0.3s ease; }
 
-    .overall-ring-wrap { display: flex; align-items: center; justify-content: center; padding: 10px 0 20px; }
-    .overall-ring { position: relative; width: 140px; height: 140px; }
-    .overall-ring svg { transform: rotate(-90deg); }
+    /* ═══ Assignment performance ═══ */
+    .perf-stat-block { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .perf-stat { display: flex; align-items: center; gap: 12px; }
+    .perf-stat-icon {
+        width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+    }
+    .perf-stat.perf-purple .perf-stat-icon { background: var(--dash-purple-bg); color: var(--dash-purple); }
+    .perf-stat.perf-green .perf-stat-icon { background: var(--dash-green-bg); color: var(--dash-green); }
+    .perf-stat .stat-value { font-size: 1.3rem; }
+    .perf-stat.perf-purple .stat-value { color: var(--dash-purple); }
+    .perf-stat.perf-green .stat-value { color: var(--dash-green); }
+
+    /* ═══ Overall progress ring ═══ */
+    .overall-ring-wrap { display: flex; align-items: center; justify-content: center; padding: 6px 0 14px; }
+    .overall-ring { position: relative; width: 150px; height: 150px; }
+    .overall-ring svg { transform: rotate(-90deg); filter: drop-shadow(0 2px 8px rgba(23,34,129,0.15)); }
     .overall-ring-label {
         position: absolute; inset: 0; display: flex; flex-direction: column;
         align-items: center; justify-content: center;
     }
-    .overall-ring-label .big { font-size: 1.6rem; font-weight: 800; color: #0e1b2e; }
-    .overall-ring-label .small-txt { font-size: 0.72rem; color: var(--text-muted); }
+    .overall-ring-label .big { font-size: 1.7rem; font-weight: 800; color: var(--text); }
+    .overall-ring-label .small-txt { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
-    .announce-mini-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.84rem; }
-    .announce-mini-item:last-child { border-bottom: none; }
-    .announce-mini-item .ami-title { font-weight: 600; color: #0e1b2e; }
-    .announce-mini-item .ami-body { color: var(--text-muted); font-size: 0.8rem; margin: 2px 0; }
-    .announce-mini-item .ami-date { font-size: 0.72rem; color: #94a3b8; }
-
-    .dash-empty { text-align: center; padding: 30px 10px; color: #94a3b8; }
-    .dash-empty i { font-size: 1.8rem; margin-bottom: 8px; display: block; }
-
-    .quick-link-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .quick-link-btn {
-        flex: 1; min-width: 140px; text-align: center;
-        padding: 14px 10px; border-radius: 12px; text-decoration: none;
-        font-size: 0.82rem; font-weight: 600; transition: transform 0.15s ease;
+    /* ═══ Announcements mini list ═══ */
+    .announce-mini-item {
+        padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.84rem;
+        display: flex; gap: 12px; align-items: flex-start;
     }
-    .quick-link-btn:hover { transform: translateY(-2px); }
-    .quick-link-btn i { display: block; font-size: 1.3rem; margin-bottom: 6px; }
-    .quick-link-btn.ql-blue { background: var(--dash-blue-bg); color: var(--dash-blue); }
-    .quick-link-btn.ql-purple { background: var(--dash-purple-bg); color: var(--dash-purple); }
-    .quick-link-btn.ql-amber { background: var(--dash-amber-bg); color: var(--dash-amber); }
-    .quick-link-btn.ql-slate { background: var(--dash-slate-bg); color: var(--dash-slate); }
+    .announce-mini-item:last-of-type { border-bottom: none; }
+    .ami-icon {
+        width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; margin-top: 1px;
+        background: linear-gradient(135deg, #fffbeb, #fef3c7); color: var(--accent-dark);
+        display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+    }
+    .announce-mini-item .ami-title { font-weight: 700; color: var(--text); }
+    .announce-mini-item .ami-body { color: var(--text-muted); font-size: 0.8rem; margin: 2px 0; line-height: 1.5; }
+    .announce-mini-item .ami-date { font-size: 0.72rem; color: #94a3b8; }
+    .dash-view-all {
+        display: inline-flex; align-items: center; gap: 5px;
+        color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.82rem;
+        margin-top: 12px;
+    }
+    .dash-view-all:hover { color: var(--primary-dark); }
+
+    /* ═══ Empty state (mini) ═══ */
+    .dash-empty { text-align: center; padding: 26px 10px; color: #94a3b8; }
+    .dash-empty i {
+        font-size: 1.6rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;
+        width: 48px; height: 48px; border-radius: 50%; background: #f1f5f9; color: var(--border-strong);
+        margin-left: auto; margin-right: auto;
+    }
+
+    @media (max-width: 576px) {
+        .dash-header-strip { padding: 22px 0 20px; }
+        .dash-header-strip h2 { font-size: 1.2rem; }
+        .perf-stat-block { gap: 20px; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<section class="dash-header-strip">
+    <div class="container">
+        <h2>Welcome back, {{ profile.full_name|default:request.user.email }} 👋</h2>
+        <p>Here's a snapshot of your learning progress.</p>
+    </div>
+</section>
+
 <div class="dash-wrap">
     <div class="container">
-        <div class="dash-header">
-            <h2>Welcome back, {{ profile.full_name|default:request.user.email }} 👋</h2>
-            <p>Here's a snapshot of your learning progress.</p>
-        </div>
 
         <div class="stat-grid">
             <div class="stat-card c-blue">
@@ -119,7 +220,7 @@
             </div>
         </div>
 
-        <div class="quick-link-row mb-4">
+        <div class="quick-link-row">
             <a href="{% url 'user_dashboard:my_courses' %}" class="quick-link-btn ql-blue"><i class="fas fa-graduation-cap"></i>My Courses</a>
             <a href="{% url 'assignment:my_assignments' %}" class="quick-link-btn ql-purple"><i class="fas fa-clipboard-check"></i>Assignments</a>
             <a href="{% url 'announcement:my_announcements' %}" class="quick-link-btn ql-amber"><i class="fas fa-bullhorn"></i>Announcements</a>
@@ -146,15 +247,21 @@
                 <div class="dash-panel">
                     <h5><i class="fas fa-star" style="color: var(--dash-amber);"></i> Assignment Performance</h5>
                     {% if graded_count %}
-                        <div class="d-flex align-items-center gap-4">
-                            <div>
-                                <div class="stat-value" style="color: var(--dash-purple);">{{ graded_count }}</div>
-                                <div class="stat-label">Graded Assignments</div>
+                        <div class="perf-stat-block">
+                            <div class="perf-stat perf-purple">
+                                <div class="perf-stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ graded_count }}</div>
+                                    <div class="stat-label">Graded Assignments</div>
+                                </div>
                             </div>
                             {% if avg_score_pct is not None %}
-                            <div>
-                                <div class="stat-value" style="color: var(--dash-green);">{{ avg_score_pct }}%</div>
-                                <div class="stat-label">Average Score</div>
+                            <div class="perf-stat perf-green">
+                                <div class="perf-stat-icon"><i class="fas fa-percentage"></i></div>
+                                <div>
+                                    <div class="stat-value">{{ avg_score_pct }}%</div>
+                                    <div class="stat-label">Average Score</div>
+                                </div>
                             </div>
                             {% endif %}
                         </div>
@@ -169,7 +276,7 @@
                     <h5><i class="fas fa-circle-notch"></i> Overall Progress</h5>
                     <div class="overall-ring-wrap">
                         <div class="overall-ring">
-                            <svg width="140" height="140" viewBox="0 0 140 140">
+                            <svg width="150" height="150" viewBox="0 0 140 140">
                                 <circle cx="70" cy="70" r="60" fill="none" stroke="#eef2f9" stroke-width="12"></circle>
                                 <circle cx="70" cy="70" r="60" fill="none" stroke="url(#gradProgress)" stroke-width="12"
                                         stroke-linecap="round"
@@ -177,8 +284,8 @@
                                         pathLength="100"></circle>
                                 <defs>
                                     <linearGradient id="gradProgress" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#2563eb"/>
-                                        <stop offset="100%" stop-color="#60a5fa"/>
+                                        <stop offset="0%" stop-color="#172281"/>
+                                        <stop offset="100%" stop-color="#f59e0b"/>
                                     </linearGradient>
                                 </defs>
                             </svg>
@@ -194,14 +301,17 @@
                     <h5><i class="fas fa-bullhorn" style="color: var(--dash-amber);"></i> Recent Announcements</h5>
                     {% for a in recent_announcements %}
                         <div class="announce-mini-item">
-                            <div class="ami-title">{{ a.title }}</div>
-                            <div class="ami-body">{{ a.message|truncatewords:12 }}</div>
-                            <div class="ami-date">{{ a.publish_at|date:"d M Y" }}</div>
+                            <div class="ami-icon"><i class="fas fa-bullhorn"></i></div>
+                            <div>
+                                <div class="ami-title">{{ a.title }}</div>
+                                <div class="ami-body">{{ a.message|truncatewords:12 }}</div>
+                                <div class="ami-date">{{ a.publish_at|date:"d M Y" }}</div>
+                            </div>
                         </div>
                     {% empty %}
                         <div class="dash-empty"><i class="fas fa-bell-slash"></i><p class="mb-0 small">No announcements yet.</p></div>
                     {% endfor %}
-                    <a href="{% url 'announcement:my_announcements' %}" class="small d-block mt-2" style="color: var(--dash-blue); text-decoration:none;">View all &rarr;</a>
+                    <a href="{% url 'announcement:my_announcements' %}" class="dash-view-all">View all <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </div>

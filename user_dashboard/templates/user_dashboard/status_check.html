@@ -1,0 +1,172 @@
+{% extends 'public/base.html' %}
+{% load static %}
+{% block title %}Check Registration Status - NIELIT Delhi{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --dash-blue: #2563eb; --dash-green: #059669; --dash-amber: #d97706; --dash-red: #dc2626; --border: #e2e8f0; --text-muted: #64748b; }
+
+    .status-wrap {
+        min-height: 82vh; display: flex; align-items: center; justify-content: center;
+        padding: 40px 16px; background: linear-gradient(135deg, #050b1a 0%, #0a1a3d 45%, #0d1f52 100%);
+    }
+    .status-card {
+        background: white; border-radius: 18px; padding: 2.4rem 2.2rem;
+        width: 100%; max-width: 560px; box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+    }
+    .status-icon-wrap {
+        width: 56px; height: 56px; border-radius: 14px; background: #eff6ff;
+        display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
+        font-size: 1.4rem; color: var(--dash-blue);
+    }
+    .status-card h4 { text-align: center; font-weight: 700; color: #0e1b2e; font-size: 1.3rem; margin: 0 0 4px; }
+    .status-card p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.86rem; margin-bottom: 26px; }
+
+    .form-label { font-size: 0.83rem; font-weight: 600; color: #374151; }
+    .form-control { border-radius: 10px; border: 1.5px solid #e2e8f0; padding: 10px 14px; font-size: 0.92rem; }
+    .form-control:focus { border-color: var(--dash-blue); box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
+
+    .btn-check-status {
+        background: var(--dash-blue); border: none; color: white; font-weight: 600;
+        font-size: 0.92rem; padding: 11px; border-radius: 10px; width: 100%; margin-top: 16px;
+    }
+    .btn-check-status:hover { background: #1d4ed8; color: white; }
+
+    /* ── Result panel ── */
+    .result-panel { margin-top: 26px; padding-top: 22px; border-top: 1px solid #f1f5f9; }
+
+    .result-not-found { text-align: center; padding: 20px 10px; }
+    .result-not-found i { font-size: 2rem; color: #fca5a5; margin-bottom: 10px; display: block; }
+    .result-not-found p { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 4px; }
+
+    .result-identity { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .result-avatar {
+        width: 46px; height: 46px; border-radius: 50%; background: #172281; color: white;
+        display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0;
+    }
+    .result-identity h6 { font-size: 0.96rem; font-weight: 700; color: #0e1b2e; margin: 0; }
+    .result-identity span { font-size: 0.8rem; color: var(--text-muted); }
+
+    .status-badge-lg {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.86rem; font-weight: 700; padding: 8px 18px; border-radius: 10px; margin-bottom: 18px;
+    }
+    .status-badge-lg.active { background: #d1fae5; color: #065f46; }
+    .status-badge-lg.pending { background: #fef3c7; color: #92400e; }
+    .status-badge-lg.revoked { background: #fee2e2; color: #991b1b; }
+    .status-badge-lg.disabled { background: #f1f5f9; color: #475569; }
+
+    .result-detail-list { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 10px; padding: 4px 14px; margin-bottom: 18px; }
+    .result-detail-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; gap: 10px; }
+    .result-detail-row:last-child { border-bottom: none; }
+    .result-detail-row .rd-label { color: var(--text-muted); }
+    .result-detail-row .rd-value { color: #0e1b2e; font-weight: 600; text-align: right; }
+
+    .profile-warn {
+        display: flex; align-items: center; gap: 10px;
+        background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+        padding: 10px 14px; font-size: 0.8rem; color: #92400e; margin-bottom: 18px;
+    }
+
+    .enrollment-list-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 10px; }
+    .enrollment-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; gap: 10px;
+    }
+    .enrollment-row:last-child { border-bottom: none; }
+    .enrollment-row .er-name { font-weight: 600; color: #0e1b2e; }
+    .enrollment-row .er-date { font-size: 0.72rem; color: #94a3b8; }
+    .enroll-status-pill { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .enroll-status-pill.granted { background: #d1fae5; color: #065f46; }
+    .enroll-status-pill.pending { background: #fef3c7; color: #92400e; }
+    .enroll-status-pill.hold { background: #e2e8f0; color: #475569; }
+    .enroll-status-pill.revoked { background: #fee2e2; color: #991b1b; }
+
+    .no-enrollments { text-align: center; padding: 16px; color: #94a3b8; font-size: 0.84rem; }
+
+    .status-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .status-actions a { flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+    .status-actions .to-login { background: #172281; color: white; }
+    .status-actions .to-courses { background: #f1f5f9; color: #374151; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="status-wrap">
+    <div class="status-card">
+        <div class="status-icon-wrap"><i class="fas fa-magnifying-glass"></i></div>
+        <h4>Check Your Status</h4>
+        <p class="subtitle">Check your account approval and course enrollment status</p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <label class="form-label">{{ form.identifier.label }}</label>
+            {{ form.identifier }}
+            {% if form.identifier.errors %}<div class="text-danger small mt-1">{{ form.identifier.errors|join:", " }}</div>{% endif %}
+            <button type="submit" class="btn-check-status"><i class="fas fa-search me-2"></i>Check Status</button>
+        </form>
+
+        {% if searched %}
+        <div class="result-panel">
+            {% if result.found %}
+                <div class="result-identity">
+                    <span class="result-avatar">{{ result.email|slice:":1"|upper }}</span>
+                    <div>
+                        <h6>{{ result.full_name|default:"Registered User" }}</h6>
+                        <span>{{ result.email }} &middot; {{ result.contact|default:"—" }}</span>
+                    </div>
+                </div>
+
+                <span class="status-badge-lg {{ result.account_status }}">
+                    {% if result.account_status == 'active' %}<i class="fas fa-check-circle"></i>
+                    {% elif result.account_status == 'pending' %}<i class="fas fa-hourglass-half"></i>
+                    {% elif result.account_status == 'revoked' %}<i class="fas fa-times-circle"></i>
+                    {% else %}<i class="fas fa-pause-circle"></i>{% endif %}
+                    Account: {{ result.account_status_display }}
+                </span>
+
+                {% if not result.profile_completed %}
+                <div class="profile-warn">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Your profile isn't complete yet — log in and finish it to unlock full access.</span>
+                </div>
+                {% endif %}
+
+                <div class="result-detail-list">
+                    <div class="result-detail-row"><span class="rd-label">NIELIT Centre</span><span class="rd-value">{{ result.centre|default:"—" }}</span></div>
+                    <div class="result-detail-row"><span class="rd-label">Batch Code</span><span class="rd-value">{{ result.batch_code|default:"—" }}</span></div>
+                </div>
+
+                <div class="enrollment-list-title">Course Enrollments ({{ result.enrollments|length }})</div>
+                {% for e in result.enrollments %}
+                    <div class="enrollment-row">
+                        <div>
+                            <div class="er-name">{{ e.course_name }}</div>
+                            <div class="er-date">Requested {{ e.enrolled_at|date:"d M Y" }}</div>
+                        </div>
+                        <span class="enroll-status-pill {{ e.access_status }}">{{ e.access_status_display }}</span>
+                    </div>
+                {% empty %}
+                    <div class="no-enrollments">No course enrollment requests yet.</div>
+                {% endfor %}
+
+                <div class="status-actions">
+                    {% if result.account_status == 'active' %}
+                        <a href="{% url 'user:login' %}" class="to-login">Login Now</a>
+                    {% endif %}
+                    <a href="{% url 'public:courses' %}" class="to-courses">Browse Courses</a>
+                </div>
+
+            {% else %}
+                <div class="result-not-found">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <p><strong>No account found</strong> for the email/mobile number entered.</p>
+                    <p class="mb-3">Double-check what you entered, or register a new account below.</p>
+                    <a href="{% url 'user:signup' %}" class="btn btn-outline-primary btn-sm">Create an Account</a>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
