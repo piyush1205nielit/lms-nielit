@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-
+from django.db import models
 from accounts.models import User
 from .models import LearnerProfile, PasswordResetOTP
 from .utils import generate_enrollment_number
