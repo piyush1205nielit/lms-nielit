@@ -84,7 +84,7 @@
                     </div>
                     {% else %}
                         <div class="alert alert-warning py-2 small mb-0">
-                            No active domains exist yet. <a href="{% url 'course:domain_create' %}">Create one first</a>.
+                            No active domains exist yet. <a href="{% url 'course:domain_list' %}">Create one first</a>.
                         </div>
                     {% endif %}
                     {% if form.domains.errors %}<div class="text-danger small mt-2">{{ form.domains.errors|join:", " }}</div>{% endif %}
