@@ -45,6 +45,7 @@ def signup_view(request):
             user=user,
             full_name=data['full_name'],
             gender=data['gender'],
+            enrollment_number=generate_enrollment_number(),  
             profile_completed=False,
         )
 

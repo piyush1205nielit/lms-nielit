@@ -8,6 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from user.models import LearnerProfile
 from admin_dashboard.models import Centre
+from user.utils import generate_enrollment_number
 
 REQUIRED_HEADERS = ['Email', 'Contact', 'NIELIT Centre', 'Batch Code', 'Full Name', 'Gender']
 VALID_GENDERS = {'male': 'male', 'female': 'female', 'other': 'other', 'm': 'male', 'f': 'female'}
@@ -219,6 +220,7 @@ def create_users_from_rows(valid_rows, created_by):
             user=user,
             full_name=row['full_name'],
             gender=row['gender'],
+            enrollment_number=generate_enrollment_number(),
             profile_completed=False,   # still must complete the rest of their profile
         )
         created_users.append(user)

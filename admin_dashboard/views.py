@@ -17,7 +17,7 @@ from .models import Centre
 from .forms import CentreForm
 from django.utils import timezone
 from .notifications import notify_users
-
+from user.utils import generate_enrollment_number 
 
 
 @admin_required
@@ -176,7 +176,10 @@ def student_edit_modal_view(request, user_id):
     student = get_object_or_404(User, id=user_id, role=User.Role.USER)
     profile = getattr(student, 'learner_profile', None)
     if profile is None:
-        profile = LearnerProfile.objects.create(user=student, enrollment_number='PENDING')
+        profile = LearnerProfile.objects.create(
+            user=student, 
+            enrollment_number=generate_enrollment_number(),
+        )
 
     if request.method == 'POST':
         form = ProfileEditForm(request.POST, request.FILES, instance=profile)
