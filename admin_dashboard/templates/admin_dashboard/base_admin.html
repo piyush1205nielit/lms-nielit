@@ -521,15 +521,15 @@
         <span class="nav-label">Event Cards</span>
     </a>
 
-    <div class="sidebar-section-label"><span class="label-text">Academic Management</span></div>
-    <a href="{% url 'assignment:manage_list' %}"
-       class="nav-link {% if active_page == 'assignments' %}active{% endif %} d-flex justify-content-between align-items-center"
-       title="Assignments">
+    <div class="sidebar-section-label"><span class="label-text">Approvals &amp; Access</span></div>
+    <a href="{% url 'admin_dashboard:registration_requests' %}"
+       class="nav-link {% if active_page == 'registrations' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="New Registrations">
         <span class="d-flex align-items-center gap-2">
-            <span class="nav-icon"><i class="bi bi-clipboard-check-fill"></i></span>
-            <span class="nav-label">Assignments</span>
+            <span class="nav-icon"><i class="bi bi-person-plus-fill"></i></span>
+            <span class="nav-label">New Registrations</span>
         </span>
-        {% if pending_grading_count %}<span class="nav-badge">{{ pending_grading_count }}</span>{% endif %}
+        {% if pending_registration_count %}<span class="nav-badge">{{ pending_registration_count }}</span>{% endif %}
     </a>
     <a href="{% url 'course:enrollment_management' %}"
        class="nav-link {% if active_page == 'enrollments' %}active{% endif %} d-flex justify-content-between align-items-center"
@@ -540,26 +540,17 @@
         </span>
         {% if pending_enrollment_count %}<span class="nav-badge">{{ pending_enrollment_count }}</span>{% endif %}
     </a>
-
-    <div class="sidebar-section-label"><span class="label-text">User Management</span></div>
-    <a href="{% url 'admin_dashboard:registration_requests' %}"
-       class="nav-link {% if active_page == 'registrations' %}active{% endif %} d-flex justify-content-between align-items-center"
-       title="New Registrations">
-        <span class="d-flex align-items-center gap-2">
-            <span class="nav-icon"><i class="bi bi-person-plus-fill"></i></span>
-            <span class="nav-label">New Registrations</span>
-        </span>
-        {% if pending_registration_count %}<span class="nav-badge">{{ pending_registration_count }}</span>{% endif %}
-    </a>
-    <a href="{% url 'admin_dashboard:registered_users' %}"
-       class="nav-link {% if active_page == 'users' %}active{% endif %}" title="Registered Users">
-        <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
-        <span class="nav-label">Registered Users</span>
-    </a>
     <a href="{% url 'admin_dashboard:user_access_management' %}"
        class="nav-link {% if active_page == 'user_access' %}active{% endif %}" title="Manage User Account Access">
         <span class="nav-icon"><i class="bi bi-shield-lock-fill"></i></span>
         <span class="nav-label">Account Access Control</span>
+    </a>
+
+    <div class="sidebar-section-label"><span class="label-text">Student Directory</span></div>
+    <a href="{% url 'admin_dashboard:registered_users' %}"
+       class="nav-link {% if active_page == 'users' %}active{% endif %}" title="Registered Users">
+        <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
+        <span class="nav-label">Registered Users</span>
     </a>
     <a href="{% url 'admin_dashboard:bulk_user_upload' %}"
        class="nav-link {% if active_page == 'bulk_upload' %}active{% endif %}" title="Bulk Upload Students">
@@ -571,6 +562,19 @@
         <span class="nav-icon"><i class="bi bi-building"></i></span>
         <span class="nav-label">Manage Centres</span>
     </a>
+
+    <div class="sidebar-section-label"><span class="label-text">Academic Operations</span></div>
+    <a href="{% url 'assignment:manage_list' %}"
+       class="nav-link {% if active_page == 'assignments' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="Assignments">
+        <span class="d-flex align-items-center gap-2">
+            <span class="nav-icon"><i class="bi bi-clipboard-check-fill"></i></span>
+            <span class="nav-label">Assignments</span>
+        </span>
+        {% if pending_grading_count %}<span class="nav-badge">{{ pending_grading_count }}</span>{% endif %}
+    </a>
+
+    <div class="sidebar-section-label"><span class="label-text">Administration</span></div>
     <a href="{% url 'accounts:admin_list' %}"
        class="nav-link {% if active_page == 'admins' %}active{% endif %}" title="Admin Management">
         <span class="nav-icon"><i class="bi bi-person-badge-fill"></i></span>
