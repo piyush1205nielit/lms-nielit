@@ -36,16 +36,49 @@
         <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
     </div>
     <div class="filter-panel-body">
-        <div class="filter-field" style="max-width: 260px;">
-            <label class="form-label">Account Status</label>
-            <select id="statusFilter" class="form-select">
-                <option value="">All Statuses</option>
-                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
-                <option value="revoked" {% if selected_status == 'revoked' %}selected{% endif %}>Revoked</option>
-                <option value="disabled" {% if selected_status == 'disabled' %}selected{% endif %}>Disabled</option>
-            </select>
-        </div>
+        <form method="get" id="filterForm" class="filter-grid">
+            <div class="filter-field filter-field-search">
+                <label class="form-label">Search</label>
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Email, contact, or batch code">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">NIELIT Centre</label>
+                <select name="centre" class="form-select">
+                    <option value="">All Centres</option>
+                    {% for centre in all_centres %}
+                        <option value="{{ centre.id }}" {% if selected_centre == centre.id|stringformat:"s" %}selected{% endif %}>{{ centre.centre_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Batch Code</label>
+                <select name="batch_code" class="form-select">
+                    <option value="">All Batches</option>
+                    {% for code in all_batch_codes %}
+                        <option value="{{ code }}" {% if selected_batch_code == code %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Account Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="revoked" {% if selected_status == 'revoked' %}selected{% endif %}>Revoked</option>
+                    <option value="disabled" {% if selected_status == 'disabled' %}selected{% endif %}>Disabled</option>
+                </select>
+            </div>
+            <div class="filter-field filter-field-actions">
+                <button type="submit" class="btn-filter-apply"><i class="bi bi-funnel-fill"></i> Apply</button>
+                {% if query or selected_centre or selected_batch_code or selected_status %}
+                    <a href="{% url 'admin_dashboard:user_access_management' %}" class="btn-filter-clear" title="Clear filters"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
     </div>
 </div>
 
@@ -146,8 +179,14 @@
                     <td colspan="7" class="empty-state-cell">
                         <div class="empty-state">
                             <div class="empty-state-icon"><i class="bi bi-people"></i></div>
-                            <div class="empty-state-title">No students found</div>
-                            <div class="empty-state-sub">Try adjusting your filters.</div>
+                            {% if query or selected_centre or selected_batch_code or selected_status %}
+                                <div class="empty-state-title">No students match your filters</div>
+                                <div class="empty-state-sub">Try clearing the search or filters above.</div>
+                                <a href="{% url 'admin_dashboard:user_access_management' %}" class="btn-filter-clear-cta">Clear Filters</a>
+                            {% else %}
+                                <div class="empty-state-title">No students found</div>
+                                <div class="empty-state-sub">Registered students will appear here.</div>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -189,15 +228,57 @@
     .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
     .filter-panel-header h5 i { color: #2563eb; }
     .filter-panel-body { padding: 1.1rem 1.2rem; }
-    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
-    .filter-field .form-select { border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; padding: 0.45rem 0.7rem; }
-    .filter-field .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
+
+    .filter-grid { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; }
+    .filter-field-search { flex: 1; min-width: 200px; }
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 0; }
+    .filter-field .form-select, .filter-field .form-control {
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem;
+        padding: 0.45rem 0.7rem; height: 38px; min-width: 160px;
+    }
+    .filter-field .form-select:focus, .filter-field .form-control:focus {
+        border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none;
+    }
+    .search-input-wrap { position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.82rem; }
+    .search-input-wrap input { width: 100%; padding-left: 34px !important; }
+
+    .filter-field-actions { flex-direction: row; gap: 8px; }
+    .btn-filter-apply {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+        background: #2563eb; color: white; font-size: 0.84rem; font-weight: 600;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-apply:hover { background: #1d4ed8; }
+    .btn-filter-clear {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 8px;
+        border: 1.5px solid #cbd5e1; background: white; color: #64748b;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-filter-clear:hover { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .btn-filter-clear-cta {
+        display: inline-block; margin-top: 12px; padding: 7px 18px;
+        border-radius: 8px; border: 1.5px solid #cbd5e1; color: #374151;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-clear-cta:hover { background: #f8fafc; }
+
+    @media (max-width: 750px) {
+        .filter-grid { flex-direction: column; align-items: stretch; }
+        .filter-field { width: 100%; }
+        .filter-field .form-select, .filter-field .form-control { width: 100%; }
+        .filter-field-actions { flex-direction: row; }
+        .btn-filter-apply { flex: 1; justify-content: center; }
+    }
 
     /* ═══ Bulk actions bar ═══ */
     .bulk-actions-bar {
         display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-        padding: 0.9rem 1.2rem;
-        margin-bottom: 1rem;
+        padding: 0.9rem 1.2rem; margin-bottom: 1rem;
         border: 1.5px solid #cbd5e1 !important;
         transition: background 0.2s ease, border-color 0.2s ease;
     }
@@ -232,6 +313,30 @@
     .btn-bulk-delete  { background: #450a0a; border-color: #450a0a; color: #fecaca; }
     .btn-bulk-delete:not(:disabled):hover { background: #7f1d1d; color: white; }
 
+    /* ═══ Loading states ═══ */
+    .btn-bulk-loading { opacity: 0.85 !important; cursor: wait !important; pointer-events: none; }
+    .btn-spinner {
+        display: inline-block; width: 13px; height: 13px;
+        border: 2px solid currentColor; border-top-color: transparent;
+        border-radius: 50%; animation: btn-spin 0.6s linear infinite; vertical-align: middle;
+    }
+    @keyframes btn-spin { to { transform: rotate(360deg); } }
+
+    .table-responsive { position: relative; }
+    .table-responsive.table-loading::after {
+        content: ''; position: absolute; inset: 0;
+        background: rgba(255,255,255,0.6); backdrop-filter: blur(1px);
+        z-index: 20; cursor: wait;
+    }
+    .table-responsive.table-loading::before {
+        content: ''; position: absolute; top: 40%; left: 50%;
+        width: 34px; height: 34px; margin: -17px 0 0 -17px;
+        border: 3px solid #cbd5e1; border-top-color: #2563eb;
+        border-radius: 50%; animation: btn-spin 0.7s linear infinite; z-index: 21;
+    }
+    .account-access-table tbody tr.account-row { transition: opacity 0.15s ease; }
+    .table-responsive.table-loading .account-access-table tbody tr.account-row { opacity: 0.5; }
+
     /* ═══ Legend ═══ */
     .table-legend {
         display: flex; flex-wrap: wrap; gap: 18px;
@@ -246,10 +351,9 @@
     .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
     .dot-red   { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
 
-    /* ═══ Panel header ═══ */
     .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
 
-    /* ═══ Table structure: dark division lines ═══ */
+    /* ═══ Table structure ═══ */
     .account-access-table { border-collapse: separate; border-spacing: 0; }
     .account-access-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
     .account-access-table thead th:last-child { border-right: none; }
@@ -264,7 +368,6 @@
     .account-row { transition: background 0.12s ease; }
     .account-row.row-selected { background: #dbeafe !important; }
 
-    /* status rail — 4 states */
     .col-status { width: 5px; padding: 0 !important; }
     .status-rail { display: block; width: 5px; height: 100%; min-height: 58px; }
     .rail-active   { background: #16a34a; }
@@ -278,7 +381,6 @@
     .checkbox-cell { text-align: center; }
     .checkbox-cell input, #selectAllCheckbox { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
 
-    /* ═══ Student cell ═══ */
     .student-cell { display: flex; align-items: center; gap: 12px; }
     .student-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
     .student-avatar-placeholder {
@@ -297,7 +399,6 @@
         padding: 3px 10px; border-radius: 6px;
     }
 
-    /* ═══ Status pills ═══ */
     .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .status-pill i { font-size: 0.72rem; }
     .pill-ready      { background: #dcfce7; color: #15803d; }
@@ -305,7 +406,6 @@
     .pill-pending    { background: #f1f5f9; color: #64748b; }
     .pill-failed     { background: #fee2e2; color: #b91c1c; }
 
-    /* ═══ Empty state ═══ */
     .empty-state-cell { padding: 0 !important; border: none !important; }
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
     .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
@@ -322,12 +422,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkBar = document.getElementById('bulkActionsBar');
     const countLabel = document.getElementById('selectedCountLabel');
     const tableBody = document.getElementById('usersTableBody');
+    const tableWrap = document.querySelector('.table-responsive');
 
     const grantBtn   = document.getElementById('grantBtn');
     const revokeBtn  = document.getElementById('revokeBtn');
     const disableBtn = document.getElementById('disableBtn');
     const deleteBtn  = document.getElementById('deleteBtn');
     const bulkButtons = [grantBtn, revokeBtn, disableBtn, deleteBtn];
+
+    bulkButtons.forEach(btn => { btn.dataset.originalHtml = btn.innerHTML; });
 
     function getChecked() { return document.querySelectorAll('.row-checkbox:checked'); }
 
@@ -346,7 +449,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectAll.indeterminate = n > 0 && n < all.length;
     }
 
-    // ── Whole-row click toggles selection ──
     tableBody.addEventListener('click', function (e) {
         const row = e.target.closest('tr.selectable-row');
         if (!row) return;
@@ -367,32 +469,67 @@ document.addEventListener('DOMContentLoaded', function () {
         updateBar();
     });
 
-    document.getElementById('statusFilter').addEventListener('change', function () {
-        const url = new URL(window.location);
-        this.value ? url.searchParams.set('status', this.value) : url.searchParams.delete('status');
-        window.location = url;
-    });
+    // ── Loading state helpers ──
+    function setButtonLoading(btn, loadingLabel) {
+        btn.disabled = true;
+        btn.classList.add('btn-bulk-loading');
+        btn.innerHTML = `<span class="btn-spinner"></span> ${loadingLabel}`;
+    }
+    function resetButton(btn) {
+        btn.classList.remove('btn-bulk-loading');
+        btn.innerHTML = btn.dataset.originalHtml;
+    }
+    function lockUI() {
+        selectAll.disabled = true;
+        document.querySelectorAll('.row-checkbox').forEach(cb => { cb.disabled = true; });
+        tableWrap.classList.add('table-loading');
+    }
+    function unlockUI() {
+        selectAll.disabled = false;
+        document.querySelectorAll('.row-checkbox').forEach(cb => { cb.disabled = false; });
+        tableWrap.classList.remove('table-loading');
+    }
 
-    function postBulk(url, confirmMsg) {
+    function postBulk(url, confirmMsg, triggeringBtn, loadingLabel) {
         const ids = Array.from(getChecked()).map(cb => cb.value);
         if (ids.length === 0) return;
         if (confirmMsg && !confirm(confirmMsg.replace('{n}', ids.length))) return;
 
         const formData = new FormData();
         ids.forEach(id => formData.append('user_ids[]', id));
+
+        bulkButtons.forEach(btn => { btn.disabled = true; });
+        setButtonLoading(triggeringBtn, loadingLabel);
+        lockUI();
+
         fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
             .then(r => r.json())
-            .then(data => data.success ? location.reload() : alert('Action failed.'));
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    unlockUI();
+                    resetButton(triggeringBtn);
+                    updateBar();
+                    alert('Action failed. Please try again.');
+                }
+            })
+            .catch(() => {
+                unlockUI();
+                resetButton(triggeringBtn);
+                updateBar();
+                alert('Something went wrong. Please check your connection and try again.');
+            });
     }
 
     grantBtn.addEventListener('click', () =>
-        postBulk("{% url 'admin_dashboard:bulk_grant_access' %}", "Grant access to {n} student(s)?"));
+        postBulk("{% url 'admin_dashboard:bulk_grant_access' %}", "Grant access to {n} student(s)?", grantBtn, "Granting..."));
     revokeBtn.addEventListener('click', () =>
-        postBulk("{% url 'admin_dashboard:bulk_revoke_access' %}", "Revoke access for {n} student(s)? They will be logged out and unable to log in."));
+        postBulk("{% url 'admin_dashboard:bulk_revoke_access' %}", "Revoke access for {n} student(s)? They will be logged out and unable to log in.", revokeBtn, "Revoking..."));
     disableBtn.addEventListener('click', () =>
-        postBulk("{% url 'admin_dashboard:bulk_disable_access' %}", "Temporarily disable {n} account(s)?"));
+        postBulk("{% url 'admin_dashboard:bulk_disable_access' %}", "Temporarily disable {n} account(s)?", disableBtn, "Disabling..."));
     deleteBtn.addEventListener('click', () =>
-        postBulk("{% url 'admin_dashboard:bulk_delete_accounts' %}", "PERMANENTLY delete {n} account(s)? This cannot be undone and will remove all their data."));
+        postBulk("{% url 'admin_dashboard:bulk_delete_accounts' %}", "PERMANENTLY delete {n} account(s)? This cannot be undone and will remove all their data.", deleteBtn, "Deleting..."));
 
     updateBar();
 });

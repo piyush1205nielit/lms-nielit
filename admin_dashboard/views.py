@@ -61,15 +61,23 @@ def user_credentials_edit_view(request, user_id):
     })
 
 
-
 @admin_required
 def registered_users_view(request):
     """Renders the page shell only — the table itself loads via AJAX."""
     return render(request, 'admin_dashboard/registered_users_list.html', {
         'all_courses': Course.objects.filter(status=Course.Status.ACTIVE).only('id', 'course_name').order_by('course_name'),
         'all_domains': Domain.objects.filter(is_active=True).only('id', 'name').order_by('name'),
+        'all_centres': Centre.objects.filter(is_active=True).only('id', 'centre_name').order_by('centre_name'),
+        'all_batch_codes': (
+            User.objects.filter(role=User.Role.USER)
+            .exclude(batch_code='')
+            .values_list('batch_code', flat=True)
+            .distinct()
+            .order_by('batch_code')
+        ),
         'active_page': 'users',
     })
+
 
 @admin_required
 def registered_users_data_view(request):
@@ -78,7 +86,7 @@ def registered_users_data_view(request):
     paginates the ID list, and only then attaches the expensive
     related data (enrollments) to the single page of results.
     """
-    profiles = LearnerProfile.objects.select_related('user')
+    profiles = LearnerProfile.objects.select_related('user', 'user__nielit_centre')
 
     query = request.GET.get('q', '').strip()
     if query:
@@ -86,6 +94,7 @@ def registered_users_data_view(request):
             Q(full_name__icontains=query) |
             Q(user__email__icontains=query) |
             Q(user__contact__icontains=query) |
+            Q(user__batch_code__icontains=query) |
             Q(enrollment_number__icontains=query)
         )
 
@@ -97,15 +106,48 @@ def registered_users_data_view(request):
     if domain_id:
         profiles = profiles.filter(user__enrollments__course__domains__id=domain_id)
 
+    centre_id = request.GET.get('centre', '').strip()
+    if centre_id:
+        profiles = profiles.filter(user__nielit_centre_id=centre_id)
+
+    batch_code = request.GET.get('batch_code', '').strip()
+    if batch_code:
+        profiles = profiles.filter(user__batch_code__iexact=batch_code)
+
     status = request.GET.get('status', '').strip()
     if status == 'complete':
         profiles = profiles.filter(profile_completed=True)
     elif status == 'incomplete':
         profiles = profiles.filter(profile_completed=False)
 
-    # distinct() is only needed when the course/domain filters introduce M2M/FK
-    # join duplication — cheap to always apply here since it's on an already-narrowed set
     profiles = profiles.distinct().order_by('-created_at')
+
+    # stat counts reflect the current filter set (minus the status filter itself,
+    # since complete/incomplete IS what those two counts represent)
+    status_agnostic = profiles
+    if status:
+        # re-derive without the status filter so both counts stay meaningful together
+        status_agnostic = LearnerProfile.objects.select_related('user', 'user__nielit_centre')
+        if query:
+            status_agnostic = status_agnostic.filter(
+                Q(full_name__icontains=query) |
+                Q(user__email__icontains=query) |
+                Q(user__contact__icontains=query) |
+                Q(user__batch_code__icontains=query) |
+                Q(enrollment_number__icontains=query)
+            )
+        if course_id:
+            status_agnostic = status_agnostic.filter(user__enrollments__course_id=course_id)
+        if domain_id:
+            status_agnostic = status_agnostic.filter(user__enrollments__course__domains__id=domain_id)
+        if centre_id:
+            status_agnostic = status_agnostic.filter(user__nielit_centre_id=centre_id)
+        if batch_code:
+            status_agnostic = status_agnostic.filter(user__batch_code__iexact=batch_code)
+        status_agnostic = status_agnostic.distinct()
+
+    complete_count = status_agnostic.filter(profile_completed=True).count()
+    incomplete_count = status_agnostic.filter(profile_completed=False).count()
 
     page_number = request.GET.get('page', 1)
     per_page = 20
@@ -114,18 +156,19 @@ def registered_users_data_view(request):
     try:
         page = paginator.page(page_number)
     except EmptyPage:
-        return JsonResponse({'html': '', 'has_next': False, 'total_count': paginator.count})
+        return JsonResponse({
+            'html': '', 'has_next': False, 'total_count': paginator.count,
+            'complete_count': complete_count, 'incomplete_count': incomplete_count,
+        })
 
-    # Only now — for this one page's worth of IDs — do the expensive join/prefetch
     page_profile_ids = list(page.object_list)
     page_profiles = LearnerProfile.objects.filter(id__in=page_profile_ids).select_related(
-        'user'
+        'user', 'user__nielit_centre'
     ).prefetch_related(
         Prefetch('user__enrollments', queryset=Enrollment.objects.select_related('course'))
     ).annotate(
         enrollment_count=Count('user__enrollments', distinct=True)
     )
-    # preserve the original ordering (created_at desc) — filtering by id__in loses row order
     page_profiles_by_id = {p.id: p for p in page_profiles}
     ordered_page_profiles = [page_profiles_by_id[pid] for pid in page_profile_ids if pid in page_profiles_by_id]
 
@@ -141,6 +184,8 @@ def registered_users_data_view(request):
         'current_page': page.number,
         'total_pages': paginator.num_pages,
         'total_count': paginator.count,
+        'complete_count': complete_count,
+        'incomplete_count': incomplete_count,
     })
 
 
@@ -243,9 +288,44 @@ def centre_delete_view(request, centre_id):
 
 @admin_required
 def registration_requests_view(request):
-    users = User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.PENDING).select_related('nielit_centre').order_by('-date_joined')
+    users = User.objects.filter(
+        role=User.Role.USER, account_status=User.AccountStatus.PENDING
+    ).select_related('nielit_centre').order_by('-date_joined')
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        users = users.filter(
+            Q(email__icontains=query) |
+            Q(contact__icontains=query) |
+            Q(batch_code__icontains=query)
+        )
+
+    batch_code = request.GET.get('batch_code', '').strip()
+    if batch_code:
+        users = users.filter(batch_code__iexact=batch_code)
+
+    centre_id = request.GET.get('centre', '').strip()
+    if centre_id:
+        users = users.filter(nielit_centre_id=centre_id)
+
+    # distinct batch codes among currently-pending users, for the filter dropdown —
+    # only shows codes that are actually relevant right now, not every code ever used
+    all_batch_codes = (
+        User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.PENDING)
+        .exclude(batch_code='')
+        .values_list('batch_code', flat=True)
+        .distinct()
+        .order_by('batch_code')
+    )
+
     return render(request, 'admin_dashboard/registration_requests.html', {
-        'users': users, 'active_page': 'registrations',
+        'users': users,
+        'all_batch_codes': all_batch_codes,
+        'all_centres': Centre.objects.filter(is_active=True).order_by('centre_name'),
+        'query': query,
+        'selected_batch_code': batch_code,
+        'selected_centre': centre_id,
+        'active_page': 'registrations',
     })
 
 
@@ -278,11 +358,67 @@ def bulk_deny_registrations_view(request):
 @admin_required
 def user_access_management_view(request):
     users = User.objects.filter(role=User.Role.USER).select_related('nielit_centre').order_by('-date_joined')
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        users = users.filter(
+            Q(email__icontains=query) |
+            Q(contact__icontains=query) |
+            Q(batch_code__icontains=query)
+        )
+
     status_filter = request.GET.get('status', '').strip()
     if status_filter:
         users = users.filter(account_status=status_filter)
+
+    centre_id = request.GET.get('centre', '').strip()
+    if centre_id:
+        users = users.filter(nielit_centre_id=centre_id)
+
+    batch_code = request.GET.get('batch_code', '').strip()
+    if batch_code:
+        users = users.filter(batch_code__iexact=batch_code)
+
+    # counts reflect the current filter set (search/centre/batch), excluding
+    # the status filter itself, since the four cards ARE the status breakdown
+    base = User.objects.filter(role=User.Role.USER)
+    if query:
+        base = base.filter(
+            Q(email__icontains=query) |
+            Q(contact__icontains=query) |
+            Q(batch_code__icontains=query)
+        )
+    if centre_id:
+        base = base.filter(nielit_centre_id=centre_id)
+    if batch_code:
+        base = base.filter(batch_code__iexact=batch_code)
+
+    active_count = base.filter(account_status=User.AccountStatus.ACTIVE).count()
+    pending_count = base.filter(account_status=User.AccountStatus.PENDING).count()
+    disabled_count = base.filter(account_status=User.AccountStatus.DISABLED).count()
+    revoked_count = base.filter(account_status=User.AccountStatus.REVOKED).count()
+
+    all_batch_codes = (
+        User.objects.filter(role=User.Role.USER)
+        .exclude(batch_code='')
+        .values_list('batch_code', flat=True)
+        .distinct()
+        .order_by('batch_code')
+    )
+
     return render(request, 'admin_dashboard/user_access_management.html', {
-        'users': users, 'selected_status': status_filter, 'active_page': 'user_access',
+        'users': users,
+        'all_centres': Centre.objects.filter(is_active=True).order_by('centre_name'),
+        'all_batch_codes': all_batch_codes,
+        'query': query,
+        'selected_status': status_filter,
+        'selected_centre': centre_id,
+        'selected_batch_code': batch_code,
+        'active_count': active_count,
+        'pending_count': pending_count,
+        'disabled_count': disabled_count,
+        'revoked_count': revoked_count,
+        'active_page': 'user_access',
     })
 
 

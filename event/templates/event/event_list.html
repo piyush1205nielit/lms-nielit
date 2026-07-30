@@ -15,7 +15,6 @@
         </a>
     </div>
 </div>
-
 <!-- ═══ Summary stat cards ═══ -->
 <div class="stat-grid stat-grid-3">
     <div class="stat-mini-card stat-blue">
@@ -29,57 +28,6 @@
     <div class="stat-mini-card stat-purple">
         <div class="stat-mini-icon"><i class="bi bi-tv-fill"></i></div>
         <div><div class="stat-mini-value">{{ display_settings.get_display_mode_display }}</div><div class="stat-mini-label">Display Mode</div></div>
-    </div>
-</div>
-
-<!-- ═══ Homepage display mode control ═══ -->
-<div class="card-panel form-section-card">
-    <div class="form-section-header">
-        <div class="form-section-icon icon-purple"><i class="bi bi-tv-fill"></i></div>
-        <div><h6>Homepage Display Mode</h6><p>Controls how active event cards appear to visitors.</p></div>
-    </div>
-    <div class="form-section-body">
-        <div class="display-mode-switcher">
-            <form method="post" action="{% url 'event:event_set_display_mode' 'stacked' %}">
-                {% csrf_token %}
-                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'stacked' %}mode-active{% endif %}">
-                    <i class="bi bi-layers-fill"></i>
-                    <span>Stacked</span>
-                </button>
-            </form>
-            <form method="post" action="{% url 'event:event_set_display_mode' 'carousel' %}">
-                {% csrf_token %}
-                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'carousel' %}mode-active{% endif %}">
-                    <i class="bi bi-images"></i>
-                    <span>Carousel</span>
-                </button>
-            </form>
-            <form method="post" action="{% url 'event:event_set_display_mode' 'hidden' %}">
-                {% csrf_token %}
-                <button type="submit" class="mode-btn mode-btn-danger {% if display_settings.display_mode == 'hidden' %}mode-active-danger{% endif %}">
-                    <i class="bi bi-eye-slash-fill"></i>
-                    <span>Hide from Homepage</span>
-                </button>
-            </form>
-        </div>
-
-        {% if display_settings.display_mode == 'hidden' %}
-            <div class="alert-banner alert-banner-warning">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <span>Events are currently hidden from the homepage, even if individually marked active.</span>
-            </div>
-        {% elif active_events %}
-            <div class="live-preview-frame">
-                <div class="live-preview-label"><i class="bi bi-eye-fill"></i> Live Preview</div>
-                <div class="live-preview-box">
-                    {% include 'public/includes/event_cards_display.html' with events=active_events display_mode=display_settings.display_mode %}
-                </div>
-            </div>
-        {% else %}
-            <div class="no-active-note">
-                <i class="bi bi-info-circle"></i> No active events yet — activate one below to see it here.
-            </div>
-        {% endif %}
     </div>
 </div>
 
@@ -171,6 +119,59 @@
     </div>
     {% endfor %}
 </div>
+
+
+<!-- ═══ Homepage display mode control ═══ -->
+<div class="card-panel form-section-card">
+    <div class="form-section-header">
+        <div class="form-section-icon icon-purple"><i class="bi bi-tv-fill"></i></div>
+        <div><h6>Homepage Display Mode</h6><p>Controls how active event cards appear to visitors.</p></div>
+    </div>
+    <div class="form-section-body">
+        <div class="display-mode-switcher">
+            <form method="post" action="{% url 'event:event_set_display_mode' 'stacked' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'stacked' %}mode-active{% endif %}">
+                    <i class="bi bi-layers-fill"></i>
+                    <span>Stacked</span>
+                </button>
+            </form>
+            <form method="post" action="{% url 'event:event_set_display_mode' 'carousel' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn {% if display_settings.display_mode == 'carousel' %}mode-active{% endif %}">
+                    <i class="bi bi-images"></i>
+                    <span>Carousel</span>
+                </button>
+            </form>
+            <form method="post" action="{% url 'event:event_set_display_mode' 'hidden' %}">
+                {% csrf_token %}
+                <button type="submit" class="mode-btn mode-btn-danger {% if display_settings.display_mode == 'hidden' %}mode-active-danger{% endif %}">
+                    <i class="bi bi-eye-slash-fill"></i>
+                    <span>Hide from Homepage</span>
+                </button>
+            </form>
+        </div>
+
+        {% if display_settings.display_mode == 'hidden' %}
+            <div class="alert-banner alert-banner-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Events are currently hidden from the homepage, even if individually marked active.</span>
+            </div>
+        {% elif active_events %}
+            <div class="live-preview-frame">
+                <div class="live-preview-label"><i class="bi bi-eye-fill"></i> Live Preview</div>
+                <div class="live-preview-box">
+                    {% include 'public/includes/event_cards_display.html' with events=active_events display_mode=display_settings.display_mode %}
+                </div>
+            </div>
+        {% else %}
+            <div class="no-active-note">
+                <i class="bi bi-info-circle"></i> No active events yet — activate one below to see it here.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_css %}

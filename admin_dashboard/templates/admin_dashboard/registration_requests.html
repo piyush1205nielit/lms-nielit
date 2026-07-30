@@ -18,6 +18,45 @@
     </div>
 </div>
 
+<!-- ═══ Search + filters ═══ -->
+<div class="card-panel filter-bar">
+    <form method="get" class="filter-form">
+        <div class="filter-field filter-field-search">
+            <label class="filter-label">Search</label>
+            <div class="search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" name="q" value="{{ query }}" class="filter-input" placeholder="Email, contact, or batch code">
+            </div>
+        </div>
+        <div class="filter-field">
+            <label class="filter-label">Batch Code</label>
+            <select name="batch_code" class="filter-select">
+                <option value="">All Batches</option>
+                {% for code in all_batch_codes %}
+                    <option value="{{ code }}" {% if selected_batch_code == code %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label class="filter-label">NIELIT Centre</label>
+            <select name="centre" class="filter-select">
+                <option value="">All Centres</option>
+                {% for centre in all_centres %}
+                    <option value="{{ centre.id }}" {% if selected_centre == centre.id|stringformat:"s" %}selected{% endif %}>{{ centre.centre_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field filter-field-actions">
+            <button type="submit" class="btn-filter-apply"><i class="bi bi-funnel-fill"></i> Filter</button>
+            {% if query or selected_batch_code or selected_centre %}
+                <a href="{% url 'admin_dashboard:registration_requests' %}" class="btn-filter-clear" title="Clear filters">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
 <!-- ═══ Bulk actions bar — always visible, disabled until selection ═══ -->
 <div class="card-panel bulk-actions-bar" id="bulkActionsBar">
     <div class="bulk-bar-left">
@@ -86,8 +125,14 @@
                     <td colspan="7" class="empty-state-cell">
                         <div class="empty-state">
                             <div class="empty-state-icon"><i class="bi bi-check2-circle"></i></div>
-                            <div class="empty-state-title">No pending registration requests</div>
-                            <div class="empty-state-sub">You're all caught up — new sign-ups will appear here.</div>
+                            {% if query or selected_batch_code or selected_centre %}
+                                <div class="empty-state-title">No requests match your filters</div>
+                                <div class="empty-state-sub">Try clearing the search or filters above.</div>
+                                <a href="{% url 'admin_dashboard:registration_requests' %}" class="btn-filter-clear-cta">Clear Filters</a>
+                            {% else %}
+                                <div class="empty-state-title">No pending registration requests</div>
+                                <div class="empty-state-sub">You're all caught up — new sign-ups will appear here.</div>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -116,6 +161,60 @@
     .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
     .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
+
+    /* ═══ Filter bar ═══ */
+    .filter-bar { padding: 1rem 1.2rem; margin-bottom: 1rem; border: 1.5px solid #cbd5e1 !important; }
+    .filter-form { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; }
+    .filter-field-search { flex: 1; min-width: 220px; }
+    .filter-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #64748b; }
+
+    .search-input-wrap { position: relative; }
+    .search-input-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.82rem; }
+    .filter-input {
+        width: 100%; height: 38px; padding: 0 14px 0 34px;
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .filter-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+
+    .filter-select {
+        height: 38px; min-width: 170px; padding: 0 12px;
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; color: #374151;
+        background: white; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .filter-select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+
+    .filter-field-actions { flex-direction: row; gap: 8px; }
+    .btn-filter-apply {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+        background: #2563eb; color: white; font-size: 0.84rem; font-weight: 600;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-apply:hover { background: #1d4ed8; }
+    .btn-filter-clear {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 8px;
+        border: 1.5px solid #cbd5e1; background: white; color: #64748b;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-filter-clear:hover { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .btn-filter-clear-cta {
+        display: inline-block; margin-top: 12px; padding: 7px 18px;
+        border-radius: 8px; border: 1.5px solid #cbd5e1; color: #374151;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-clear-cta:hover { background: #f8fafc; }
+
+    @media (max-width: 700px) {
+        .filter-form { flex-direction: column; align-items: stretch; }
+        .filter-field { width: 100%; }
+        .filter-select { width: 100%; }
+        .filter-field-actions { width: 100%; }
+        .btn-filter-apply { flex: 1; justify-content: center; }
+    }
 
     /* ═══ Bulk actions bar ═══ */
     .bulk-actions-bar {
@@ -170,7 +269,6 @@
     .registration-row { transition: background 0.12s ease; }
     .registration-row.row-selected { background: #dbeafe !important; }
 
-    /* status rail — all pending on this page */
     .col-status { width: 5px; padding: 0 !important; }
     .status-rail { display: block; width: 5px; height: 100%; min-height: 58px; }
     .rail-pending { background: #d97706; }
@@ -178,7 +276,6 @@
     .checkbox-cell { text-align: center; }
     .checkbox-cell input, #selectAllCheckbox { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
 
-    /* ═══ Student cell ═══ */
     .student-cell { display: flex; align-items: center; gap: 12px; }
     .student-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
     .student-avatar-placeholder {
@@ -197,12 +294,54 @@
         padding: 3px 10px; border-radius: 6px;
     }
 
-    /* ═══ Empty state ═══ */
     .empty-state-cell { padding: 0 !important; border: none !important; }
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
     .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
     .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+
+    /* ═══ Loading states ═══ */
+    .btn-bulk-loading { opacity: 0.85 !important; cursor: wait !important; pointer-events: none; }
+
+    .btn-spinner {
+        display: inline-block;
+        width: 13px; height: 13px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: btn-spin 0.6s linear infinite;
+        vertical-align: middle;
+    }
+    @keyframes btn-spin { to { transform: rotate(360deg); } }
+
+    /* Table overlay while a bulk action is processing */
+    .table-responsive { position: relative; }
+    .table-responsive.table-loading::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(1px);
+        z-index: 20;
+        cursor: wait;
+    }
+    .table-responsive.table-loading::before {
+        content: '';
+        position: absolute; top: 40%; left: 50%;
+        width: 34px; height: 34px;
+        margin: -17px 0 0 -17px;
+        border: 3px solid #cbd5e1;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: btn-spin 0.7s linear infinite;
+        z-index: 21;
+    }
+
+    .registration-table tbody tr.registration-row {
+        transition: opacity 0.15s ease;
+    }
+    .table-responsive.table-loading .registration-table tbody tr.registration-row {
+        opacity: 0.5;
+    }
 </style>
 {% endblock %}
 
@@ -214,10 +353,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkBar = document.getElementById('bulkActionsBar');
     const countLabel = document.getElementById('selectedCountLabel');
     const tableBody = document.getElementById('requestsTableBody');
+    const tableWrap = document.querySelector('.table-responsive');
 
     const approveBtn = document.getElementById('approveBtn');
     const denyBtn = document.getElementById('denyBtn');
     const bulkButtons = [approveBtn, denyBtn];
+
+    // ── Store each button's original inner HTML so we can restore it if the request fails ──
+    bulkButtons.forEach(btn => { btn.dataset.originalHtml = btn.innerHTML; });
 
     function getChecked() { return document.querySelectorAll('.row-checkbox:checked'); }
 
@@ -236,7 +379,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectAll.indeterminate = n > 0 && n < all.length;
     }
 
-    // ── Whole-row click toggles selection ──
     tableBody.addEventListener('click', function (e) {
         const row = e.target.closest('tr.selectable-row');
         if (!row) return;
@@ -257,7 +399,29 @@ document.addEventListener('DOMContentLoaded', function () {
         updateBar();
     });
 
-    function postBulk(url, confirmMsg) {
+    // ── Loading state helpers ──
+    function setButtonLoading(btn, loadingLabel) {
+        btn.disabled = true;
+        btn.classList.add('btn-bulk-loading');
+        btn.innerHTML = `<span class="btn-spinner"></span> ${loadingLabel}`;
+    }
+
+    function resetButton(btn) {
+        btn.classList.remove('btn-bulk-loading');
+        btn.innerHTML = btn.dataset.originalHtml;
+    }
+
+    function showTableOverlay() {
+        tableWrap.classList.add('table-loading');
+    }
+
+    function lockUI() {
+        selectAll.disabled = true;
+        document.querySelectorAll('.row-checkbox').forEach(cb => { cb.disabled = true; });
+        showTableOverlay();
+    }
+
+    function postBulk(url, confirmMsg, triggeringBtn, loadingLabel) {
         const ids = Array.from(getChecked()).map(cb => cb.value);
         if (ids.length === 0) return;
         if (confirmMsg && !confirm(confirmMsg.replace('{n}', ids.length))) return;
@@ -265,16 +429,52 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData();
         ids.forEach(id => formData.append('user_ids[]', id));
 
+        // Disable both bulk buttons immediately, show spinner on the one actually clicked
+        bulkButtons.forEach(btn => { btn.disabled = true; });
+        setButtonLoading(triggeringBtn, loadingLabel);
+        lockUI();
+
         fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
             .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else alert('Action failed.'); });
+            .then(data => {
+                if (data.success) {
+                    // keep the loading state visible through the reload —
+                    // avoids a flash of an "un-loading" button right before the page changes
+                    location.reload();
+                } else {
+                    tableWrap.classList.remove('table-loading');
+                    selectAll.disabled = false;
+                    document.querySelectorAll('.row-checkbox').forEach(cb => { cb.disabled = false; });
+                    resetButton(triggeringBtn);
+                    updateBar();
+                    alert('Action failed. Please try again.');
+                }
+            })
+            .catch(() => {
+                tableWrap.classList.remove('table-loading');
+                selectAll.disabled = false;
+                document.querySelectorAll('.row-checkbox').forEach(cb => { cb.disabled = false; });
+                resetButton(triggeringBtn);
+                updateBar();
+                alert('Something went wrong. Please check your connection and try again.');
+            });
     }
 
     approveBtn.addEventListener('click', function () {
-        postBulk("{% url 'admin_dashboard:bulk_approve_registrations' %}", "Approve {n} student(s)? They'll be notified by email.");
+        postBulk(
+            "{% url 'admin_dashboard:bulk_approve_registrations' %}",
+            "Approve {n} student(s)? They'll be notified by email.",
+            approveBtn,
+            "Approving..."
+        );
     });
     denyBtn.addEventListener('click', function () {
-        postBulk("{% url 'admin_dashboard:bulk_deny_registrations' %}", "Deny and permanently delete {n} registration(s)? This cannot be undone.");
+        postBulk(
+            "{% url 'admin_dashboard:bulk_deny_registrations' %}",
+            "Deny and permanently delete {n} registration(s)? This cannot be undone.",
+            denyBtn,
+            "Denying..."
+        );
     });
 
     updateBar();

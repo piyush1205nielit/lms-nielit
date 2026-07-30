@@ -13,6 +13,7 @@ from accounts.models import User
 from admin_dashboard.notifications import notify_users
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from admin_dashboard.models import Centre
 
 
 # ── Admin: domain management ──────────────────────────────
@@ -349,19 +350,38 @@ def course_publish_view(request, course_id):
 
 # ── Public: course detail page ──────────────────────────────
 
+# def course_detail_view(request, slug):
+#     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
+#     modules = course.modules.prefetch_related('lessons').order_by('order')
+#     is_enrolled = False
+#     if request.user.is_authenticated and request.user.role == 'user':
+#         is_enrolled = course.enrollments.filter(user=request.user).exists()
+
+#     return render(request, 'course/course_detail.html', {
+#         'course': course,
+#         'modules': modules,
+#         'is_enrolled': is_enrolled,
+#     })
+
+@login_required(login_url='user:login')
 def course_detail_view(request, slug):
     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
     modules = course.modules.prefetch_related('lessons').order_by('order')
-    is_enrolled = False
-    if request.user.is_authenticated and request.user.role == 'user':
-        is_enrolled = course.enrollments.filter(user=request.user).exists()
+    total_lessons = Lesson.objects.filter(module__course=course).count()
+
+    enrollment = None
+    if request.user.is_authenticated:
+        enrollment = Enrollment.objects.filter(user=request.user, course=course).first()
+
+    is_enrolled = bool(enrollment and enrollment.access_status == Enrollment.AccessStatus.GRANTED)
 
     return render(request, 'course/course_detail.html', {
         'course': course,
         'modules': modules,
-        'is_enrolled': is_enrolled,
+        'total_lessons': total_lessons,
+        'enrollment': enrollment,       
+        'is_enrolled': is_enrolled,     
     })
-
 
 
 def course_detail_view(request, slug):
@@ -384,6 +404,21 @@ def course_detail_view(request, slug):
     })
 
 
+# @login_required(login_url='user:login')
+# def course_enroll_view(request, slug):
+#     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
+
+#     if request.user.account_status != User.AccountStatus.ACTIVE:
+#         messages.error(request, "Your account access must be approved by an admin before you can enroll in courses.")
+#         return redirect('course:detail', slug=slug)
+
+#     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
+#     if created:
+#         messages.success(request, "Enrollment request submitted. You'll get access once approved by an admin.")
+#     else:
+#         messages.info(request, f"You already have a {enrollment.get_access_status_display().lower()} enrollment for this course.")
+#     return redirect('course:detail', slug=slug)
+
 @login_required(login_url='user:login')
 def course_enroll_view(request, slug):
     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
@@ -394,9 +429,16 @@ def course_enroll_view(request, slug):
 
     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
     if created:
-        messages.success(request, "Enrollment request submitted. You'll get access once approved by an admin.")
+        messages.success(request, "Enrollment request submitted! An admin will review and approve your access shortly.")
     else:
-        messages.info(request, f"You already have a {enrollment.get_access_status_display().lower()} enrollment for this course.")
+        status_messages = {
+            Enrollment.AccessStatus.PENDING: "You already have a pending enrollment request for this course.",
+            Enrollment.AccessStatus.GRANTED: "You already have access to this course.",
+            Enrollment.AccessStatus.HOLD: "Your access to this course is currently on hold. Contact the administrator.",
+            Enrollment.AccessStatus.REVOKED: "Your access to this course has been revoked. Contact the administrator.",
+        }
+        messages.info(request, status_messages.get(enrollment.access_status, "You already have an enrollment record for this course."))
+
     return redirect('course:detail', slug=slug)
 
 
@@ -498,7 +540,9 @@ def course_overview_view(request, course_id):
 
 @admin_required
 def enrollment_management_view(request):
-    enrollments = Enrollment.objects.select_related('user', 'course').order_by('-enrolled_at')
+    enrollments = Enrollment.objects.select_related(
+        'user', 'user__nielit_centre', 'course'
+    ).order_by('-enrolled_at')
 
     course_id = request.GET.get('course', '').strip()
     if course_id:
@@ -508,11 +552,67 @@ def enrollment_management_view(request):
     if status_filter:
         enrollments = enrollments.filter(access_status=status_filter)
 
+    centre_id = request.GET.get('centre', '').strip()
+    if centre_id:
+        enrollments = enrollments.filter(user__nielit_centre_id=centre_id)
+
+    batch_code = request.GET.get('batch_code', '').strip()
+    if batch_code:
+        enrollments = enrollments.filter(user__batch_code__iexact=batch_code)
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        enrollments = enrollments.filter(
+            Q(user__email__icontains=query) |
+            Q(user__batch_code__icontains=query) |
+            Q(course__course_name__icontains=query)
+        )
+
+    # counts reflect the CURRENT filter set (course/centre/batch/search), so the
+    # stat cards stay meaningful when an admin narrows the view — only the status
+    # filter itself is excluded from each count's own base queryset, since each
+    # card IS a specific status count
+    base = Enrollment.objects.all()
+    if course_id:
+        base = base.filter(course_id=course_id)
+    if centre_id:
+        base = base.filter(user__nielit_centre_id=centre_id)
+    if batch_code:
+        base = base.filter(user__batch_code__iexact=batch_code)
+    if query:
+        base = base.filter(
+            Q(user__email__icontains=query) |
+            Q(user__batch_code__icontains=query) |
+            Q(course__course_name__icontains=query)
+        )
+
+    pending_count = base.filter(access_status=Enrollment.AccessStatus.PENDING).count()
+    granted_count = base.filter(access_status=Enrollment.AccessStatus.GRANTED).count()
+    hold_count = base.filter(access_status=Enrollment.AccessStatus.HOLD).count()
+    revoked_count = base.filter(access_status=Enrollment.AccessStatus.REVOKED).count()
+
+    all_batch_codes = (
+        User.objects.filter(role=User.Role.USER)
+        .exclude(batch_code='')
+        .values_list('batch_code', flat=True)
+        .distinct()
+        .order_by('batch_code')
+    )
+
     return render(request, 'course/enrollment_management.html', {
         'enrollments': enrollments,
         'all_courses': Course.objects.filter(status=Course.Status.ACTIVE).order_by('course_name'),
+        'all_centres': Centre.objects.filter(is_active=True).order_by('centre_name'),
+        'all_batch_codes': all_batch_codes,
         'selected_course': course_id,
         'selected_status': status_filter,
+        'selected_centre': centre_id,
+        'selected_batch_code': batch_code,
+        'query': query,
+        'pending_count': pending_count,
+        'granted_count': granted_count,
+        'hold_count': hold_count,
+        'revoked_count': revoked_count,
         'active_page': 'enrollments',
     })
 

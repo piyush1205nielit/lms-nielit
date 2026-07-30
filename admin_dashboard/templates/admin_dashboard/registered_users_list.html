@@ -41,7 +41,7 @@
                 <div class="search-input-wrap">
                     <i class="bi bi-search search-icon"></i>
                     <input type="text" id="searchInput" class="form-control"
-                           placeholder="Name, email, contact, or enrollment no.">
+                           placeholder="Name, email, contact, batch code, or enrollment no.">
                 </div>
             </div>
             <div class="filter-field">
@@ -59,6 +59,24 @@
                     <option value="">All Domains</option>
                     {% for domain in all_domains %}
                         <option value="{{ domain.id }}">{{ domain.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">NIELIT Centre</label>
+                <select id="centreFilter" class="form-select">
+                    <option value="">All Centres</option>
+                    {% for centre in all_centres %}
+                        <option value="{{ centre.id }}">{{ centre.centre_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Batch Code</label>
+                <select id="batchFilter" class="form-select">
+                    <option value="">All Batches</option>
+                    {% for code in all_batch_codes %}
+                        <option value="{{ code }}">{{ code }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -90,16 +108,18 @@
         </div>
         <table class="table table-admin student-manage-table mb-0">
             <thead>
-                <tr>
-                    <th class="col-status"></th>
-                    <th style="min-width: 220px;">Student</th>
-                    <th>Enrollment No.</th>
-                    <th>Contact</th>
-                    <th>Enrolled Courses</th>
-                    <th class="text-center">Profile</th>
-                    <th>Joined</th>
-                    <th class="text-end" style="min-width: 220px;">Actions</th>
-                </tr>
+              <tr>
+                <th class="col-status"></th>
+                <th style="min-width: 220px;">Student</th>
+                <th>Enrollment No.</th>
+                <th>Contact</th>
+                <th>Centre</th>
+                <th class="text-center">Batch Code</th>
+                <th>Enrolled Courses</th>
+                <th class="text-center">Profile</th>
+                <th>Joined</th>
+                <th class="text-end" style="min-width: 220px;">Actions</th>
+            </tr>
             </thead>
             <tbody id="studentsTableBody">
                 <!-- rows injected via AJAX; see partial notes below -->
@@ -159,9 +179,10 @@
     .btn-clear-filters { height: 32px; padding: 0 12px; font-size: 0.78rem; }
     .filter-panel-body { padding: 1.1rem 1.2rem; }
 
-    .filter-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 14px; }
-    @media (max-width: 950px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 560px) { .filter-grid { grid-template-columns: 1fr; } }
+    .filter-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr 1fr; gap: 14px; }
+    @media (max-width: 1200px) { .filter-grid { grid-template-columns: 1fr 1fr 1fr; } }
+    @media (max-width: 700px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .filter-grid { grid-template-columns: 1fr; } }  
 
     .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
     .filter-field .form-control, .filter-field .form-select {
@@ -304,6 +325,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const courseFilter = document.getElementById('courseFilter');
     const domainFilter = document.getElementById('domainFilter');
+    const centreFilter = document.getElementById('centreFilter');
+    const batchFilter = document.getElementById('batchFilter');
     const statusFilter = document.getElementById('statusFilter');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     const tableBody = document.getElementById('studentsTableBody');
@@ -318,13 +341,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentPage = 1;
     let debounceTimer = null;
-    let activeRequestController = null;   // cancels a stale in-flight request if a newer one starts
+    let activeRequestController = null;
 
     function buildQueryParams(page) {
         const params = new URLSearchParams();
         if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
         if (courseFilter.value) params.set('course', courseFilter.value);
         if (domainFilter.value) params.set('domain', domainFilter.value);
+        if (centreFilter.value) params.set('centre', centreFilter.value);
+        if (batchFilter.value) params.set('batch_code', batchFilter.value);
         if (statusFilter.value) params.set('status', statusFilter.value);
         params.set('page', page);
         return params;
@@ -359,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(err => {
                 if (err.name === 'AbortError') return;
                 tableBody.innerHTML = `
-                    <tr><td colspan="8">
+                    <tr><td colspan="10">
                         <div class="table-inline-state">
                             <div class="table-inline-state-icon state-error"><i class="bi bi-exclamation-triangle-fill"></i></div>
                             <div class="table-inline-state-title">Failed to load students</div>
@@ -405,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
         debounceTimer = setTimeout(() => fetchStudents(1), 350);
     });
 
-    [courseFilter, domainFilter, statusFilter].forEach(el => {
+    [courseFilter, domainFilter, centreFilter, batchFilter, statusFilter].forEach(el => {
         el.addEventListener('change', () => fetchStudents(1));
     });
 
@@ -413,6 +438,8 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.value = '';
         courseFilter.value = '';
         domainFilter.value = '';
+        centreFilter.value = '';
+        batchFilter.value = '';
         statusFilter.value = '';
         fetchStudents(1);
     });
@@ -455,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const userId = btn.dataset.userId;
                 if (!confirm(`Permanently delete the account for ${name}? This cannot be undone.`)) return;
 
-                fetch(`/dashboard/users/${userId}/delete/`, {
+                fetch(`/management/users/${userId}/delete/`, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken },
                 })

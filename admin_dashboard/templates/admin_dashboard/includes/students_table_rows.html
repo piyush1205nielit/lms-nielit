@@ -18,6 +18,12 @@
     </td>
     <td><span class="enrollment-no-tag">{{ profile.enrollment_number }}</span></td>
     <td class="stat-cell-sm">{{ profile.user.contact|default:"—" }}</td>
+        <td class="stat-cell-sm">{{ profile.user.nielit_centre.centre_name|default:"—" }}</td>
+    <td class="text-center">
+        <span class="enrollment-no-tag" style="color:#475569; background:#f1f5f9; border-color:#e2e8f0;">
+            {{ profile.user.batch_code|default:"—" }}
+        </span>
+    </td>
     <td class="courses-cell">
         {% for enrollment in profile.user.enrollments.all|slice:":3" %}
             <span class="course-mini-badge" title="{{ enrollment.course.course_name }}">
