@@ -131,6 +131,8 @@ INSTALLED_APPS = [
 
     # Third-party
     'storages',
+    'certificate'
+
 ]
 
 MIDDLEWARE = [

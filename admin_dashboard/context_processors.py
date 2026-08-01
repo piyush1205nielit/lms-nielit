@@ -1,6 +1,7 @@
 from accounts.models import User
 from course.models import Enrollment
 from assignment.models import AssignmentSubmission
+from certificate.models import StudentCertificate
 
 
 def admin_notifications_context(request):
@@ -9,5 +10,6 @@ def admin_notifications_context(request):
             'pending_registration_count': User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.PENDING).count(),
             'pending_enrollment_count': Enrollment.objects.filter(access_status=Enrollment.AccessStatus.PENDING).count(),
             'pending_grading_count': AssignmentSubmission.objects.filter(status=AssignmentSubmission.Status.SUBMITTED).count(),
+            'pending_certificate_count': StudentCertificate.objects.filter(status=StudentCertificate.Status.REQUESTED).count(),
         }
     return {}

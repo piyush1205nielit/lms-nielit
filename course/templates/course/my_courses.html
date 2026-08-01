@@ -4,73 +4,73 @@
 {% block extra_css %}
 <style>
     :root {
-        --primary: #172281;
-        --primary-dark: #0a1440;
-        --primary-mid: #2338a8;
-        --accent: #f59e0b;
-        --accent-dark: #d97706;
-        --success: #059669;
-        --success-bg: #ecfdf5;
-        --success-border: #a7f3d0;
-        --text: #0e1b2e;
-        --text-muted: #64748b;
-        --border: #e2e8f0;
-        --border-strong: #cbd5e1;
+        --primary: #172281; --primary-dark: #0a1440; --primary-mid: #2338a8;
+        --accent: #f59e0b; --accent-dark: #d97706;
+        --success: #059669; --success-bg: #ecfdf5; --success-border: #a7f3d0;
+        --amber-bg: #fffbeb; --amber-border: #fde68a; --amber-text: #92400e;
+        --gray-bg: #f1f5f9; --gray-text: #475569;
+        --red-bg: #fef2f2; --red-text: #991b1b;
+        --text: #0e1b2e; --text-muted: #64748b;
+        --border: #e2e8f0; --border-strong: #cbd5e1;
     }
-
     * { box-sizing: border-box; }
 
-    /* ── Full-bleed header (matches Courses / Announcements pages) ── */
     .my-courses-header {
         position: relative;
         background:
             radial-gradient(ellipse 900px 400px at 15% -10%, rgba(245,158,11,0.20), transparent 60%),
             radial-gradient(ellipse 700px 500px at 100% 100%, rgba(76,95,217,0.35), transparent 65%),
             linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-mid) 100%);
-        padding: 32px 0 26px;
-        color: white;
-        overflow: hidden;
-        box-shadow: 0 4px 24px rgba(10,20,64,0.25);
-        border-bottom: 3px solid var(--accent);
+        padding: 32px 0 26px; color: white; overflow: hidden;
+        box-shadow: 0 4px 24px rgba(10,20,64,0.25); border-bottom: 3px solid var(--accent);
     }
     .my-courses-header::after {
-        content: "";
-        position: absolute; inset: 0;
+        content: ""; position: absolute; inset: 0;
         background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
-        background-size: 22px 22px;
-        opacity: 0.4;
-        pointer-events: none;
+        background-size: 22px 22px; opacity: 0.4; pointer-events: none;
     }
     .my-courses-header .container { position: relative; z-index: 1; }
     .header-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .header-top-left { display: flex; align-items: center; gap: 14px; }
     .my-courses-header .header-icon {
         width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-        background: linear-gradient(135deg, var(--accent), #fbbf24);
-        color: var(--primary-dark);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.1rem;
+        background: linear-gradient(135deg, var(--accent), #fbbf24); color: var(--primary-dark);
+        display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
         box-shadow: 0 4px 14px rgba(245,158,11,0.35);
     }
     .my-courses-header h2 { font-size: 1.5rem; font-weight: 700; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
     .my-courses-header p { color: rgba(255,255,255,0.82); font-size: 0.88rem; margin: 2px 0 0; }
 
-    /* Quick stat pills in the header, right side */
     .header-stats { display: flex; gap: 10px; flex-wrap: wrap; }
     .header-stat-chip {
         display: flex; align-items: center; gap: 8px;
         background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
-        backdrop-filter: blur(6px);
-        border-radius: 10px; padding: 7px 14px; font-size: 0.8rem; color: rgba(255,255,255,0.95);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        backdrop-filter: blur(6px); border-radius: 10px; padding: 7px 14px; font-size: 0.8rem;
+        color: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .header-stat-chip strong { font-size: 0.92rem; }
     .header-stat-chip i { color: var(--accent); }
+    .header-stat-chip a { color: white; text-decoration: none; display: flex; align-items: center; gap: 8px; }
 
-    /* ── Body ── */
     .my-courses-body { padding: 28px 0 50px; background: #f8fafc; min-height: calc(100vh - 280px); }
 
-    /* ── Course cards ── */
+    .section-block { margin-bottom: 38px; }
+    .section-title {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+        font-size: 1rem; font-weight: 700; color: var(--text);
+    }
+    .section-title .section-icon {
+        width: 32px; height: 32px; border-radius: 9px;
+        display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;
+    }
+    .section-title .section-count {
+        font-size: 0.74rem; font-weight: 700; color: var(--text-muted);
+        background: white; border: 1px solid var(--border); padding: 2px 10px; border-radius: 20px;
+    }
+    .section-icon.icon-pending { background: var(--amber-bg); color: var(--accent-dark); }
+    .section-icon.icon-progress { background: #eef1ff; color: var(--primary); }
+    .section-icon.icon-completed { background: var(--success-bg); color: var(--success); }
+
     .course-item-card {
         background: white; border: 1px solid var(--border); border-radius: 14px;
         box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 14px rgba(15,23,42,0.04);
@@ -80,15 +80,19 @@
     }
     .course-item-card:hover { box-shadow: 0 4px 8px rgba(15,23,42,0.08), 0 10px 24px rgba(15,23,42,0.07); transform: translateY(-2px); }
     .course-item-card.completed { border-left-color: var(--success); }
+    .course-item-card.pending { border-left-color: var(--accent-dark); }
 
     .course-card-title { font-size: 0.92rem; font-weight: 700; color: var(--text); margin: 0; line-height: 1.4; }
 
     .status-badge {
         font-size: 0.66rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
-        white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
+        white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
     }
     .status-badge.completed { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
     .status-badge.progress { background: #eef1ff; color: var(--primary); border: 1px solid #dde3fb; }
+    .status-badge.pending { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber-border); }
+    .status-badge.hold { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--border-strong); }
+    .status-badge.revoked { background: var(--red-bg); color: var(--red-text); border: 1px solid #fecaca; }
 
     .course-card-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; }
 
@@ -111,6 +115,9 @@
     .btn-course-action:hover { color: white; box-shadow: 0 5px 14px rgba(23,34,129,0.38); transform: translateY(-1px); }
     .btn-course-action.is-complete { background: linear-gradient(135deg, var(--success), #10b981); box-shadow: 0 3px 10px rgba(5,150,105,0.28); }
     .btn-course-action.is-complete:hover { box-shadow: 0 5px 14px rgba(5,150,105,0.38); }
+    .btn-course-action.is-cert { background: linear-gradient(135deg, var(--accent-dark), var(--accent)); box-shadow: 0 3px 10px rgba(217,119,6,0.28); }
+    .btn-course-action.is-cert:hover { box-shadow: 0 5px 14px rgba(217,119,6,0.38); }
+
     .btn-view-only {
         display: block; width: 100%; text-align: center;
         border: 1.5px solid var(--border-strong); color: var(--text-muted);
@@ -119,7 +126,18 @@
     }
     .btn-view-only:hover { background: #f8fafc; border-color: var(--text-muted); color: var(--text); }
 
-    /* ── Empty state ── */
+    .btn-disabled-note {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        width: 100%; text-align: center; border-radius: 9px; padding: 9px;
+        font-size: 0.8rem; font-weight: 600; background: var(--gray-bg); color: var(--gray-text);
+    }
+
+    .pending-note {
+        font-size: 0.76rem; color: var(--amber-text); background: var(--amber-bg);
+        border: 1px solid var(--amber-border); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px;
+        display: flex; align-items: center; gap: 6px;
+    }
+
     .empty-state {
         text-align: center; padding: 60px 30px; color: var(--text-muted);
         background: white; border: 1px dashed var(--border-strong); border-radius: 14px;
@@ -139,9 +157,7 @@
     }
     .btn-browse:hover { color: white; box-shadow: 0 6px 16px rgba(23,34,129,0.4); }
 
-    @media (max-width: 767px) {
-        .header-top { flex-direction: column; align-items: flex-start; }
-    }
+    @media (max-width: 767px) { .header-top { flex-direction: column; align-items: flex-start; } }
     @media (max-width: 576px) {
         .my-courses-header { padding: 24px 0 20px; }
         .my-courses-header .header-icon { width: 38px; height: 38px; font-size: 1rem; }
@@ -158,14 +174,17 @@
                 <div class="header-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
                 <div>
                     <h2>My Courses</h2>
-                    <p>Courses you're currently enrolled in</p>
+                    <p>Track your enrollment, progress, and certificates</p>
                 </div>
             </div>
 
-            {% if enrollment_data %}
+            {% if total_enrolled %}
             <div class="header-stats">
-                <span class="header-stat-chip"><i class="bi bi-collection-fill"></i><strong>{{ enrollment_data|length }}</strong>&nbsp;Enrolled</span>
+                <span class="header-stat-chip"><i class="bi bi-collection-fill"></i><strong>{{ total_enrolled }}</strong>&nbsp;Enrolled</span>
                 <span class="header-stat-chip"><i class="bi bi-check-circle-fill"></i><strong>{{ completed_count }}</strong>&nbsp;Completed</span>
+                <span class="header-stat-chip">
+                    <a href="{% url 'certificate:my_certificates' %}"><i class="bi bi-award-fill"></i>My Certificates</a>
+                </span>
             </div>
             {% endif %}
         </div>
@@ -174,57 +193,156 @@
 
 <section class="my-courses-body">
     <div class="container">
-        {% if enrollment_data %}
-        <div class="row g-3">
-            {% for item in enrollment_data %}
-            <div class="col-md-6 col-lg-4">
-                <div class="course-item-card h-100 d-flex flex-column {% if item.enrollment.status == 'completed' %}completed{% endif %}">
-                    <div class="d-flex align-items-start justify-content-between mb-2 gap-2">
-                        <h6 class="course-card-title">{{ item.enrollment.course.course_name }}</h6>
-                        {% if item.enrollment.status == 'completed' %}
-                            <span class="status-badge completed"><i class="bi bi-check-circle-fill"></i>Completed</span>
-                        {% else %}
-                            <span class="status-badge progress"><i class="bi bi-play-circle-fill"></i>In Progress</span>
-                        {% endif %}
-                    </div>
-                    <p class="course-card-desc mb-3">{{ item.enrollment.course.course_description|truncatewords:14 }}</p>
 
-                    <div class="mt-auto">
-                        <div class="progress-meta">
-                            <span>{{ item.completed_lessons }}/{{ item.total_lessons }} lessons</span>
-                            <span class="percent-val">{{ item.percent }}%</span>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: {{ item.percent }}%;"></div>
-                        </div>
-
-                        {% with first_lesson=item.enrollment.course.modules.first.lessons.first %}
-                            {% if first_lesson %}
-                                <a href="{% url 'stream:player' item.enrollment.course.slug first_lesson.id %}"
-                                   class="btn-course-action {% if item.enrollment.status == 'completed' %}is-complete{% endif %}">
-                                    {% if item.enrollment.status == 'completed' %}
-                                        <i class="bi bi-arrow-repeat me-1"></i>Review Course
-                                    {% elif item.percent > 0 %}
-                                        <i class="bi bi-play-fill me-1"></i>Continue Learning
-                                    {% else %}
-                                        <i class="bi bi-rocket-takeoff me-1"></i>Start Course
-                                    {% endif %}
-                                </a>
-                            {% else %}
-                                <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-view-only">View Course</a>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
+        {% if not total_enrolled %}
         <div class="empty-state">
             <i class="bi bi-journal-x"></i>
             <p>You haven't enrolled in any courses yet.</p>
             <a href="{% url 'public:courses' %}" class="btn-browse">Browse Courses</a>
         </div>
+        {% else %}
+
+            {% if pending_courses %}
+            <div class="section-block">
+                <div class="section-title">
+                    <span class="section-icon icon-pending"><i class="bi bi-hourglass-split"></i></span>
+                    Pending Approval
+                    <span class="section-count">{{ pending_courses|length }}</span>
+                </div>
+                <div class="row g-3">
+                    {% for item in pending_courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="course-item-card h-100 d-flex flex-column pending">
+                            <div class="d-flex align-items-start justify-content-between mb-2 gap-2">
+                                <h6 class="course-card-title">{{ item.enrollment.course.course_name }}</h6>
+                                {% if item.enrollment.access_status == 'pending' %}
+                                    <span class="status-badge pending"><i class="bi bi-hourglass-split"></i>Pending</span>
+                                {% elif item.enrollment.access_status == 'hold' %}
+                                    <span class="status-badge hold"><i class="bi bi-pause-circle-fill"></i>On Hold</span>
+                                {% else %}
+                                    <span class="status-badge revoked"><i class="bi bi-x-circle-fill"></i>Revoked</span>
+                                {% endif %}
+                            </div>
+                            <p class="course-card-desc mb-3">{{ item.enrollment.course.course_description|truncatewords:14 }}</p>
+                            <div class="mt-auto">
+                                {% if item.enrollment.access_status == 'pending' %}
+                                    <div class="pending-note"><i class="bi bi-info-circle"></i> Awaiting admin approval</div>
+                                {% elif item.enrollment.access_status == 'hold' %}
+                                    <div class="pending-note"><i class="bi bi-info-circle"></i> Access temporarily on hold</div>
+                                {% else %}
+                                    <div class="pending-note"><i class="bi bi-info-circle"></i> Access was revoked</div>
+                                {% endif %}
+                                <span class="btn-disabled-note"><i class="bi bi-lock-fill"></i> Not Yet Accessible</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if in_progress_courses %}
+            <div class="section-block">
+                <div class="section-title">
+                    <span class="section-icon icon-progress"><i class="bi bi-play-circle-fill"></i></span>
+                    Enrolled Courses
+                    <span class="section-count">{{ in_progress_courses|length }}</span>
+                </div>
+                <div class="row g-3">
+                    {% for item in in_progress_courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="course-item-card h-100 d-flex flex-column">
+                            <div class="d-flex align-items-start justify-content-between mb-2 gap-2">
+                                <h6 class="course-card-title">{{ item.enrollment.course.course_name }}</h6>
+                                <span class="status-badge progress"><i class="bi bi-play-circle-fill"></i>In Progress</span>
+                            </div>
+                            <p class="course-card-desc mb-3">{{ item.enrollment.course.course_description|truncatewords:14 }}</p>
+
+                            <div class="mt-auto">
+                                <div class="progress-meta">
+                                    <span>{{ item.completed }}/{{ item.total }} lessons</span>
+                                    <span class="percent-val">{{ item.percent }}%</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill" style="width: {{ item.percent }}%;"></div></div>
+
+                                {% with first_lesson=item.enrollment.course.modules.first.lessons.first %}
+                                    {% if first_lesson %}
+                                        <a href="{% url 'stream:player' item.enrollment.course.slug first_lesson.id %}" class="btn-course-action">
+                                            {% if item.percent > 0 %}<i class="bi bi-play-fill me-1"></i>Continue Learning{% else %}<i class="bi bi-rocket-takeoff me-1"></i>Start Course{% endif %}
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-view-only">View Course</a>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if completed_courses %}
+            <div class="section-block">
+                <div class="section-title">
+                    <span class="section-icon icon-completed"><i class="bi bi-check-circle-fill"></i></span>
+                    Completed Courses
+                    <span class="section-count">{{ completed_courses|length }}</span>
+                </div>
+                <div class="row g-3">
+                    {% for item in completed_courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="course-item-card h-100 d-flex flex-column completed">
+                            <div class="d-flex align-items-start justify-content-between mb-2 gap-2">
+                                <h6 class="course-card-title">{{ item.enrollment.course.course_name }}</h6>
+                                <span class="status-badge completed"><i class="bi bi-check-circle-fill"></i>Completed</span>
+                            </div>
+                            <p class="course-card-desc mb-3">{{ item.enrollment.course.course_description|truncatewords:14 }}</p>
+
+                            <div class="mt-auto">
+                                <div class="progress-meta">
+                                    <span>{{ item.completed }}/{{ item.total }} lessons</span>
+                                    <span class="percent-val">100%</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill" style="width: 100%;"></div></div>
+
+                                {% if item.certificate %}
+                                    {% if item.certificate.status == 'approved' %}
+                                        <a href="{% url 'certificate:view_certificate' item.certificate.certificate_number %}" class="btn-course-action is-cert">
+                                            <i class="bi bi-award-fill me-1"></i>View Certificate
+                                        </a>
+                                    {% elif item.certificate.status == 'requested' %}
+                                        <span class="btn-disabled-note"><i class="bi bi-hourglass-split"></i> Certificate Pending Approval</span>
+                                    {% elif item.certificate.status == 'revoked' %}
+                                        <span class="btn-disabled-note" style="background: var(--red-bg); color: var(--red-text);"><i class="bi bi-x-circle-fill"></i> Certificate Revoked</span>
+                                    {% elif item.certificate.status == 'denied' %}
+                                        <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.slug %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-course-action is-cert border-0">Re-request Certificate</button>
+                                        </form>
+                                    {% endif %}
+                                {% elif item.can_request_certificate %}
+                                    <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.slug %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-course-action is-cert border-0"><i class="bi bi-award-fill me-1"></i>Request Certificate</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{% url 'assignment:my_assignments' %}" class="btn-disabled-note text-decoration-none">
+                                        <i class="bi bi-clipboard-check"></i> Submit Assignments to Unlock
+                                    </a>
+                                {% endif %}
+
+                                <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-view-only mt-2">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Review Course
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
         {% endif %}
     </div>
 </section>

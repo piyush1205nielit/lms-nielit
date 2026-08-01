@@ -1,0 +1,188 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Issued Certificates - Admin{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-bold text-dark mb-0">
+            <i class="fas fa-certificate text-primary me-2"></i>Issued Certificates
+        </h1>
+        <div class="text-muted small">
+            Total: <strong>{{ page_obj.paginator.count }}</strong> certificates
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-10">
+                    <label class="form-label small fw-bold mb-1">Search Certificates</label>
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Certificate number, student name, registration number, mobile..."
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Certificate No.</th>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Centre</th>
+                            <th>Issue Date</th>
+                            <th>Issued By</th>
+                            <th width="130">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in page_obj %}
+                        <tr>
+                            <!-- Correct serial number across pages -->
+                            <td class="text-muted small">
+                                {{ page_obj.start_index|add:forloop.counter0 }}
+                            </td>
+
+                            <td>
+                                <code class="small text-primary fw-semibold">{{ cert.certificate_number }}</code>
+                            </td>
+
+                            <td>
+                                <strong>{{ cert.student.name }}</strong><br>
+                                <small class="text-muted">{{ cert.student.registration_number }}</small><br>
+                                <small class="text-muted">{{ cert.student.mobile_number }}</small>
+                            </td>
+
+                            <td class="small">{{ cert.student.course_enrolled.course_name|truncatechars:30 }}</td>
+
+                            <td class="small">
+                                {% if cert.student.preferred_centre %}
+                                    {{ cert.student.preferred_centre.centre_name|truncatechars:20 }}
+                                {% else %}
+                                    <span class="text-muted">Online</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="small">{{ cert.issue_date|date:"d M Y" }}</td>
+
+                            <td class="small text-muted">{{ cert.issued_by|default:"NIELIT Administration" }}</td>
+
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'certificate:view_certificate' cert.student.registration_number %}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       target="_blank"
+                                       title="View Certificate">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'certificate:verify_certificate' cert.certificate_number %}"
+                                       class="btn btn-sm btn-outline-success"
+                                       target="_blank"
+                                       title="Verify Certificate">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger revoke-btn"
+                                            data-id="{{ cert.student.id }}"
+                                            data-name="{{ cert.student.name }}"
+                                            title="Revoke Certificate">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-certificate fa-3x mb-3 d-block text-muted"></i>
+                                {% if search %}
+                                    <p class="text-muted">No certificates found for "<strong>{{ search }}</strong>".</p>
+                                    <a href="{% url 'certificate:issued_list' %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times me-1"></i>Clear Search
+                                    </a>
+                                {% else %}
+                                    <p class="text-muted mb-0">No certificates have been issued yet.</p>
+                                    <a href="{% url 'dashboard:approve_certificate' %}" class="btn btn-primary mt-3">
+                                        <i class="fas fa-certificate me-2"></i>Go to Approvals
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white border-top">
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Revoke Confirmation Form (hidden) -->
+<form id="revokeForm" method="post" action="{% url 'dashboard:revoke_certificate' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="student_id" id="revokeStudentId">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.revoke-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const studentId = this.dataset.id;
+            const studentName = this.dataset.name;
+            if (confirm(`Revoke certificate for ${studentName}?\nThis will set their status back to Confirmed.`)) {
+                document.getElementById('revokeStudentId').value = studentId;
+                document.getElementById('revokeForm').submit();
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

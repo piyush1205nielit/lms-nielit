@@ -1,0 +1,399 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block title %}Certificate - NIELIT{% endblock %}
+
+{% block extra_css %}
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    .cert-shell {
+        font-family: 'Montserrat', 'Georgia', 'Times New Roman', serif;
+    }
+    
+
+    .cert-title {
+        font-family: 'Playfair Display', 'Georgia', serif !important;
+    }
+    
+    .cert-line-2 {
+        font-family: 'Montserrat', 'Georgia', serif !important;
+        letter-spacing: 1px;
+    }
+
+    @media print {
+        .no-print { display: none !important; }
+        html, body { margin: 0; padding: 0; background: white; }
+        .cert-shell { margin: 0 auto; box-shadow: none; }
+        .cert-shell::before, .cert-shell::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        @page { size: A4 landscape; margin: 0.2in; }
+    }
+
+    body { background: #d0d0d0; }
+    .page-wrapper { background: #d0d0d0; padding: 30px 20px 40px; }
+
+    .cert-shell {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        background: #ffffff;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+        position: relative;
+    }
+
+    .cert-shell::before {
+        content: '';
+        position: absolute;
+        inset: 10px;
+        border: {{ design.border_width|default:2 }}px solid {{ design.border_color|default:"#1e3a8a" }};
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .cert-shell::after {
+        content: '';
+        position: absolute;
+        inset: 16px;
+        border: 1px solid {{ design.border_color|default:"#1e3a8a" }};
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .cert-inner {
+        width: 100%;
+        padding: 18px 25px 12px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 1;
+    }
+
+    .cert-header { text-align: center; margin-bottom: 5px; }
+    .cert-institute-name { font-size: 26px; font-weight: 700; color: {{ design.title_color|default:"#1e3a8a" }}; letter-spacing: 1px; }
+    .cert-institute-subtitle { font-size: 14px; color: {{ design.line_5_color|default:"#555" }}; margin-top: 2px; font-style: italic; }
+
+    .cert-logo-section { text-align: center; margin: 5px 0 8px; }
+    .cert-logo-container { display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap; }
+    .cert-logo-img { max-height: {{ design.logo_size|default:65 }}px; width: auto; }
+    .cert-logo-placeholder { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #ccc; background: #f4f4f4; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; color: #999; }
+
+
+    .cert-divider-dashed { border-top: 1px dashed #999; margin: 6px 0; }
+    .cert-title { 
+        text-align: center; 
+        font-size: 20px; 
+        font-weight: 800; 
+        color: {{ design.title_color|default:"#1e3a8a" }}; 
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        letter-spacing: 2px; 
+        text-transform: uppercase; 
+        margin-bottom: 30px;
+        margin-top: 30px; 
+    }
+
+    .cert-line { text-align: center; line-height: 1.3; margin-bottom: 4px; }
+    .cert-line-1 { font-size: 14px; color: {{ design.line_5_color|default:"#333" }}; margin-bottom: 6px; }
+    .cert-line-2 { font-size: {{ design.line_2_font_size|default:26 }}px; font-weight: 700; color: {{ design.line_2_color|default:"#1e3a8a" }}; margin-bottom: 6px; letter-spacing: 1px; }
+    .cert-line-3 { font-size: 14px; color: {{ design.line_5_color|default:"#333" }}; margin-bottom: 6px; }
+    .cert-line-4 { font-size: {{ design.line_4_font_size|default:16 }}px; font-weight: 600; color: {{ design.line_4_color|default:"#1e3a8a" }}; margin-bottom: 6px; }
+    .cert-line-5 { font-size: 14px; color: {{ design.line_5_color|default:"#333" }}; margin-bottom: 8px; }
+
+    .cert-sig-row { display: flex; justify-content: space-between; align-items: flex-end; margin: 8px 0 8px; width: 100%; }
+    .cert-sig-row.single-sig { justify-content: center; }
+    .cert-sig-block { display: flex; flex-direction: column; flex: 1; }
+    .cert-sig-block.single-sig-left { 
+        align-items: flex-start; 
+        width: 200px; 
+        margin-left: 50px;
+    }
+    .cert-sig-block.single-sig-center { align-items: center; width: 200px; }
+    .cert-sig-block.single-sig-right { 
+        align-items: flex-end; 
+        width: 200px;
+        margin-right: 50px; 
+    }
+    .cert-sig-img { max-height: 45px; margin-bottom: 3px; }
+    .cert-sig-line { width: 140px; height: 1px; background: #222; margin-bottom: 3px; }
+    .cert-sig-name { font-size: 15px; font-weight: 600; color: #222; }
+    .cert-sig-desig { font-size: 13px; color: {{ design.line_5_color|default:"#555" }}; }
+
+    .footer-info-row { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; gap: 10px; }
+    .issue-date-box { display: flex; flex-direction: column; }
+    .issue-date-label { font-size: 10px; color: {{ design.line_5_color|default:"#555" }}; }
+    .issue-date-value { font-weight: 600; font-size: 12px; color: {{ design.title_color|default:"#1e3a8a" }}; }
+    .cert-details-box { display: flex; flex-direction: column; gap: 3px; text-align: right; }
+    .cert-detail-row { display: flex; gap: 6px; font-size: 10px; }
+    .cert-detail-label { color: {{ design.line_5_color|default:"#555" }}; }
+    .cert-detail-value { font-weight: 600; color: #1e293b; }
+
+    .cert-qr-section { text-align: center; }
+    .cert-qr-section img { width: {{ design.qr_code_size|default:55 }}px; height: {{ design.qr_code_size|default:55 }}px; border: 1px solid #ddd; padding: 3px; background: white; border-radius: 5px; }
+
+    .action-buttons { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+    .ms-auto { margin-left: auto !important; }
+
+    @media (max-width: 600px) {
+        .cert-inner { padding: 12px; }
+        .cert-title { font-size: 16px; }
+        .cert-line-2 { font-size: 20px; }
+        .cert-logo-img { max-height: 45px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <div class="action-buttons no-print">
+        <button onclick="downloadCertificateAsPDF()" class="btn btn-success btn-lg px-5">
+            <i class="fas fa-download me-2"></i>Download as PDF
+        </button>
+        <a href="{% url 'registration:user_profile' %}" class="btn btn-outline-secondary btn-lg px-5">
+            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+        </a>
+    </div>
+
+    <div class="cert-shell" id="certificateContent">
+        <div class="cert-inner">
+
+            <div class="cert-header">
+                <div class="cert-institute-name">{{ design.header_title|default:"NIELIT Delhi" }}</div>
+                {% if design.header_subtitle %}
+                <div class="cert-institute-subtitle">"{{ design.header_subtitle }}"</div>
+                {% endif %}
+            </div>
+
+            <div class="cert-logo-section">
+                <div class="cert-logo-container">
+                    {% if design.logo_position == 'both' %}
+                        {% if design.institute_logo %}
+                            <img src="{{ design.institute_logo.url }}" class="cert-logo-img" alt="Institute Logo">
+                        {% else %}
+                            <div class="cert-logo-placeholder">Logo Here</div>
+                        {% endif %}
+                        {% if design.secondary_logo %}
+                            <img src="{{ design.secondary_logo.url }}" class="cert-logo-img" alt="Secondary Logo">
+                        {% else %}
+                            <div class="cert-logo-placeholder">Logo Here</div>
+                        {% endif %}
+                    {% else %}
+                        {% if design.institute_logo %}
+                            <img src="{{ design.institute_logo.url }}" class="cert-logo-img" alt="Institute Logo">
+                        {% else %}
+                            <div class="cert-logo-placeholder">Logo Here</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="cert-divider"></div>
+
+            <div class="cert-title">{{ design.certificate_title|default:"CERTIFICATE OF PARTICIPATION" }}</div>
+
+            <div class="cert-line cert-line-1">{{ design.line_1_text|default:"This certificate is proudly presented to" }}</div>
+            <div class="cert-line cert-line-2">
+                {% if design.line_2_student_name %}{{ student.name }}{% else %}{{ design.line_2_custom_text }}{% endif %}
+            </div>
+            <div class="cert-line cert-line-3">{{ design.line_3_text|default:"for participating in the" }}</div>
+            <div class="cert-line cert-line-4">
+                {% if design.line_4_show_course %}{{ student.course_enrolled.course_name }}{% else %}{{ design.line_4_custom_text }}{% endif %}
+            </div>
+            <div class="cert-line cert-line-5">
+                {% if design.line_5_date_range %}
+                    on {% if student.course_enrolled.event_date %}{{ student.course_enrolled.event_date|date:"d-m-Y" }}{% elif student.course_enrolled.start_date %}{{ student.course_enrolled.start_date|date:"d-m-Y" }}{% else %}{{ certificate.issue_date|date:"d-m-Y" }}{% endif %}
+                    organised by NIELIT Delhi Inderlok Centre
+                {% else %}
+                    {{ design.line_5_custom_text }}
+                {% endif %}
+            </div>
+
+            {% if design.signatory_count == 1 %}
+                <div class="cert-sig-row single-sig">
+                    <div class="cert-sig-block single-sig-{{ design.signature_1_position|default:'center' }}">
+                        {% if design.signature_1_image %}
+                            <img src="{{ design.signature_1_image.url }}" class="cert-sig-img">
+                        {% else %}
+                            <div class="cert-sig-line {% if design.signature_1_position == 'center' %}mx-auto{% elif design.signature_1_position == 'right' %}ms-auto{% endif %}"></div>
+                        {% endif %}
+                        <div class="cert-sig-name">{{ design.signature_1_name|default:"Authorized Signatory" }}</div>
+                        <div class="cert-sig-desig">{{ design.signature_1_designation|default:"Joint Director" }}</div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="cert-sig-row">
+                    <div class="cert-sig-block left-sig">
+                        {% if design.signature_1_image %}<img src="{{ design.signature_1_image.url }}" class="cert-sig-img">{% else %}<div class="cert-sig-line"></div>{% endif %}
+                        <div class="cert-sig-name">{{ design.signature_1_name|default:"Authorized Signatory" }}</div>
+                        <div class="cert-sig-desig">{{ design.signature_1_designation|default:"Joint Director" }}</div>
+                    </div>
+                    <div class="cert-sig-block right-sig">
+                        {% if design.signature_2_image %}<img src="{{ design.signature_2_image.url }}" class="cert-sig-img">{% else %}<div class="cert-sig-line"></div>{% endif %}
+                        <div class="cert-sig-name">{{ design.signature_2_name|default:"Authorized Signatory" }}</div>
+                        <div class="cert-sig-desig">{{ design.signature_2_designation|default:"Director" }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="cert-divider-dashed"></div>
+
+            <div class="footer-info-row">
+                <div class="d-flex align-items-center gap-2">
+                    {% if design.show_qr_code and certificate.certificate_number %}
+                        <div class="cert-qr-section">
+                            <img src="{% url 'certificate:certificate_qr_code' certificate.certificate_number %}" 
+                                alt="QR Code" 
+                                style="width: {{ design.qr_code_size|default:55 }}px; height: {{ design.qr_code_size|default:55 }}px;
+                                        border: 1px solid #ddd; padding: 3px; background: white; border-radius: 5px;">
+                            <div style="font-size: 8px; color: #666;">Scan to Verify</div>
+                        </div>
+                    {% endif %}
+                    <div class="issue-date-box">
+                        <div class="issue-date-label">ISSUE DATE</div>
+                        <div class="issue-date-value">{{ certificate.issue_date|date:"d-m-Y" }}</div>
+                    </div>
+                </div>
+                <div class="cert-details-box">
+                    {% if design.show_certificate_number %}<div class="cert-detail-row"><span class="cert-detail-label">Certificate No:</span><span class="cert-detail-value">{{ certificate.certificate_number }}</span></div>{% endif %}
+                    {% if design.show_registration_number %}<div class="cert-detail-row"><span class="cert-detail-label">Registration No:</span><span class="cert-detail-value">{{ student.registration_number }}</span></div>{% endif %}
+                    {% if design.show_student_id %}<div class="cert-detail-row"><span class="cert-detail-label">Student ID:</span><span class="cert-detail-value">{{ student.id|slice:"-8" }}</span></div>{% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3 text-center small no-print">Click <strong>Download as PDF</strong> to save your certificate.</div>
+</div>
+
+<script>
+function downloadCertificateAsPDF() {
+    const borderColor = "{{ design.border_color|default:'#1e3a8a' }}";
+    const borderWidth = "{{ design.border_width|default:2 }}";
+    const titleColor = "{{design.title_color}}";
+    const logoSize = "{{ design.logo_size|default:65 }}";
+    const line2FontSize = "{{ design.line_2_font_size|default:26 }}";
+    const line2Color = "{{ design.line_2_color|default:'#1e3a8a' }}";
+    const line4FontSize = "{{ design.line_4_font_size|default:16 }}";
+    const line4Color = "{{ design.line_4_color|default:'#1e3a8a' }}";
+    const qrCodeSize = "{{ design.qr_code_size|default:55 }}";
+    
+    const certHTML = document.getElementById('certificateContent').cloneNode(true);
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Certificate - {{ student.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .cert-shell {
+            width: 1000px;
+            max-width: 100%;
+            background: white;
+            position: relative;
+            margin: 0 auto;
+        }
+        .cert-shell::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: ${borderWidth}px solid ${borderColor};
+            pointer-events: none;
+            z-index: 10;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .cert-shell::after {
+            content: '';
+            position: absolute;
+            inset: 16px;
+            border: 1px solid ${borderColor};
+            pointer-events: none;
+            z-index: 10;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .cert-inner {
+            width: 100%;
+            padding: 18px 25px 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+        .cert-header { text-align: center; margin-bottom: 5px; }
+        .cert-institute-name { font-size: 24px; font-weight: 700; color: ${titleColor}; font-family: 'Playfair Display', serif; }
+        .cert-institute-subtitle { font-size: 11px; color: #555; margin-top: 2px; font-style: italic; }
+        .cert-logo-section { text-align: center; margin: 5px 0 8px; }
+        .cert-logo-container { display: flex; justify-content: center; align-items: center; gap: 30px; }
+        .cert-logo-img { max-height: ${logoSize}px; width: auto; }
+        .cert-logo-placeholder { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #ccc; background: #f4f4f4; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; color: #999; }
+        .cert-title { text-align: center; font-size: 20px; font-weight: 800; color: ${titleColor}; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-family: 'Playfair Display', serif; }
+        .cert-line { text-align: center; line-height: 1.3; margin-bottom: 4px; }
+        .cert-line-1 { font-size: 13px; color: #333; margin-bottom: 6px; }
+        .cert-line-2 { font-size: ${line2FontSize}px; font-weight: 700; color: ${line2Color}; margin-bottom: 6px; font-family: 'Cormorant Garamond', serif; }
+        .cert-line-3 { font-size: 13px; color: #333; margin-bottom: 6px; }
+        .cert-line-4 { font-size: ${line4FontSize}px; font-weight: 600; color: ${line4Color}; margin-bottom: 6px; }
+        .cert-line-5 { font-size: 12px; color: #333; margin-bottom: 8px; }
+        .cert-sig-row { display: flex; justify-content: space-between; align-items: flex-end; margin: 8px 0 8px; width: 100%; }
+        .cert-sig-row.single-sig { justify-content: center; }
+        .cert-sig-block { display: flex; flex-direction: column; flex: 1; }
+        .cert-sig-block.single-sig-left { align-items: flex-start; width: 200px; }
+        .cert-sig-block.single-sig-center { align-items: center; width: 200px; }
+        .cert-sig-block.single-sig-right { align-items: flex-end; width: 200px; }
+        .cert-sig-img { max-height: 45px; margin-bottom: 3px; }
+        .cert-sig-line { width: 140px; height: 1px; background: #222; margin-bottom: 3px; }
+        .cert-sig-name { font-size: 12px; font-weight: 600; color: #222; }
+        .cert-sig-desig { font-size: 10px; color: #555; }
+        .cert-divider-dashed { border-top: 1px dashed #999; margin: 6px 0; }
+        .footer-info-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 10px; }
+        .issue-date-box { display: flex; flex-direction: column; }
+        .issue-date-label { font-size: 9px; color: #555; }
+        .issue-date-value { font-weight: 600; font-size: 12px; color: ${borderColor}; }
+        .cert-details-box { display: flex; flex-direction: column; gap: 3px; text-align: right; }
+        .cert-detail-row { display: flex; gap: 6px; font-size: 9px; }
+        .cert-detail-label { color: #555; }
+        .cert-detail-value { font-weight: 600; color: #1e293b; }
+        .cert-qr-section { text-align: center; }
+        .cert-qr-section img { width: ${qrCodeSize}px; height: ${qrCodeSize}px; border: 1px solid #ddd; padding: 3px; background: white; border-radius: 5px; }
+        .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+        .ms-auto { margin-left: auto !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        @page { size: A4 landscape; margin: 0.2in; }
+    </style>
+</head>
+<body>
+    <div class="cert-shell">
+        ${certHTML.innerHTML}
+    </div>
+    <script>
+        window.onload = function() {
+            setTimeout(function() { 
+                window.print(); 
+                setTimeout(function(){ window.close(); }, 600); 
+            }, 500);
+        };
+    <\/script>
+</body>
+</html>
+`);
+    printWindow.document.close();
+}
+</script>
+{% endblock %}

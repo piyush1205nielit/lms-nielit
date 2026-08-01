@@ -1,0 +1,734 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Certificate Admin{% endblock %}
+
+{% block extra_css %}
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    .preview-container {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 12px;
+        position: sticky;
+        top: 20px;
+    }
+    .preview-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .color-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .logo-preview {
+        max-width: 100px;
+        max-height: 100px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        padding: 5px;
+        border-radius: 8px;
+    }
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .section-header {
+        background: #f8fafc;
+        padding: 12px 20px;
+        border-bottom: 2px solid #e2e8f0;
+        border-radius: 12px 12px 0 0;
+        font-weight: 600;
+        color: #1e3a8a;
+    }
+    .placeholder-badge {
+        background: #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    /* Preview Certificate Styles */
+    .preview-cert-shell {
+        background: white;
+        position: relative;
+        margin: 0 auto;
+    }
+    .preview-cert-shell::before {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        border: 2px solid #1e3a8a;
+        pointer-events: none;
+        z-index: 10;
+    }
+    .preview-cert-shell::after {
+        content: '';
+        position: absolute;
+        inset: 12px;
+        border: 1px solid #1e3a8a;
+        pointer-events: none;
+        z-index: 10;
+    }
+    .preview-cert-inner {
+        padding: 15px 20px 12px;
+        position: relative;
+        z-index: 1;
+    }
+    .preview-cert-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        font-weight: 800;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-transform: uppercase;
+        margin: 15px 0;
+    }
+    .preview-line-2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 24px;
+        font-weight: 700;
+    }
+    .preview-sig-line {
+        width: 120px;
+        height: 1px;
+        background: #222;
+        margin: 8px auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'certificate:design_list' %}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <h1 class="h3 fw-bold text-dark mb-0">
+            <i class="fas fa-certificate text-primary me-2"></i>{{ title }}
+        </h1>
+    </div>
+
+    <div class="row">
+        <!-- Form Column -->
+        <div class="col-lg-7">
+            <form method="post" enctype="multipart/form-data" id="certificateForm">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Please correct the following errors:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field|title }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- ==================== HEADER SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-heading me-2"></i>Header Section
+                    </div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Header Title <span class="text-danger">*</span></label>
+                            {{ form.header_title }}
+                            <small class="text-muted">Institute name displayed at the top</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Header Subtitle</label>
+                            {{ form.header_subtitle }}
+                            <small class="text-muted">Brief intro / one liner about the institute</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== LOGO SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-image me-2"></i>Logo Settings
+                    </div>
+                    <div class="p-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Logo Position</label>
+                                {{ form.logo_position }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Logo Size (px)</label>
+                                {{ form.logo_size }}
+                                <small class="text-muted">40-150 pixels</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Main/Institute Logo</label>
+                            {{ form.institute_logo }}
+                            {% if form.instance.institute_logo %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.institute_logo.url }}" class="logo-preview">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Secondary Logo (for Both Sides)</label>
+                            {{ form.secondary_logo }}
+                            {% if form.instance.secondary_logo %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.secondary_logo.url }}" class="logo-preview">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== CERTIFICATE TITLE SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-certificate me-2"></i>Certificate Title
+                    </div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Title Text</label>
+                            {{ form.certificate_title }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Title Font Size (px)</label>
+                                {{ form.title_font_size }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Title Color</label>
+                                {{ form.title_color }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== CUSTOM BODY TEXT SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-paragraph me-2"></i>Custom Body Text
+                    </div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Line 1 (Simple Text)</label>
+                            {{ form.line_1_text }}
+                            <small class="text-muted">Example: "This certificate is proudly presented to"</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.line_2_student_name }}
+                                    <label class="form-check-label fw-bold">Show Student Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 2 Custom Text</label>
+                                {{ form.line_2_custom_text }}
+                                <small class="text-muted">Used if student name is disabled</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 2 Font Size (px)</label>
+                                {{ form.line_2_font_size }}
+                                <small class="text-muted">Recommended: 28-36</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 2 Color</label>
+                                {{ form.line_2_color }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Line 3 (Simple Text)</label>
+                            {{ form.line_3_text }}
+                            <small class="text-muted">Example: "for successfully completing the"</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.line_4_show_course }}
+                                    <label class="form-check-label fw-bold">Show Course Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 4 Custom Text</label>
+                                {{ form.line_4_custom_text }}
+                                <small class="text-muted">Used if course name is disabled</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 4 Font Size (px)</label>
+                                {{ form.line_4_font_size }}
+                                <small class="text-muted">Recommended: 18-24</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 4 Color</label>
+                                {{ form.line_4_color }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.line_5_date_range }}
+                                    <label class="form-check-label fw-bold">Show Date Range</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 5 Custom Text</label>
+                                {{ form.line_5_custom_text }}
+                                <small class="text-muted">Used if date range is disabled</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 5 Font Size (px)</label>
+                                {{ form.line_5_font_size }}
+                                <small class="text-muted">Recommended: 12-16</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Line 5 Color</label>
+                                {{ form.line_5_color }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== SIGNATURE SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-signature me-2"></i>Signature Settings
+                    </div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Number of Signatories</label>
+                            {{ form.signatory_count }}
+                        </div>
+
+                        <div id="singleSignatureSettings">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Signature 1 Position</label>
+                                {{ form.signature_1_position }}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="fw-bold">Signatory 1</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Name</label>
+                                {{ form.signature_1_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Designation</label>
+                                {{ form.signature_1_designation }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Signature Image</label>
+                            {{ form.signature_1_image }}
+                            <small class="text-muted d-block">Upload PNG with transparent background for best results</small>
+                            {% if form.instance.signature_1_image %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.signature_1_image.url }}" class="logo-preview">
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div id="doubleSignatureSettings">
+                            <hr>
+                            <h6 class="fw-bold">Signatory 2</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Name</label>
+                                    {{ form.signature_2_name }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Designation</label>
+                                    {{ form.signature_2_designation }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Signature Image</label>
+                                {{ form.signature_2_image }}
+                                <small class="text-muted d-block">Upload PNG with transparent background for best results</small>
+                                {% if form.instance.signature_2_image %}
+                                <div class="mt-2">
+                                    <img src="{{ form.instance.signature_2_image.url }}" class="logo-preview">
+                                </div>
+                            {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== FOOTER SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-info-circle me-2"></i>Footer Settings
+                    </div>
+                    <div class="p-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-check mb-2">
+                                    {{ form.show_certificate_number }}
+                                    <label class="form-check-label">Show Certificate No.</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mb-2">
+                                    {{ form.show_registration_number }}
+                                    <label class="form-check-label">Show Registration No.</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mb-2">
+                                    {{ form.show_student_id }}
+                                    <label class="form-check-label">Show Student ID</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mb-2">
+                                    {{ form.show_issue_date }}
+                                    <label class="form-check-label">Show Issue Date</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label fw-bold">Footer Font Size (px)</label>
+                            {{ form.footer_font_size }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== STYLING SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-palette me-2"></i>Styling
+                    </div>
+                    <div class="p-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Border Color</label>
+                                {{ form.border_color }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Border Width (px)</label>
+                                {{ form.border_width }}
+                                <small class="text-muted">1-10 pixels</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Background Image (Optional)</label>
+                            {{ form.background_image }}
+                            {% if form.instance.background_image %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.background_image.url }}" class="logo-preview">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-check mt-2">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-bold">Active (Use this design)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== QR CODE SECTION ==================== -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-qrcode me-2"></i>QR Code Settings
+                    </div>
+                    <div class="p-3">
+                        <div class="form-check mb-3">
+                            {{ form.show_qr_code }}
+                            <label class="form-check-label fw-bold">Show QR Code on Certificate</label>
+                        </div>
+                        <div class="row" id="qrCodeSettings">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">QR Code Position</label>
+                                {{ form.qr_code_position }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">QR Code Size (px)</label>
+                                {{ form.qr_code_size }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 mb-4">
+                    <a href="{% url 'certificate:design_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Design
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Live Preview Column -->
+        <div class="col-lg-5">
+            <div class="preview-container">
+                <h5 class="mb-3"><i class="fas fa-eye me-2"></i>Live Preview</h5>
+                <div class="preview-card" id="livePreview">
+                    <div class="preview-cert-shell">
+                        <div class="preview-cert-inner">
+                            <div id="previewHeaderTitle" style="font-family: '', serif; font-size: 22px; font-weight: 700; text-align: center;">NIELIT Delhi</div>
+                            <div id="previewHeaderSubtitle" style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: #666; text-align: center; font-style: italic;"></div>
+                            
+                            <div id="previewLogo" class="my-2 text-center"></div>
+                            
+                            <div id="previewTitle" class="preview-cert-title text-center"></div>
+                            
+                            <div id="previewLine1" style="font-family: 'Montserrat', sans-serif; font-size: 12px; text-align: center; margin: 8px 0;"></div>
+                            <div id="previewLine2" class="preview-line-2 text-center"></div>
+                            <div id="previewLine3" style="font-family: 'Montserrat', sans-serif; font-size: 12px; text-align: center; margin: 8px 0;"></div>
+                            <div id="previewLine4" style="font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600; text-align: center; margin: 8px 0;"></div>
+                            <div id="previewLine5" style="font-family: 'Montserrat', sans-serif; font-size: 11px; text-align: center; margin: 8px 0;"></div>
+                            
+                            <div id="previewSignature" class="my-3"></div>
+                            
+                            <div style="border-top: 1px dashed #999; margin: 8px 0;"></div>
+                            
+                            <div class="d-flex justify-content-between align-items-center" style="margin-top: 5px;">
+                                <div>
+                                    <div style="font-size: 9px; color: #555;">ISSUE DATE</div>
+                                    <div id="previewIssueDate" style="font-weight: 600; font-size: 11px; color: #1e3a8a;"></div>
+                                </div>
+                                <div id="previewFooter" style="font-size: 8px; color: #666; text-align: right;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    This is a live preview. Actual certificate will include student data.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle signature sections based on signatory count
+    const signatoryCount = document.getElementById('id_signatory_count');
+    const singleSignatureSettings = document.getElementById('singleSignatureSettings');
+    const doubleSignatureSettings = document.getElementById('doubleSignatureSettings');
+
+    function toggleSignatures() {
+        if (signatoryCount && signatoryCount.value === '1') {
+            if (singleSignatureSettings) singleSignatureSettings.style.display = 'block';
+            if (doubleSignatureSettings) doubleSignatureSettings.style.display = 'none';
+        } else {
+            if (singleSignatureSettings) singleSignatureSettings.style.display = 'none';
+            if (doubleSignatureSettings) doubleSignatureSettings.style.display = 'block';
+        }
+    }
+
+    if (signatoryCount) {
+        signatoryCount.addEventListener('change', toggleSignatures);
+        toggleSignatures();
+    }
+
+    // Toggle QR code settings
+    const showQrCheckbox = document.getElementById('id_show_qr_code');
+    const qrCodeSettings = document.getElementById('qrCodeSettings');
+    
+    function toggleQrSettings() {
+        if (showQrCheckbox && showQrCheckbox.checked) {
+            qrCodeSettings.style.display = 'flex';
+        } else {
+            qrCodeSettings.style.display = 'none';
+        }
+    }
+    
+    if (showQrCheckbox) {
+        showQrCheckbox.addEventListener('change', toggleQrSettings);
+        toggleQrSettings();
+    }
+
+    // Live preview update function
+    function updatePreview() {
+        // Header
+        const headerTitle = document.getElementById('id_header_title');
+        if (headerTitle) {
+            document.getElementById('previewHeaderTitle').innerHTML = headerTitle.value || 'NIELIT Delhi';
+            document.getElementById('previewHeaderTitle').style.color = document.getElementById('id_title_color').value;
+        }
+        
+        const subtitle = document.getElementById('id_header_subtitle');
+        if (subtitle) {
+            document.getElementById('previewHeaderSubtitle').innerHTML = subtitle.value;
+            document.getElementById('previewHeaderSubtitle').style.display = subtitle.value ? 'block' : 'none';
+        }
+        
+        // Title
+        const certTitle = document.getElementById('id_certificate_title');
+        if (certTitle) {
+            document.getElementById('previewTitle').innerHTML = certTitle.value || 'CERTIFICATE OF PARTICIPATION';
+            document.getElementById('previewTitle').style.fontSize = document.getElementById('id_title_font_size').value + 'px';
+            document.getElementById('previewTitle').style.color = document.getElementById('id_title_color').value;
+        }
+        
+        // Line 1
+        const line1 = document.getElementById('id_line_1_text');
+        if (line1) {
+            document.getElementById('previewLine1').innerHTML = line1.value;
+            document.getElementById('previewLine1').style.display = line1.value ? 'block' : 'none';
+        }
+        
+        // Line 2 (Student Name)
+        const showStudentName = document.getElementById('id_line_2_student_name');
+        const line2Custom = document.getElementById('id_line_2_custom_text');
+        let line2Text = '';
+        if (showStudentName && showStudentName.checked) {
+            line2Text = 'John Doe';
+        } else if (line2Custom) {
+            line2Text = line2Custom.value || '';
+        }
+        document.getElementById('previewLine2').innerHTML = line2Text;
+        document.getElementById('previewLine2').style.fontSize = document.getElementById('id_line_2_font_size').value + 'px';
+        document.getElementById('previewLine2').style.color = document.getElementById('id_line_2_color').value;
+        document.getElementById('previewLine2').style.display = line2Text ? 'block' : 'none';
+        
+        // Line 3
+        const line3 = document.getElementById('id_line_3_text');
+        if (line3) {
+            document.getElementById('previewLine3').innerHTML = line3.value;
+            document.getElementById('previewLine3').style.display = line3.value ? 'block' : 'none';
+        }
+        
+        // Line 4 (Course Name)
+        const showCourseName = document.getElementById('id_line_4_show_course');
+        const line4Custom = document.getElementById('id_line_4_custom_text');
+        let line4Text = '';
+        if (showCourseName && showCourseName.checked) {
+            line4Text = 'Sample Course Name';
+        } else if (line4Custom) {
+            line4Text = line4Custom.value || '';
+        }
+        document.getElementById('previewLine4').innerHTML = line4Text;
+        document.getElementById('previewLine4').style.fontSize = document.getElementById('id_line_4_font_size').value + 'px';
+        document.getElementById('previewLine4').style.color = document.getElementById('id_line_4_color').value;
+        document.getElementById('previewLine4').style.display = line4Text ? 'block' : 'none';
+        
+        // Line 5 (Date Range)
+        const showDateRange = document.getElementById('id_line_5_date_range');
+        const line5Custom = document.getElementById('id_line_5_custom_text');
+        let line5Text = '';
+        if (showDateRange && showDateRange.checked) {
+            line5Text = 'on 01-06-2026 organised by NIELIT Delhi';
+        } else if (line5Custom) {
+            line5Text = line5Custom.value || '';
+        }
+        document.getElementById('previewLine5').innerHTML = line5Text;
+        document.getElementById('previewLine5').style.fontSize = document.getElementById('id_line_5_font_size').value + 'px';
+        document.getElementById('previewLine5').style.color = document.getElementById('id_line_5_color').value;
+        document.getElementById('previewLine5').style.display = line5Text ? 'block' : 'none';
+        
+        // Issue Date
+        const issueDate = new Date();
+        document.getElementById('previewIssueDate').innerHTML = issueDate.toLocaleDateString('en-GB');
+        document.getElementById('previewIssueDate').style.color = document.getElementById('id_title_color').value;
+        
+        // Signature preview
+        const signCount = document.getElementById('id_signatory_count');
+        const sig1Name = document.getElementById('id_signature_1_name');
+        const sig1Pos = document.getElementById('id_signature_1_position');
+        const sig1Desig = document.getElementById('id_signature_1_designation');
+        const sig2Name = document.getElementById('id_signature_2_name');
+        const sig2Desig = document.getElementById('id_signature_2_designation');
+        
+        let signatureHtml = '';
+        if (signCount && signCount.value === '1') {
+            const position = sig1Pos ? sig1Pos.value : 'center';
+            let marginStyle = '';
+            if (position === 'center') marginStyle = 'margin: 0 auto;';
+            else if (position === 'right') marginStyle = 'margin-left: auto;';
+            else marginStyle = 'margin-right: auto;';
+            
+            signatureHtml = `<div style="text-align: ${position}; margin-top: 15px;">
+                <div class="preview-sig-line" style="${marginStyle}"></div>
+                <div style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px;">${sig1Name ? sig1Name.value || 'Authorized Signatory' : 'Authorized Signatory'}</div>
+                <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555;">${sig1Desig ? sig1Desig.value || 'Joint Director' : 'Joint Director'}</div>
+            </div>`;
+        } else {
+            signatureHtml = `<div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <div style="text-align: left;">
+                    <div class="preview-sig-line"></div>
+                    <div style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px;">${sig1Name ? sig1Name.value || 'Authorized Signatory' : 'Authorized Signatory'}</div>
+                    <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555;">${sig1Desig ? sig1Desig.value || 'Joint Director' : 'Joint Director'}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="preview-sig-line" style="margin-left: auto;"></div>
+                    <div style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px;">${sig2Name ? sig2Name.value || 'Authorized Signatory' : 'Authorized Signatory'}</div>
+                    <div style="font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555;">${sig2Desig ? sig2Desig.value || 'Director' : 'Director'}</div>
+                </div>
+            </div>`;
+        }
+        document.getElementById('previewSignature').innerHTML = signatureHtml;
+        
+        // Footer items
+        let footerItems = [];
+        const showCertNo = document.getElementById('id_show_certificate_number');
+        const showRegNo = document.getElementById('id_show_registration_number');
+        const showStudentId = document.getElementById('id_show_student_id');
+        
+        if (showCertNo && showCertNo.checked) footerItems.push('Cert: PREVIEW-2026');
+        if (showRegNo && showRegNo.checked) footerItems.push('Reg: NIELIT-2026');
+        if (showStudentId && showStudentId.checked) footerItems.push('ID: SAMPLE-UUID');
+        
+        document.getElementById('previewFooter').innerHTML = footerItems.join(' | ');
+        
+        // Border
+        const borderWidth = document.getElementById('id_border_width');
+        const borderColor = document.getElementById('id_border_color');
+        if (borderWidth && borderColor) {
+            const previewShell = document.querySelector('.preview-cert-shell');
+            if (previewShell) {
+                previewShell.style.border = 'none';
+                const beforeStyle = document.createElement('style');
+                beforeStyle.textContent = `
+                    .preview-cert-shell::before { border: ${borderWidth.value}px solid ${borderColor.value} !important; }
+                    .preview-cert-shell::after { border: 1px solid ${borderColor.value} !important; }
+                `;
+                document.head.appendChild(beforeStyle);
+            }
+        }
+    }
+    
+    // Attach event listeners to all form inputs for live preview
+    const formInputs = document.querySelectorAll('#certificateForm input, #certificateForm select, #certificateForm textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('input', updatePreview);
+        input.addEventListener('change', updatePreview);
+    });
+    
+    // Initial preview
+    updatePreview();
+</script>
+{% endblock %}

@@ -1131,6 +1131,7 @@
                   <a href="{% url 'course:my_courses' %}"><i class="fas fa-journal-bookmark"></i> My Courses</a>
                   <a href="{% url 'assignment:my_assignments' %}"><i class="fas fa-clipboard-check"></i> Assignments</a>
                   <a href="{% url 'announcement:my_announcements' %}"><i class="fas fa-bullhorn"></i> Announcements</a>
+                  <a href="{% url 'certificate:my_certificates' %}"><i class="fas fa-award"></i> My Certificates</a>
                   <a href="{% url 'user:logout' %}" class="logout-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
               </div>
@@ -1176,6 +1177,7 @@
         <a href="{% url 'public:home' %}"><i class="fas fa-home"></i> Home</a>
         <a href="{% url 'public:announcements' %}"><i class="fas fa-bullhorn"></i> Announcements</a>
         <a href="{% url 'public:courses' %}"><i class="fas fa-book"></i> Courses</a>
+        <a href="{% url 'certificate:my_certificates' %}" class="nav-link"><i class="fas fa-award fa-fw"></i>My Certificates</a>
         {% if not user.is_authenticated %}
           <hr class="mobile-menu-divider" />
           <a href="{% url 'user_dashboard:status_check' %}"><i class="fas fa-magnifying-glass"></i> Check Status</a>

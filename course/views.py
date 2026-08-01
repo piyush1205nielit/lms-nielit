@@ -14,6 +14,8 @@ from admin_dashboard.notifications import notify_users
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from admin_dashboard.models import Centre
+from certificate.models import StudentCertificate
+from certificate.eligibility import is_eligible_for_certificate
 
 
 # ── Admin: domain management ──────────────────────────────
@@ -442,31 +444,52 @@ def course_enroll_view(request, slug):
     return redirect('course:detail', slug=slug)
 
 
+from certificate.models import StudentCertificate
+from certificate.eligibility import is_eligible_for_certificate
+
 @login_required(login_url='user:login')
 def my_courses_view(request):
-    if request.user.role != 'user':
-        messages.error(request, "This page is only available for learner accounts.")
-        return redirect('public:home')
+    enrollments = Enrollment.objects.filter(user=request.user).select_related('course').prefetch_related('course__domains').order_by('-enrolled_at')
 
-    enrollments = Enrollment.objects.filter(user=request.user).select_related('course').prefetch_related('course__modules__lessons')
+    pending_courses = []
+    in_progress_courses = []
+    completed_courses = []
 
-    # attach a lightweight progress percentage to each enrollment for display
-    enrollment_data = []
     for enrollment in enrollments:
         total_lessons = Lesson.objects.filter(module__course=enrollment.course).count()
-        completed_lessons = enrollment.user.lesson_progress.filter(
-            lesson__module__course=enrollment.course, completed=True
+        completed_lessons = Progress.objects.filter(
+            user=request.user, lesson__module__course=enrollment.course, completed=True
         ).count()
         percent = int((completed_lessons / total_lessons) * 100) if total_lessons else 0
-        enrollment_data.append({
-            'enrollment': enrollment,
-            'total_lessons': total_lessons,
-            'completed_lessons': completed_lessons,
-            'percent': percent,
-        })
+
+        item = {
+            'enrollment': enrollment, 'percent': percent,
+            'completed': completed_lessons, 'total': total_lessons,
+        }
+
+        if enrollment.access_status == Enrollment.AccessStatus.PENDING:
+            pending_courses.append(item)
+        elif enrollment.access_status == Enrollment.AccessStatus.GRANTED and enrollment.status == Enrollment.Status.COMPLETED:
+            certificate = StudentCertificate.objects.filter(user=request.user, course=enrollment.course).first()
+            can_request_cert = False
+            if not certificate:
+                can_request_cert, _ = is_eligible_for_certificate(request.user, enrollment.course)
+            item['certificate'] = certificate
+            item['can_request_certificate'] = can_request_cert
+            completed_courses.append(item)
+        elif enrollment.access_status == Enrollment.AccessStatus.GRANTED:
+            in_progress_courses.append(item)
+        else:
+            # hold / revoked — still worth showing, grouped with pending so the
+            # student sees *something* explaining why they can't access it
+            pending_courses.append(item)
 
     return render(request, 'course/my_courses.html', {
-        'enrollment_data': enrollment_data,
+        'pending_courses': pending_courses,
+        'in_progress_courses': in_progress_courses,
+        'completed_courses': completed_courses,
+        'total_enrolled': len(enrollments),
+        'completed_count': len(completed_courses),
         'active_page': 'my_courses',
     })
 
@@ -662,3 +685,34 @@ def bulk_deny_enrollment_view(request):
     count = Enrollment.objects.filter(id__in=enrollment_ids).count()
     Enrollment.objects.filter(id__in=enrollment_ids).delete()
     return JsonResponse({'success': True, 'count': count})
+
+
+
+@login_required(login_url='user:login')
+def my_courses_view(request):
+    enrollments = Enrollment.objects.filter(user=request.user).select_related('course').prefetch_related('course__domains').order_by('-enrolled_at')
+
+    course_data = []
+    for enrollment in enrollments:
+        total_lessons = Lesson.objects.filter(module__course=enrollment.course).count()
+        completed_lessons = Progress.objects.filter(
+            user=request.user, lesson__module__course=enrollment.course, completed=True
+        ).count()
+        percent = int((completed_lessons / total_lessons) * 100) if total_lessons else 0
+
+        certificate = StudentCertificate.objects.filter(user=request.user, course=enrollment.course).first()
+        can_request_cert = False
+        if enrollment.status == Enrollment.Status.COMPLETED and not certificate:
+            can_request_cert, _ = is_eligible_for_certificate(request.user, enrollment.course)
+
+        course_data.append({
+            'enrollment': enrollment, 'percent': percent,
+            'completed': completed_lessons, 'total': total_lessons,
+            'certificate': certificate,
+            'can_request_certificate': can_request_cert,
+        })
+
+    return render(request, 'course/my_courses.html', {
+        'course_data': course_data,
+        'active_page': 'my_courses',
+    })

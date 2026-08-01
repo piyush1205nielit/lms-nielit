@@ -1,0 +1,74 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Issue Certificate{% endblock %}
+{% block page_title %}Issue Certificate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-award-fill"></i> Issue Certificate</h2>
+        <p>Review and manually approve this certificate request.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'certificate:certificate_management' %}" class="btn-admin-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Requests
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card-panel">
+            <div class="card-panel-header"><h5><i class="bi bi-person-fill"></i> Student Information</h5></div>
+            <div class="card-panel-body">
+                <table class="table table-borderless mb-0">
+                    <tr><th width="40%">Student Name:</th><td><strong>{{ certificate.user.learner_profile.full_name|default:certificate.user.email }}</strong></td></tr>
+                    <tr><th>Email:</th><td>{{ certificate.user.email }}</td></tr>
+                    <tr><th>Contact:</th><td>{{ certificate.user.contact|default:"—" }}</td></tr>
+                    <tr><th>Registration Number:</th><td><code>{{ certificate.user.learner_profile.enrollment_number|default:"—" }}</code></td></tr>
+                    <tr><th>Course:</th><td>{{ certificate.course.course_name }}</td></tr>
+                    <tr><th>NIELIT Centre:</th><td>{{ certificate.user.nielit_centre.centre_name|default:"—" }}</td></tr>
+                    <tr><th>Batch Code:</th><td>{{ certificate.user.batch_code|default:"—" }}</td></tr>
+                    <tr><th>Requested On:</th><td>{{ certificate.requested_at|date:"d M Y, g:i A" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card-panel">
+            <div class="card-panel-header"><h5><i class="bi bi-check-circle-fill"></i> Certificate Details</h5></div>
+            <div class="card-panel-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Issued By</label>
+                        {{ form.issued_by }}
+                        <small class="text-muted">Name of the issuing authority — defaults to "NIELIT Administration" if left blank</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Remarks (Optional)</label>
+                        {{ form.remarks }}
+                    </div>
+
+                    {% if design %}
+                    <div class="alert alert-info py-2 small">
+                        <i class="bi bi-palette-fill me-2"></i>Using certificate design: <strong>{{ design.certificate_title }}</strong>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning py-2 small">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>No active certificate design found. <a href="{% url 'certificate:design_create' %}">Create one first</a>.
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'certificate:certificate_management' %}" class="btn-admin-secondary">Cancel</a>
+                        <button type="submit" class="btn-admin-primary" {% if not design %}disabled{% endif %}>
+                            <i class="bi bi-award-fill me-1"></i> Issue Certificate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

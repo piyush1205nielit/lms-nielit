@@ -242,18 +242,3 @@ class Progress(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.lesson.title} ({'done' if self.completed else 'in progress'})"
 
-
-class Certificate(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='certificates')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='certificates')
-    certificate_number = models.CharField(max_length=30, unique=True, editable=False)
-    pdf_file = models.FileField(upload_to=certificate_upload_path, null=True, blank=True)
-    issued_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'course_certificate'
-        unique_together = ('user', 'course')
-
-    def __str__(self):
-        return f"Certificate {self.certificate_number} - {self.user.email}"

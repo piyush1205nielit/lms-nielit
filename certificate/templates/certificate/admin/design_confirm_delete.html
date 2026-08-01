@@ -1,0 +1,99 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete Certificate Design - Admin{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirm Delete
+                    </h4>
+                </div>
+                <div class="card-body text-center py-4">
+                    <div class="mb-4">
+                        <i class="fas fa-certificate text-danger fa-5x"></i>
+                    </div>
+                    
+                    <h5 class="mb-3">Are you sure you want to delete this certificate design?</h5>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Design Details:</strong><br>
+                        <span class="fw-bold">{{ design.certificate_title }}</span><br>
+                        <small class="text-muted">Created: {{ design.created_at|date:"d M Y, h:i A" }}</small><br>
+                        <small class="text-muted">Last Updated: {{ design.updated_at|date:"d M Y, h:i A" }}</small>
+                    </div>
+                    
+                    <div class="alert alert-danger small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Warning:</strong> This action cannot be undone. 
+                        {% if design.is_active %}
+                        This is currently the ACTIVE design. Deleting it may affect certificate generation.
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'certificate:design_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>Yes, Delete Design
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 16px;
+        overflow: hidden;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .alert {
+        border-radius: 12px;
+    }
+    
+    .btn {
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+</style>
+{% endblock %}

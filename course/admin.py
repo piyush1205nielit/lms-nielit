@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Course, Module, Lesson, Enrollment, Progress, Certificate, Domain
+from .models import Course, Module, Lesson, Enrollment, Progress, Domain
 
 @admin.register(Domain)
 class DomainAdmin(admin.ModelAdmin):
@@ -204,25 +204,3 @@ class ProgressAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'lesson', 'lesson__module', 'lesson__module__course')
 
-
-@admin.register(Certificate)
-class CertificateAdmin(admin.ModelAdmin):
-    list_display = ('certificate_number', 'user_email', 'course', 'issued_at', 'has_pdf')
-    list_filter = ('course', 'issued_at')
-    search_fields = ('certificate_number', 'user__email', 'course__course_name')
-    autocomplete_fields = ('user', 'course')
-    readonly_fields = ('id', 'certificate_number', 'issued_at')
-    date_hierarchy = 'issued_at'
-
-    def user_email(self, obj):
-        return obj.user.email
-    user_email.short_description = 'Learner'
-    user_email.admin_order_field = 'user__email'
-
-    def has_pdf(self, obj):
-        return bool(obj.pdf_file)
-    has_pdf.boolean = True
-    has_pdf.short_description = 'PDF Ready'
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user', 'course')
