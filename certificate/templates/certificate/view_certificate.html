@@ -512,16 +512,15 @@
 
                 <div class="cert-line cert-line-1">{{ design.line_1_text|default:"This certificate is proudly presented to" }}</div>
                 <div class="cert-line cert-line-2">
-                    {% if design.line_2_student_name %}{{ student.name }}{% else %}{{ design.line_2_custom_text }}{% endif %}
+                    {% if design.line_2_student_name %}{{ student_name }}{% else %}{{ design.line_2_custom_text }}{% endif %}
                 </div>
                 <div class="cert-line cert-line-3">{{ design.line_3_text|default:"for participating in the" }}</div>
                 <div class="cert-line cert-line-4">
-                    {% if design.line_4_show_course %}{{ student.course_enrolled.course_name }}{% else %}{{ design.line_4_custom_text }}{% endif %}
+                    {% if design.line_4_show_course %}{{ course_name }}{% else %}{{ design.line_4_custom_text }}{% endif %}
                 </div>
                 <div class="cert-line cert-line-5">
-                    {% if design.line_5_date_range %}
-                        on {% if student.course_enrolled.event_date %}{{ student.course_enrolled.event_date|date:"d-m-Y" }}{% elif student.course_enrolled.start_date %}{{ student.course_enrolled.start_date|date:"d-m-Y" }}{% else %}{{ certificate.issue_date|date:"d-m-Y" }}{% endif %}
-                        organised by NIELIT Delhi Inderlok Centre
+                   {% if design.line_5_date_range %}
+                        on {{ certificate.issue_date|date:"d-m-Y" }} &mdash; {{ institute_name }}{% if centre_name %}, {{ centre_name }}{% endif %}
                     {% else %}
                         {{ design.line_5_custom_text }}
                     {% endif %}
@@ -582,8 +581,8 @@
                     </div>
                     <div class="cert-details-box">
                         {% if design.show_certificate_number %}<div class="cert-detail-row"><span class="cert-detail-label">Certificate No:</span><span class="cert-detail-value">{{ certificate.certificate_number }}</span></div>{% endif %}
-                        {% if design.show_registration_number %}<div class="cert-detail-row"><span class="cert-detail-label">Registration No:</span><span class="cert-detail-value">{{ student.registration_number }}</span></div>{% endif %}
-                        {% if design.show_student_id %}<div class="cert-detail-row"><span class="cert-detail-label">Student ID:</span><span class="cert-detail-value">{{ student.id|slice:"-8" }}</span></div>{% endif %}
+                        {% if design.show_registration_number %}<div class="cert-detail-row"><span class="cert-detail-label">Registration No:</span><span class="cert-detail-value">{{ registration_number }}</span></div>{% endif %}
+                        {% if design.show_student_id %}<div class="cert-detail-row"><span class="cert-detail-label">Student ID:</span><span class="cert-detail-value">{{ certificate.user.id|slice:"-8" }}</span></div>{% endif %}
                     </div>
                 </div>
 
