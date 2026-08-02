@@ -226,16 +226,6 @@ LOGIN_URL = 'user:login'
 LOGIN_REDIRECT_URL = 'user_dashboard:home'
 LOGOUT_REDIRECT_URL = 'public:home'
 
-# ── Celery — background jobs (certificate generation, notifications) ──
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=None)   # SQS queue URL, or redis:// if using ElastiCache
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'region': AWS_S3_REGION_NAME,
-    'polling_interval': 5,
-}
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TIMEZONE = 'Asia/Kolkata'
 
 # ── Email — via Amazon SES ──
 # ── Email — plain SMTP (Gmail, or any SMTP provider) ──

@@ -15,6 +15,7 @@ from .models import CertificateDesign, StudentCertificate
 from .forms import CertificateDesignForm, ManualIssueForm
 from .eligibility import is_eligible_for_certificate
 from .utils import get_or_generate_qr_code
+import requests
 
 
 def build_certificate_context(request, certificate):
@@ -362,3 +363,32 @@ def my_certificates_view(request):
         'certificates': certificates,
         'active_page': 'certificates',
     })
+
+@csrf_exempt
+def image_proxy(request):
+    """
+    Proxy images through Django to avoid CORS issues with S3 and other sources.
+    No auth required — only serves images, not sensitive data.
+    """
+    url = request.GET.get('url', '')
+
+    if not url:
+        return HttpResponse(status=400)
+
+    try:
+        resp = requests.get(
+            url,
+            timeout=15,
+            headers={
+                'User-Agent': 'Mozilla/5.0',
+            }
+        )
+        content_type = resp.headers.get('Content-Type', 'image/png')
+        response = HttpResponse(resp.content, content_type=content_type)
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Cache-Control'] = 'public, max-age=3600'
+        return response
+
+    except Exception as e:
+        print(f'Image proxy error: {e}')
+        return HttpResponse(status=500)
