@@ -16,7 +16,7 @@ urlpatterns = [
     path('stream/', include('stream.urls')),
     path('announcements/', include('announcement.urls')),
     path('assignments/', include('assignment.urls')),
-    path('certificates/', include('certificate.urls')),
+    path('certificate/', include('certificate.urls')),
 ]
 
 # Media is served by S3 in production (USE_S3=True) and never touches local
