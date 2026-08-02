@@ -116,22 +116,22 @@ def certificate_qr_code(request, cert_number):
         return HttpResponse(status=404)
 
 
-@csrf_exempt
-def image_proxy(request):
-    """Proxies S3-hosted logos/signatures/QR around CORS restrictions for html2canvas."""
-    import requests
-    url = request.GET.get('url', '')
-    if not url:
-        return HttpResponse(status=400)
-    try:
-        resp = requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
-        content_type = resp.headers.get('Content-Type', 'image/png')
-        response = HttpResponse(resp.content, content_type=content_type)
-        response['Access-Control-Allow-Origin'] = '*'
-        response['Cache-Control'] = 'public, max-age=3600'
-        return response
-    except Exception:
-        return HttpResponse(status=500)
+# @csrf_exempt
+# def image_proxy(request):
+#     """Proxies S3-hosted logos/signatures/QR around CORS restrictions for html2canvas."""
+#     import requests
+#     url = request.GET.get('url', '')
+#     if not url:
+#         return HttpResponse(status=400)
+#     try:
+#         resp = requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
+#         content_type = resp.headers.get('Content-Type', 'image/png')
+#         response = HttpResponse(resp.content, content_type=content_type)
+#         response['Access-Control-Allow-Origin'] = '*'
+#         response['Cache-Control'] = 'public, max-age=3600'
+#         return response
+#     except Exception:
+#         return HttpResponse(status=500)
 
 
 # ══════════════════ ADMIN: Certificate Designs ══════════════════
