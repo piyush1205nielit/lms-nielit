@@ -1361,42 +1361,41 @@
               dropdown.classList.remove('show')
             }
           })
-        })()
+        })();
       
         // ── Notification bell dropdown ──
-        ;(function () {
-          const bellToggle = document.getElementById('notifBellToggle')
-          const dropdown = document.getElementById('notifDropdown')
-          const dropdownBody = document.getElementById('notifDropdownBody')
-          const badge = document.getElementById('notifBadge')
-          if (!bellToggle || !dropdown) return
-      
-          let loaded = false
-      
-          bellToggle.addEventListener('click', function (e) {
-            e.stopPropagation()
-            dropdown.classList.toggle('show')
-      
-            if (dropdown.classList.contains('show') && !loaded) {
-              fetch("{% url 'user_dashboard:notifications_dropdown' %}")
-                .then((res) => res.json())
-                .then((data) => {
-                  dropdownBody.innerHTML = data.html
-                  loaded = true
-                  if (badge) badge.remove()
-                })
-                .catch(() => {
-                  dropdownBody.innerHTML = '<div class="notif-empty"><p>Failed to load notifications.</p></div>'
-                })
-            }
-          })
-      
-          document.addEventListener('click', function (e) {
-            if (!dropdown.contains(e.target) && !bellToggle.contains(e.target)) {
-              dropdown.classList.remove('show')
-            }
-          })
-        })()
+        (function () {
+            const bellToggle = document.getElementById('notifBellToggle');
+            const dropdown = document.getElementById('notifDropdown');
+            const dropdownBody = document.getElementById('notifDropdownBody');
+            const badge = document.getElementById('notifBadge');
+            if (!bellToggle || !dropdown) return;
+
+            bellToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const opening = !dropdown.classList.contains('show');
+                dropdown.classList.toggle('show');
+
+                if (opening) {
+                    dropdownBody.innerHTML = '<div class="notif-loading"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+                    fetch("{% url 'user_dashboard:notifications_dropdown' %}")
+                        .then(res => res.json())
+                        .then(data => {
+                            dropdownBody.innerHTML = data.html;
+                            if (badge) { badge.remove(); }   // clear immediately, every time — server-side mark-seen already happened
+                        })
+                        .catch(() => {
+                            dropdownBody.innerHTML = '<div class="notif-empty"><p>Failed to load notifications.</p></div>';
+                        });
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!dropdown.contains(e.target) && !bellToggle.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        })();
       
         // ── Mobile hamburger drawer ──
         ;(function () {

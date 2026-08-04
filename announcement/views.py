@@ -66,9 +66,12 @@ def announcement_toggle_active_view(request, announcement_id):
 
 # ── Learner: full announcement inbox (beyond the dashboard widget) ──
 
+from user_dashboard.services import mark_notifications_seen
+
 @login_required(login_url='user:login')
 def my_announcements_view(request):
     announcements = Announcement.objects.for_user(request.user)
+    mark_notifications_seen(request.user)   # visiting this page = seen, same as opening the bell
     return render(request, 'announcement/my_announcements.html', {
         'announcements': announcements,
         'active_page': 'announcements',

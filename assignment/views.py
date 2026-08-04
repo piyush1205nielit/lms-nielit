@@ -10,6 +10,7 @@ from accounts.decorators import admin_required
 from course.models import Course, Enrollment
 from .models import Assignment, AssignmentSubmission
 from .forms import AssignmentForm, SubmissionForm, GradeSubmissionForm
+from user_dashboard.services import mark_notifications_seen
 
 
 # ══════════════════ ADMIN ══════════════════
@@ -130,6 +131,12 @@ def my_assignments_view(request):
             missed.append({'assignment': a, 'submission': None})
         else:
             pending.append({'assignment': a, 'submission': None})
+
+    mark_notifications_seen(request.user)
+    return render(request, 'assignment/my_assignments.html', {
+        'pending': pending, 'submitted': submitted, 'graded': graded, 'missed': missed,
+        'active_page': 'assignments',
+    })
 
     return render(request, 'assignment/my_assignments.html', {
         'pending': pending, 'submitted': submitted, 'graded': graded, 'missed': missed,

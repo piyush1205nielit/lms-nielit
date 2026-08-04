@@ -6,10 +6,6 @@ from assignment.models import AssignmentSubmission
 
 
 def get_user_notifications(user, limit=10):
-    """
-    Unified, time-sorted feed combining internal announcements targeted
-    at this user and their recently-graded assignment submissions.
-    """
     items = []
 
     for a in Announcement.objects.for_user(user)[:limit]:
@@ -44,7 +40,10 @@ def get_user_notifications(user, limit=10):
 
 def get_unread_notification_count(user):
     profile = getattr(user, 'learner_profile', None)
-    last_seen = profile.notifications_last_seen_at if profile else None
+    if profile is None:
+        return 0
+
+    last_seen = profile.notifications_last_seen_at
 
     announcement_qs = Announcement.objects.for_user(user)
     graded_qs = AssignmentSubmission.objects.filter(
@@ -55,7 +54,6 @@ def get_unread_notification_count(user):
         announcement_count = announcement_qs.filter(publish_at__gt=last_seen).count()
         graded_count = graded_qs.filter(graded_at__gt=last_seen).count()
     else:
-        # never opened the dropdown before — everything currently visible counts as unread
         announcement_count = announcement_qs.count()
         graded_count = graded_qs.count()
 
@@ -63,7 +61,15 @@ def get_unread_notification_count(user):
 
 
 def mark_notifications_seen(user):
+    """
+    Idempotent — safe to call on every dropdown open and every visit to
+    the full Announcements/Assignments pages, not just the first time.
+    Always advances last_seen to 'now', so anything visible at the moment
+    of viewing is considered seen, and only genuinely NEW items (created
+    after this exact call) will count as unread again.
+    """
     profile = getattr(user, 'learner_profile', None)
-    if profile:
-        profile.notifications_last_seen_at = timezone.now()
-        profile.save(update_fields=['notifications_last_seen_at'])
+    if profile is None:
+        return
+    profile.notifications_last_seen_at = timezone.now()
+    profile.save(update_fields=['notifications_last_seen_at'])

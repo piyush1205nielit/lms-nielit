@@ -140,6 +140,7 @@ def notifications_dropdown_view(request):
     html = render_to_string(
         'user_dashboard/includes/notifications_dropdown.html', {'items': items}, request=request
     )
+    mark_notifications_seen(request.user)   # every open, not just the first — see JS fix below
     return JsonResponse({'html': html})
 
 
