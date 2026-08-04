@@ -18,10 +18,11 @@ class DomainForm(forms.ModelForm):
 
 class CourseForm(forms.ModelForm):
     domains = forms.ModelMultipleChoiceField(
-        queryset=Domain.objects.filter(is_active=True),
+        queryset=Domain.objects.none(),
         widget=forms.CheckboxSelectMultiple,
         required=True,
-        help_text="Select at least one subject area this course belongs to.",
+        help_text="Select at least one subject area. A domain automatically becomes "
+                   "active on the public filter once any published course uses it.",
     )
     is_active = forms.BooleanField(
         required=False,
@@ -48,7 +49,8 @@ class CourseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['domains'].queryset = Domain.objects.filter(is_active=True)
+        self.fields['domains'].queryset = Domain.objects.all().order_by('name')
+
         if self.instance.pk:
             self.fields['is_active'].initial = (self.instance.status == Course.Status.ACTIVE)
         else:

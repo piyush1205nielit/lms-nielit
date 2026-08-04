@@ -14,3 +14,10 @@ def format_duration(total_seconds):
     if minutes:
         return f"{minutes}m {seconds}s"
     return f"{seconds}s"
+
+@register.filter
+def get_item(dictionary, key):
+    """Enables dict lookup by a variable key inside templates, e.g. {{ mydict|get_item:some_var }}."""
+    if dictionary is None:
+        return None
+    return dictionary.get(str(key))

@@ -63,13 +63,15 @@
                 </div>
             </div>
 
+           {% load course_extras %}
+
             <!-- Domains -->
             <div class="card-panel form-section-card">
                 <div class="form-section-header">
                     <div class="form-section-icon icon-amber"><i class="bi bi-tags-fill"></i></div>
                     <div>
                         <h6>Domains <span class="required-star">*</span></h6>
-                        <p>Select at least one subject area — this powers search and filtering on the public catalog.</p>
+                        <p>Select at least one subject area. A domain automatically activates on the public filter once any published course uses it.</p>
                     </div>
                 </div>
                 <div class="form-section-body">
@@ -79,12 +81,21 @@
                             <label class="domain-checkbox-chip">
                                 {{ checkbox.tag }}
                                 <span>{{ checkbox.choice_label }}</span>
+                                {% if domain_active_map|get_item:checkbox.data.value %}
+                                    <span class="domain-status-dot dot-active" title="Currently active"></span>
+                                {% else %}
+                                    <span class="domain-status-dot dot-inactive" title="Currently inactive — activates once this course is saved as Active"></span>
+                                {% endif %}
                             </label>
                         {% endfor %}
                     </div>
+                    <div class="domain-legend">
+                        <span><span class="domain-status-dot dot-active"></span> Active</span>
+                        <span><span class="domain-status-dot dot-inactive"></span> Inactive (will activate if selected + course is Active)</span>
+                    </div>
                     {% else %}
                         <div class="alert alert-warning py-2 small mb-0">
-                            No active domains exist yet. <a href="{% url 'course:domain_list' %}">Create one first</a>.
+                            No domains exist yet. <a href="{% url 'course:domain_list' %}">Create one from Manage Domains</a>.
                         </div>
                     {% endif %}
                     {% if form.domains.errors %}<div class="text-danger small mt-2">{{ form.domains.errors|join:", " }}</div>{% endif %}
@@ -369,5 +380,35 @@
         transition: background 0.15s ease, border-color 0.15s ease;
     }
     .btn-admin-secondary:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+
+    .domain-checkbox-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    }
+    .domain-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+        margin-left: 2px;
+    }
+    .domain-status-dot.dot-active { background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.15); }
+    .domain-status-dot.dot-inactive { background: #cbd5e1; }
+
+    .domain-legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 10px;
+        font-size: 0.74rem;
+        color: #6b7785;
+        flex-wrap: wrap;
+    }
+    .domain-legend span:not(.domain-status-dot) {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
 </style>
 {% endblock %}

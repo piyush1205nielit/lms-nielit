@@ -130,9 +130,9 @@ def course_create_view(request):
         messages.success(request, f"'{course.course_name}' created. Now add modules and lessons.")
         return redirect('course:modules', course_id=course.id)
 
+    domain_active_map = {str(d.id): d.is_active for d in Domain.objects.all()}
     return render(request, 'course/course_form.html', {
-        'form': form,
-        'active_page': 'courses',
+        'form': form, 'domain_active_map': domain_active_map, 'active_page': 'courses',
     })
 
 
@@ -145,16 +145,15 @@ def course_edit_view(request, course_id):
     if request.method == 'POST' and form.is_valid():
         updated_course = form.save(commit=False)
         if updated_course.status == Course.Status.ACTIVE and not was_active_before:
-            updated_course.published_date = timezone.now()   # first-time activation only
+            updated_course.published_date = timezone.now()
         updated_course.save()
         form.save_m2m()
         messages.success(request, "Course details updated.")
         return redirect('course:manage_list')
 
+    domain_active_map = {str(d.id): d.is_active for d in Domain.objects.all()}
     return render(request, 'course/course_form.html', {
-        'form': form,
-        'course': course,
-        'active_page': 'courses',
+        'form': form, 'course': course, 'domain_active_map': domain_active_map, 'active_page': 'courses',
     })
 
 # ── Quick actions, used directly from the manage-list row ──────────────
