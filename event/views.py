@@ -2,9 +2,10 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
-
 from .forms import EventForm
 from .models import Event, EventDisplaySettings
+from django.http import JsonResponse
+import json
 
 
 def public_event_list(request):
@@ -96,3 +97,34 @@ def event_toggle_active(request, pk):
     state = "activated and now live on the homepage" if event.is_active else "deactivated and hidden from the homepage"
     messages.success(request, f'"{event.title}" has been {state}.')
     return redirect("event:event_list")
+
+
+@staff_member_required
+@require_POST
+def event_reorder(request):
+    """
+    Accepts JSON: {"order": ["<uuid1>", "<uuid2>", ...]}
+    Persists the new order for the given events (index in list == order value).
+    """
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+        event_ids = payload.get("order", [])
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"success": False, "error": "Invalid JSON payload."}, status=400)
+
+    if not isinstance(event_ids, list) or not event_ids:
+        return JsonResponse({"success": False, "error": "No order data provided."}, status=400)
+
+    # Fetch only events that actually belong to this id set, update in bulk-ish fashion
+    events = {str(e.pk): e for e in Event.objects.filter(pk__in=event_ids)}
+
+    updated = []
+    for index, event_id in enumerate(event_ids):
+        event = events.get(str(event_id))
+        if event is not None:
+            event.order = index
+            updated.append(event)
+
+    Event.objects.bulk_update(updated, ["order"])
+
+    return JsonResponse({"success": True, "count": len(updated)})

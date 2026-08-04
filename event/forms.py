@@ -6,7 +6,7 @@ from .models import Event
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
-        exclude = ["id", "qr_code", "created_at", "updated_at", "image", "image_size"]
+        exclude = ["id", "qr_code", "created_at", "updated_at", "image", "image_size", "order"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
             "subtitle": forms.TextInput(attrs={"class": "form-control"}),

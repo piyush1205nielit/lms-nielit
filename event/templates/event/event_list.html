@@ -15,6 +15,7 @@
         </a>
     </div>
 </div>
+
 <!-- ═══ Summary stat cards ═══ -->
 <div class="stat-grid stat-grid-3">
     <div class="stat-mini-card stat-blue">
@@ -32,12 +33,18 @@
 </div>
 
 <!-- ═══ Event cards grid ═══ -->
-<div class="event-section-label"><i class="bi bi-grid-3x3-gap-fill"></i> All Events</div>
+<div class="event-section-label">
+    <span><i class="bi bi-grid-3x3-gap-fill"></i> All Events</span>
+    <span class="drag-hint"><i class="bi bi-arrows-move"></i> Drag the <i class="bi bi-grip-vertical"></i> handle to reorder</span>
+</div>
 
-<div class="event-cards-grid">
+<div class="event-cards-grid" id="eventCardsSortable">
     {% for event in events %}
-    <div class="event-card {% if event.is_active %}event-card-live{% endif %}">
+    <div class="event-card {% if event.is_active %}event-card-live{% endif %}" data-event-id="{{ event.id }}">
         <div class="event-card-header" style="background: linear-gradient(135deg, {{ event.gradient_start }} 0%, {{ event.gradient_end }} 100%);">
+            <span class="event-drag-handle" title="Drag to reorder">
+                <i class="bi bi-grip-vertical"></i>
+            </span>
             <span class="event-card-title">{{ event.title }}</span>
             {% if event.is_active %}
                 <span class="event-live-badge"><i class="bi bi-circle-fill pulse-dot"></i> Live</span>
@@ -83,9 +90,7 @@
 
         <div class="event-card-footer">
             <div class="event-actions-row">
-                <a href="{% url 'event:event_preview' event.id %}" target="_blank" class="btn-admin-labeled btn-label-view" title="Preview">
-                    <i class="bi bi-eye"></i><span class="btn-label-text">Preview</span>
-                </a>
+         
                 <a href="{% url 'event:event_update' event.id %}" class="btn-admin-labeled btn-label-toggle" title="Edit">
                     <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
                 </a>
@@ -172,39 +177,56 @@
     </div>
 </div>
 
+<!-- ═══ Reorder save toast ═══ -->
+<div id="reorderToast" class="reorder-toast" style="display:none;">
+    <i class="bi bi-check-circle-fill"></i> <span>Order saved</span>
+</div>
+
 {% endblock %}
 
 {% block extra_css %}
 <style>
     .main-content { max-width: none; }
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+    .page-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        flex-wrap: wrap; gap: 14px;
+        padding-bottom: 18px; margin-bottom: 6px;
+        border-bottom: 2px solid #1e293b;
+    }
     .page-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
     /* ═══ Stat grid ═══ */
-    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-grid { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
     .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
     @media (max-width: 700px) { .stat-grid-3 { grid-template-columns: 1fr; } }
 
     .stat-mini-card {
-        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        background: white; border: 1.5px solid #1e293b; border-left: 4px solid transparent;
         border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 12px;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        box-shadow: 0 1px 3px rgba(15,23,42,0.06);
     }
     .stat-mini-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
     .stat-mini-value { font-size: 1.25rem; font-weight: 800; color: #0f172a; line-height: 1.15; }
-    .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+    .stat-mini-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
 
     .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
     .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
     .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
 
     /* ═══ Section card (shared language) ═══ */
-    .form-section-card { margin-bottom: 1.5rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
-    .form-section-header { display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .form-section-card {
+        margin-bottom: 1.5rem; margin-top: 2rem; overflow: hidden;
+        border: 2px solid #1e293b !important; border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+    }
+    .form-section-header {
+        display: flex; align-items: flex-start; gap: 14px; padding: 1rem 1.2rem;
+        background: #f1f5f9; border-bottom: 2px solid #1e293b;
+    }
     .form-section-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
     .icon-purple { background: #ede9fe; color: #7c3aed; }
     .form-section-header h6 { font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
-    .form-section-header p { font-size: 0.77rem; color: #64748b; margin: 0; }
+    .form-section-header p { font-size: 0.77rem; color: #475569; margin: 0; }
     .form-section-body { padding: 1.25rem 1.2rem; }
 
     /* ═══ Display mode switcher ═══ */
@@ -212,30 +234,30 @@
         display: flex; gap: 8px; flex-wrap: wrap;
         margin-bottom: 1.25rem;
         background: #f1f5f9; padding: 6px; border-radius: 12px;
-        border: 1.5px solid #e2e8f0;
+        border: 1.5px solid #1e293b;
     }
     .mode-btn {
         display: flex; align-items: center; gap: 8px;
-        padding: 9px 16px; border-radius: 8px; border: none;
-        background: transparent; color: #64748b;
+        padding: 9px 16px; border-radius: 8px; border: 1.5px solid transparent;
+        background: transparent; color: #475569;
         font-size: 0.84rem; font-weight: 600;
-        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
-    .mode-btn:hover { background: rgba(255,255,255,0.6); color: #172281; }
-    .mode-active { background: white; color: #2563eb; box-shadow: 0 2px 6px rgba(15,23,42,0.1); }
+    .mode-btn:hover { background: rgba(255,255,255,0.7); color: #172281; border-color: #cbd5e1; }
+    .mode-active { background: white; color: #2563eb; border-color: #1e293b; box-shadow: 0 2px 6px rgba(15,23,42,0.12); }
     .mode-btn-danger:hover { color: #b91c1c; }
-    .mode-active-danger { background: white; color: #dc2626; box-shadow: 0 2px 6px rgba(220,38,38,0.15); }
+    .mode-active-danger { background: white; color: #dc2626; border-color: #1e293b; box-shadow: 0 2px 6px rgba(220,38,38,0.18); }
 
     /* ═══ Alerts / notes ═══ */
     .alert-banner { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 10px; font-size: 0.85rem; }
-    .alert-banner-warning { background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; }
+    .alert-banner-warning { background: #fffbeb; border: 1.5px solid #d97706; color: #92400e; }
     .alert-banner-warning i { flex-shrink: 0; }
 
-    .no-active-note { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.85rem; padding: 10px 0; }
+    .no-active-note { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 0.85rem; padding: 10px 0; }
 
     /* ═══ Live preview frame ═══ */
     .live-preview-frame {
-        border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1rem;
+        border: 1.5px dashed #334155; border-radius: 12px; padding: 1rem;
         background: #fafbfd;
     }
     .live-preview-label {
@@ -244,15 +266,22 @@
         text-transform: uppercase; letter-spacing: 0.04em;
         margin-bottom: 0.75rem;
     }
-    .live-preview-box { border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white; }
+    .live-preview-box { border: 1.5px solid #1e293b; border-radius: 10px; overflow: hidden; background: white; }
 
     /* ═══ Event grid section label ═══ */
     .event-section-label {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
         font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-        color: #64748b; margin-bottom: 1rem;
+        color: #475569; margin-bottom: 1rem;
+        padding-bottom: 10px; border-bottom: 1.5px solid #cbd5e1;
     }
+    .event-section-label > span:first-child { display: flex; align-items: center; gap: 8px; }
     .event-section-label i { color: #2563eb; }
+    .drag-hint {
+        font-size: 0.7rem; font-weight: 600; text-transform: none; letter-spacing: 0;
+        color: #94a3b8; display: flex; align-items: center; gap: 6px;
+    }
+    .drag-hint i { color: #94a3b8; font-size: 0.85rem; }
 
     /* ═══ Event cards grid ═══ */
     .event-cards-grid {
@@ -262,19 +291,38 @@
     }
 
     .event-card {
-        background: white; border: 1.5px solid #cbd5e1; border-radius: 14px;
+        background: white; border: 2px solid #1e293b; border-radius: 14px;
         overflow: hidden; display: flex; flex-direction: column;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        box-shadow: 0 1px 3px rgba(15,23,42,0.06);
         transition: box-shadow 0.2s ease, transform 0.2s ease;
     }
-    .event-card:hover { box-shadow: 0 10px 26px rgba(15,23,42,0.1); transform: translateY(-2px); }
-    .event-card-live { border-color: #86efac; }
+    .event-card:hover { box-shadow: 0 10px 26px rgba(15,23,42,0.14); transform: translateY(-2px); }
+    .event-card-live { border-color: #16a34a; }
+
+    /* Drag states */
+    .event-card.sortable-ghost { opacity: 0.35; }
+    .event-card.sortable-chosen { box-shadow: 0 14px 34px rgba(15,23,42,0.22); }
+    .event-card.sortable-drag { cursor: grabbing; }
 
     .event-card-header {
         display: flex; justify-content: space-between; align-items: center; gap: 10px;
         padding: 14px 16px; color: white;
+        border-bottom: 2px solid rgba(15,23,42,0.35);
     }
-    .event-card-title { font-size: 0.98rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68%; }
+    .event-drag-handle {
+        cursor: grab;
+        color: rgba(255,255,255,0.8);
+        font-size: 1.05rem;
+        padding: 3px 5px;
+        margin-right: -2px;
+        flex-shrink: 0;
+        border-radius: 6px;
+        transition: background 0.15s ease;
+    }
+    .event-drag-handle:hover { background: rgba(255,255,255,0.18); }
+    .event-drag-handle:active { cursor: grabbing; }
+
+    .event-card-title { font-size: 0.98rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 58%; flex: 1; }
 
     .event-live-badge {
         display: inline-flex; align-items: center; gap: 5px;
@@ -292,41 +340,41 @@
     }
 
     .event-card-body { padding: 14px 16px; flex: 1; }
-    .event-info-row { display: flex; align-items: center; gap: 8px; font-size: 0.79rem; color: #64748b; margin-bottom: 8px; }
-    .event-info-row i { color: #94a3b8; font-size: 0.78rem; width: 14px; text-align: center; flex-shrink: 0; }
+    .event-info-row { display: flex; align-items: center; gap: 8px; font-size: 0.79rem; color: #475569; margin-bottom: 8px; }
+    .event-info-row i { color: #64748b; font-size: 0.78rem; width: 14px; text-align: center; flex-shrink: 0; }
     .event-info-row:last-of-type { margin-bottom: 12px; }
 
     .keyword-count-tag {
         font-size: 0.7rem; font-weight: 700; color: #2563eb;
-        background: #eff6ff; border: 1px solid #dbeafe;
+        background: #eff6ff; border: 1.5px solid #93c5fd;
         padding: 2px 9px; border-radius: 999px;
     }
 
     .theme-swatch-box {
         display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-        background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px;
+        background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 9px;
         padding: 9px 12px;
     }
-    .theme-swatch-label { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
-    .theme-swatch { width: 17px; height: 17px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px #e2e8f0; flex-shrink: 0; }
-    .theme-style-tag { font-size: 0.72rem; color: #64748b; margin-left: auto; }
+    .theme-swatch-label { font-size: 0.72rem; color: #64748b; font-weight: 600; }
+    .theme-swatch { width: 17px; height: 17px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1.5px #1e293b; flex-shrink: 0; }
+    .theme-style-tag { font-size: 0.72rem; color: #475569; margin-left: auto; }
 
-    .event-card-footer { padding: 12px 16px 16px; border-top: 1.5px solid #eef1f6; background: #fafbfd; }
+    .event-card-footer { padding: 12px 16px 16px; border-top: 2px solid #1e293b; background: #f8fafc; }
     .event-actions-row { display: flex; gap: 6px; margin-bottom: 8px; }
 
     .btn-admin-labeled {
         display: inline-flex; align-items: center; gap: 6px;
-        height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid transparent;
+        height: 32px; padding: 0 11px; border-radius: 8px; border: 1.5px solid transparent;
         font-size: 0.76rem; font-weight: 600; white-space: nowrap; text-decoration: none;
         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
         flex: 1; justify-content: center;
     }
     .btn-admin-labeled:hover { transform: translateY(-1px); }
-    .btn-label-view   { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+    .btn-label-view   { background: #f0f9ff; border-color: #7dd3fc; color: #0369a1; }
     .btn-label-view:hover { background: #e0f2fe; color: #075985; }
-    .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-label-toggle { background: #fffbeb; border-color: #fbbf24; color: #b45309; }
     .btn-label-toggle:hover { background: #fef3c7; color: #92400e; }
-    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; flex: 0 0 auto; width: 34px; }
+    .btn-label-delete { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; flex: 0 0 auto; width: 34px; }
     .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
 
     .event-toggle-btn {
@@ -335,20 +383,88 @@
         border-radius: 8px; font-size: 0.82rem; font-weight: 600;
         transition: background 0.15s ease, transform 0.1s ease;
     }
-    .toggle-feature { background: #172281; border: none; color: white; }
+    .toggle-feature { background: #172281; border: 1.5px solid #172281; color: white; }
     .toggle-feature:hover { background: #0f2b6d; }
-    .toggle-remove { background: white; border: 1.5px solid #cbd5e1; color: #64748b; }
-    .toggle-remove:hover { background: #f8fafc; border-color: #94a3b8; color: #172281; }
+    .toggle-remove { background: white; border: 1.5px solid #1e293b; color: #475569; }
+    .toggle-remove:hover { background: #f8fafc; border-color: #172281; color: #172281; }
 
     /* ═══ Empty state ═══ */
     .event-empty-state {
         grid-column: 1 / -1;
         display: flex; flex-direction: column; align-items: center;
         padding: 3.5rem 1rem; text-align: center;
-        background: white; border: 1.5px dashed #cbd5e1; border-radius: 14px;
+        background: white; border: 2px dashed #1e293b; border-radius: 14px;
     }
-    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
     .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
-    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+    .empty-state-sub { font-size: 0.85rem; color: #64748b; max-width: 320px; }
+
+    /* ═══ Reorder toast ═══ */
+    .reorder-toast {
+        position: fixed; bottom: 24px; right: 24px; z-index: 1080;
+        background: #172281; color: white; padding: 10px 18px;
+        border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+        display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 8px 24px rgba(15,23,42,0.28);
+        border: 1.5px solid rgba(255,255,255,0.15);
+        animation: toastIn 0.25s ease;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const grid = document.getElementById('eventCardsSortable');
+    if (!grid || typeof Sortable === 'undefined') return;
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function showToast(message, isError) {
+        const toast = document.getElementById('reorderToast');
+        if (!toast) return;
+        toast.querySelector('span').textContent = message;
+        toast.style.background = isError ? '#dc2626' : '#172281';
+        toast.style.display = 'flex';
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => { toast.style.display = 'none'; }, 2200);
+    }
+
+    Sortable.create(grid, {
+        animation: 180,
+        handle: '.event-drag-handle',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        draggable: '.event-card',
+        onEnd: function () {
+            const order = Array.from(grid.querySelectorAll('.event-card[data-event-id]'))
+                .map(el => el.dataset.eventId);
+
+            fetch("{% url 'event:event_reorder' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ order: order }),
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Order saved');
+                } else {
+                    showToast(data.error || 'Could not save order', true);
+                }
+            })
+            .catch(() => showToast('Network error saving order', true));
+        },
+    });
+});
+</script>
 {% endblock %}

@@ -134,11 +134,18 @@ class Event(models.Model):
         max_length=10, choices=LOGO_POSITION_CHOICES, default=LOGO_CENTER
     )
 
+    order = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        help_text="Lower numbers appear first in stacked list / carousel.",
+    )
+
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["order", "-created_at"]
 
     def __str__(self):
         return self.title
@@ -149,6 +156,10 @@ class Event(models.Model):
         return [k.strip() for k in self.keywords.split(",") if k.strip()]
 
     def save(self, *args, **kwargs):
+        if self._state.adding and not self.order:
+            last = Event.objects.order_by("-order").first()
+            self.order = (last.order + 1) if last else 1
+            
         should_generate_qr = bool(self.show_qr and self.url and not self.qr_code)
         super().save(*args, **kwargs)
         if should_generate_qr:

@@ -14,4 +14,5 @@ urlpatterns = [
     path("admin/<uuid:pk>/preview/", views.event_preview, name="event_preview"),
     path("admin/<uuid:pk>/toggle-active/", views.event_toggle_active, name="event_toggle_active"),
     path("admin/display-mode/<str:mode>/", views.event_set_display_mode, name="event_set_display_mode"),
+    path("admin/reorder/", views.event_reorder, name="event_reorder"),
 ]
