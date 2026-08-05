@@ -412,3 +412,27 @@
     }
 </style>
 {% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // If the error message contains a suggested name, make it clickable to auto-fill
+    const errorEl = document.getElementById('courseNameError');
+    if (errorEl) {
+        const match = errorEl.textContent.match(/Try "([^"]+)" instead/);
+        if (match) {
+            const suggestion = match[1];
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'ms-1 fw-semibold';
+            link.textContent = `Use "${suggestion}"`;
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.getElementById('id_course_name').value = suggestion;
+            });
+            errorEl.appendChild(document.createTextNode(' — '));
+            errorEl.appendChild(link);
+        }
+    }
+});
+</script>
+{% endblock %}

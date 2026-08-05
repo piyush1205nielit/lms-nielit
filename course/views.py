@@ -364,9 +364,8 @@ def course_publish_view(request, course_id):
 #         'is_enrolled': is_enrolled,
 #     })
 
-@login_required(login_url='user:login')
-def course_detail_view(request, slug):
-    course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
+def course_detail_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id, status=Course.Status.ACTIVE)
     modules = course.modules.prefetch_related('lessons').order_by('order')
     total_lessons = Lesson.objects.filter(module__course=course).count()
 
@@ -380,53 +379,18 @@ def course_detail_view(request, slug):
         'course': course,
         'modules': modules,
         'total_lessons': total_lessons,
-        'enrollment': enrollment,       
-        'is_enrolled': is_enrolled,     
-    })
-
-
-def course_detail_view(request, slug):
-    course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
-    modules = course.modules.prefetch_related('lessons').order_by('order')
-
-    is_enrolled = False
-    if request.user.is_authenticated and request.user.role == 'user':
-        is_enrolled = is_enrolled = Enrollment.objects.filter(
-            user=request.user, course=course, access_status=Enrollment.AccessStatus.GRANTED
-            ).exists()
-
-    total_lessons = sum(module.lessons.count() for module in modules)
-
-    return render(request, 'course/course_detail.html', {
-        'course': course,
-        'modules': modules,
+        'enrollment': enrollment,
         'is_enrolled': is_enrolled,
-        'total_lessons': total_lessons,
     })
 
-
-# @login_required(login_url='user:login')
-# def course_enroll_view(request, slug):
-#     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
-
-#     if request.user.account_status != User.AccountStatus.ACTIVE:
-#         messages.error(request, "Your account access must be approved by an admin before you can enroll in courses.")
-#         return redirect('course:detail', slug=slug)
-
-#     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
-#     if created:
-#         messages.success(request, "Enrollment request submitted. You'll get access once approved by an admin.")
-#     else:
-#         messages.info(request, f"You already have a {enrollment.get_access_status_display().lower()} enrollment for this course.")
-#     return redirect('course:detail', slug=slug)
 
 @login_required(login_url='user:login')
-def course_enroll_view(request, slug):
-    course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
+def course_enroll_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id, status=Course.Status.ACTIVE)
 
     if request.user.account_status != User.AccountStatus.ACTIVE:
         messages.error(request, "Your account access must be approved by an admin before you can enroll in courses.")
-        return redirect('course:detail', slug=slug)
+        return redirect('course:detail', course_id=course.id)
 
     enrollment, created = Enrollment.objects.get_or_create(user=request.user, course=course)
     if created:
@@ -440,7 +404,7 @@ def course_enroll_view(request, slug):
         }
         messages.info(request, status_messages.get(enrollment.access_status, "You already have an enrollment record for this course."))
 
-    return redirect('course:detail', slug=slug)
+    return redirect('course:detail', course_id=course.id)
 
 
 from certificate.models import StudentCertificate

@@ -19,7 +19,7 @@
         </p>
     </div>
     <div class="page-header-actions">
-        <a href="{% url 'course:detail' course.slug %}" target="_blank" class="btn-admin-secondary">
+        <a href="{% url 'course:detail' course.id %}" target="_blank" class="btn-admin-secondary">
             <i class="bi bi-box-arrow-up-right me-1"></i> View Public Page
         </a>
         <a href="{% url 'course:edit' course.id %}" class="btn-admin-secondary">
@@ -198,7 +198,7 @@
                     </div>
                     <i class="bi bi-chevron-right quick-action-arrow"></i>
                 </a>
-                <a href="{% url 'course:detail' course.slug %}" target="_blank" class="quick-action-item">
+                <a href="{% url 'course:detail' course.id %}" target="_blank" class="quick-action-item">
                     <div class="quick-action-icon icon-green"><i class="bi bi-box-arrow-up-right"></i></div>
                     <div>
                         <div class="quick-action-title">View Public Page</div>

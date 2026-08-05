@@ -329,7 +329,7 @@
         </div>
         {% endif %}
 
-        <a href="{% url 'course:detail' course.slug %}" class="ccb-exit-link">
+        <a href="{% url 'course:detail' course.id %}" class="ccb-exit-link">
           <i class="fas fa-arrow-right-from-bracket"></i> Exit to Course
         </a>
       </div>
@@ -361,7 +361,7 @@
           <i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved. &middot; <strong>NIELIT Delhi Web Team</strong>
         </p>
         {% if course %}
-          <a href="{% url 'course:detail' course.slug %}">Back to {{ course.course_name }}</a>
+          <a href="{% url 'course:detail' course.id %}">Back to {{ course.course_name }}</a>
         {% else %}
           <a href="{% url 'course:my_courses' %}">Back to My Courses</a>
         {% endif %}

@@ -5,7 +5,7 @@ app_name = 'certificate'
 
 urlpatterns = [
     # Student
-    path('request/<slug:course_slug>/', views.request_certificate_view, name='request_certificate'),
+    path('request/<uuid:course_id>/', views.request_certificate_view, name='request_certificate'),
     path('view/<str:certificate_number>/', views.view_certificate, name='view_certificate'),
     path('verify/<str:cert_number>/', views.verify_certificate, name='verify_certificate'),
     path('qr/<str:cert_number>/', views.certificate_qr_code, name='certificate_qr_code'),

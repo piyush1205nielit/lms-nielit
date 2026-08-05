@@ -25,10 +25,6 @@ urlpatterns = [
     path('manage/domains/<uuid:domain_id>/toggle-active/', views.domain_toggle_active_view, name='domain_toggle_active'),
     path('manage/domains/<uuid:domain_id>/delete/', views.domain_delete_view, name='domain_delete'),
 
-    path('my-courses/', views.my_courses_view, name='my_courses'),
-    path('<slug:slug>/enroll/', views.course_enroll_view, name='enroll'),
-    path('<slug:slug>/', views.course_detail_view, name='detail'),   # catch-all — must stay last
-
     path('manage/<uuid:course_id>/overview/', views.course_overview_view, name='overview'),
     path('manage/<uuid:course_id>/students/', views.course_students_view, name='students'),
 
@@ -37,4 +33,10 @@ urlpatterns = [
     path('manage/enrollments/bulk-hold/', views.bulk_hold_enrollment_view, name='bulk_hold_enrollment'),
     path('manage/enrollments/bulk-revoke/', views.bulk_revoke_enrollment_view, name='bulk_revoke_enrollment'),
     path('manage/enrollments/bulk-deny/', views.bulk_deny_enrollment_view, name='bulk_deny_enrollment'),
+
+    path('my-courses/', views.my_courses_view, name='my_courses'),
+
+    # ── Public routes: now id-based, not slug-based ──
+    path('<uuid:course_id>/enroll/', views.course_enroll_view, name='enroll'),
+    path('<uuid:course_id>/', views.course_detail_view, name='detail'),   # no longer needs to be last — id can't collide with 'manage/', 'my-courses/', etc.
 ]

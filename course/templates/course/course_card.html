@@ -77,7 +77,7 @@
                     <span>{{ course.enrolled_count|default:"0" }}</span>
                 </div>
             </div>
-            <a href="{% url 'course:detail' course.slug %}" class="course-card-btn">
+            <a href="{% url 'course:detail' course.id %}" class="course-card-btn">
                 <span>Explore</span>
                 <i class="fas fa-arrow-right"></i>
             </a>

@@ -1,6 +1,7 @@
 from django import forms
 from .models import Course, Module, Lesson, Domain
 from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 
 TEXT_INPUT_CLASS = 'form-control'
 
@@ -37,6 +38,7 @@ class CourseForm(forms.ModelForm):
             'course_name', 'course_description', 'course_banner', 'domains',
             'learning_outcomes', 'pre_requisites', 'info_doc', 'assignment_doc',
         ]
+   
         widgets = {
             'course_name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Python for Beginners'}),
             'course_description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4}),
@@ -61,6 +63,35 @@ class CourseForm(forms.ModelForm):
         if not domains or domains.count() == 0:
             raise ValidationError("Select at least one domain for this course.")
         return domains
+
+    def clean_course_name(self):
+        name = self.cleaned_data['course_name'].strip()
+        candidate_slug = slugify(name)
+
+        existing_qs = Course.objects.filter(slug=candidate_slug)
+        if self.instance.pk:
+            existing_qs = existing_qs.exclude(pk=self.instance.pk)
+
+        if existing_qs.exists():
+            suggestion = self._generate_unique_name_suggestion(name)
+            raise ValidationError(
+                f"A course named \"{name}\" already exists. Try \"{suggestion}\" instead, "
+                f"or choose a different name."
+            )
+        return name
+
+    def _generate_unique_name_suggestion(self, base_name):
+        """
+        'Python Programming' -> 'Python Programming 2.0' if that's the first
+        collision, then '3.0', '4.0', etc., skipping any that are also taken.
+        """
+        counter = 2
+        while True:
+            candidate_name = f"{base_name} {counter}.0"
+            candidate_slug = slugify(candidate_name)
+            if not Course.objects.filter(slug=candidate_slug).exists():
+                return candidate_name
+            counter += 1
 
     def save(self, commit=True):
         course = super().save(commit=False)

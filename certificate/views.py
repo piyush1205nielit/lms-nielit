@@ -45,8 +45,8 @@ def build_certificate_context(request, certificate):
 
 @login_required(login_url='user:login')
 @require_POST
-def request_certificate_view(request, course_slug):
-    course = get_object_or_404(Course, slug=course_slug)
+def request_certificate_view(request, course_id):
+    course = get_object_or_404(Course, id = course_id)
 
     eligible, reason = is_eligible_for_certificate(request.user, course)
     if not eligible:
