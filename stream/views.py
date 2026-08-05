@@ -16,18 +16,18 @@ from .utils import generate_presigned_upload, generate_signed_cookies
 
 
 @login_required(login_url='user:login')
-def lesson_player_view(request, slug, lesson_id):
-    course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
+def lesson_player_view(request, course_id, lesson_id):
+    course = get_object_or_404(Course, id=course_id, status=Course.Status.ACTIVE)
     lesson = get_object_or_404(Lesson, id=lesson_id, module__course=course)
 
     is_enrolled = Enrollment.objects.filter(user=request.user, course=course).exists()
     if not is_enrolled and not request.user.is_admin_role:
         messages.error(request, "You need to enroll in this course to access its content.")
-        return redirect('course:detail', slug=slug)
+        return redirect('course:detail', id=course_id)
 
     if lesson.video_status != Lesson.VideoStatus.READY or not lesson.hls_manifest_key:
         messages.error(request, "This lesson's video isn't available yet.")
-        return redirect('course:detail', slug=slug)
+        return redirect('course:detail', id=course_id)
 
     modules = course.modules.prefetch_related('lessons').order_by('order')
 
