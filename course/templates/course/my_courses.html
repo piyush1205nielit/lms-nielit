@@ -267,11 +267,11 @@
 
                                 {% with first_lesson=item.enrollment.course.modules.first.lessons.first %}
                                     {% if first_lesson %}
-                                        <a href="{% url 'stream:player' item.enrollment.course.slug first_lesson.id %}" class="btn-course-action">
+                                        <a href="{% url 'stream:player' item.enrollment.course.id first_lesson.id %}" class="btn-course-action">
                                             {% if item.percent > 0 %}<i class="bi bi-play-fill me-1"></i>Continue Learning{% else %}<i class="bi bi-rocket-takeoff me-1"></i>Start Course{% endif %}
                                         </a>
                                     {% else %}
-                                        <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-view-only">View Course</a>
+                                        <a href="{% url 'course:detail' item.enrollment.course.id %}" class="btn-view-only">View Course</a>
                                     {% endif %}
                                 {% endwith %}
                             </div>
@@ -316,13 +316,13 @@
                                     {% elif item.certificate.status == 'revoked' %}
                                         <span class="btn-disabled-note" style="background: var(--red-bg); color: var(--red-text);"><i class="bi bi-x-circle-fill"></i> Certificate Revoked</span>
                                     {% elif item.certificate.status == 'denied' %}
-                                        <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.slug %}">
+                                        <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.id %}">
                                             {% csrf_token %}
                                             <button type="submit" class="btn-course-action is-cert border-0">Re-request Certificate</button>
                                         </form>
                                     {% endif %}
                                 {% elif item.can_request_certificate %}
-                                    <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.slug %}">
+                                    <form method="post" action="{% url 'certificate:request_certificate' item.enrollment.course.id %}">
                                         {% csrf_token %}
                                         <button type="submit" class="btn-course-action is-cert border-0"><i class="bi bi-award-fill me-1"></i>Request Certificate</button>
                                     </form>
@@ -332,7 +332,7 @@
                                     </a>
                                 {% endif %}
 
-                                <a href="{% url 'course:detail' item.enrollment.course.slug %}" class="btn-view-only mt-2">
+                                <a href="{% url 'course:detail' item.enrollment.course.id %}" class="btn-view-only mt-2">
                                     <i class="bi bi-arrow-repeat me-1"></i>Review Course
                                 </a>
                             </div>

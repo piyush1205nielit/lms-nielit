@@ -36,7 +36,6 @@ urlpatterns = [
 
     path('my-courses/', views.my_courses_view, name='my_courses'),
 
-    # ── Public routes: now id-based, not slug-based ──
     path('<uuid:course_id>/enroll/', views.course_enroll_view, name='enroll'),
     path('<uuid:course_id>/', views.course_detail_view, name='detail'),   # no longer needs to be last — id can't collide with 'manage/', 'my-courses/', etc.
 ]
