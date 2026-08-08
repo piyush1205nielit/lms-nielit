@@ -493,12 +493,21 @@
 <nav class="sidebar" id="sidebarNav">
 
     <div class="sidebar-section-label"><span class="label-text">Overview</span></div>
-    <a href="{% url 'admin_dashboard:home' %}"
-       class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" title="Dashboard">
-        <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
-        <span class="nav-label">Dashboard</span>
-    </a>
+    {% if request.user.role == 'faculty' %}
+        <a href="{% url 'admin_dashboard:faculty_home' %}"
+           class="nav-link {% if active_page == 'faculty_dashboard' %}active{% endif %}" title="Dashboard">
+            <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+            <span class="nav-label">Dashboard</span>
+        </a>
+    {% else %}
+        <a href="{% url 'admin_dashboard:home' %}"
+           class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" title="Dashboard">
+            <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+            <span class="nav-label">Dashboard</span>
+        </a>
+    {% endif %}
 
+    {% if request.user.role != 'faculty' %}
     <div class="sidebar-section-label"><span class="label-text">Content Management</span></div>
     <a href="{% url 'course:domain_list' %}"
        class="nav-link {% if active_page == 'domains' %}active{% endif %}" title="Manage Domains">
@@ -509,6 +518,14 @@
        class="nav-link {% if active_page == 'courses' %}active{% endif %}" title="Manage Courses">
         <span class="nav-icon"><i class="bi bi-journal-bookmark-fill"></i></span>
         <span class="nav-label">Manage Courses</span>
+        {% if request.user.role == 'admin' and not request.user.admin_profile.can_manage_courses %}
+            <i class="bi bi-eye-fill nav-view-only-badge" title="View only — course management not granted"></i>
+        {% endif %}
+    </a>
+    <a href="{% url 'certificate:design_list' %}"
+       class="nav-link {% if active_page == 'certificate_designs' %}active{% endif %}" title="Certificate Designs">
+        <span class="nav-icon"><i class="bi bi-vector-pen"></i></span>
+        <span class="nav-label">Certificate Designs</span>
     </a>
     <a href="{% url 'announcement:manage_list' %}"
        class="nav-link {% if active_page == 'announcements' %}active{% endif %}" title="Announcements">
@@ -520,6 +537,7 @@
         <span class="nav-icon"><i class="bi bi-images"></i></span>
         <span class="nav-label">Event Cards</span>
     </a>
+    {% endif %}
 
     <div class="sidebar-section-label"><span class="label-text">Approvals &amp; Access</span></div>
     <a href="{% url 'admin_dashboard:registration_requests' %}"
@@ -545,21 +563,17 @@
         <span class="nav-icon"><i class="bi bi-shield-lock-fill"></i></span>
         <span class="nav-label">Account Access Control</span>
     </a>
-   
-    <a href="{% url 'certificate:design_list' %}"
-    class="nav-link {% if active_page == 'certificate_designs' %}active{% endif %}" title="Certificate Designs">
-        <span class="nav-icon"><i class="bi bi-vector-pen"></i></span>
-        <span class="nav-label">Certificate Designs</span>
-    </a>
+    {% if request.user.role != 'faculty' %}
     <a href="{% url 'certificate:certificate_management' %}"
-    class="nav-link {% if active_page == 'certificates' %}active{% endif %} d-flex justify-content-between align-items-center"
-    title="Certificate Requests">
+       class="nav-link {% if active_page == 'certificates' %}active{% endif %} d-flex justify-content-between align-items-center"
+       title="Certificate Requests">
         <span class="d-flex align-items-center gap-2">
             <span class="nav-icon"><i class="bi bi-award-fill"></i></span>
             <span class="nav-label">Certificate Requests</span>
         </span>
         {% if pending_certificate_count %}<span class="nav-badge">{{ pending_certificate_count }}</span>{% endif %}
     </a>
+    {% endif %}
 
     <div class="sidebar-section-label"><span class="label-text">Student Directory</span></div>
     <a href="{% url 'admin_dashboard:registered_users' %}"
@@ -567,16 +581,20 @@
         <span class="nav-icon"><i class="bi bi-people-fill"></i></span>
         <span class="nav-label">Registered Users</span>
     </a>
+    {% if request.user.role != 'faculty' %}
     <a href="{% url 'admin_dashboard:bulk_user_upload' %}"
        class="nav-link {% if active_page == 'bulk_upload' %}active{% endif %}" title="Bulk Upload Students">
         <span class="nav-icon"><i class="bi bi-file-earmark-spreadsheet-fill"></i></span>
         <span class="nav-label">Bulk Upload Students</span>
     </a>
+    {% endif %}
+    {% if request.user.role == 'superadmin' %}
     <a href="{% url 'admin_dashboard:centre_list' %}"
        class="nav-link {% if active_page == 'centres' %}active{% endif %}" title="Manage Centres">
         <span class="nav-icon"><i class="bi bi-building"></i></span>
         <span class="nav-label">Manage Centres</span>
     </a>
+    {% endif %}
 
     <div class="sidebar-section-label"><span class="label-text">Academic Operations</span></div>
     <a href="{% url 'assignment:manage_list' %}"
@@ -589,12 +607,19 @@
         {% if pending_grading_count %}<span class="nav-badge">{{ pending_grading_count }}</span>{% endif %}
     </a>
 
+    {% if request.user.role == 'superadmin' %}
     <div class="sidebar-section-label"><span class="label-text">Administration</span></div>
     <a href="{% url 'accounts:admin_list' %}"
        class="nav-link {% if active_page == 'admins' %}active{% endif %}" title="Admin Management">
         <span class="nav-icon"><i class="bi bi-person-badge-fill"></i></span>
         <span class="nav-label">Admin Management</span>
     </a>
+    <a href="{% url 'accounts:faculty_list' %}"
+       class="nav-link {% if active_page == 'faculty' %}active{% endif %}" title="Faculty Management">
+        <span class="nav-icon"><i class="bi bi-person-workspace"></i></span>
+        <span class="nav-label">Faculty Management</span>
+    </a>
+    {% endif %}
 
     <div class="nav-divider"></div>
 

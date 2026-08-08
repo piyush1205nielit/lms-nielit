@@ -1,9 +1,9 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-
 from .models import User, AdminProfile
-
+from admin_dashboard.models import Centre
+from .models import User, FacultyProfile
 
 TEXT_INPUT_CLASS = 'form-control'
 
@@ -101,3 +101,72 @@ class AdminEditForm(forms.ModelForm):
                 raise ValidationError("Another account already uses this contact number.")
 
         return contact
+
+
+
+class FacultyForm(forms.ModelForm):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    contact = forms.CharField(
+        max_length=10,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '10-digit mobile number'})
+    )
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Leave blank to keep current password'}),
+        help_text="Required when creating a new faculty account. Leave blank when editing to keep the existing password."
+    )
+
+    class Meta:
+        model = FacultyProfile
+        fields = ['full_name', 'designation', 'nielit_centre']
+        widgets = {
+            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'designation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Assistant Professor'}),
+            'nielit_centre': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['nielit_centre'].queryset = Centre.objects.filter(is_active=True).order_by('centre_name')
+        self.fields['nielit_centre'].required = False
+
+        # self.instance.pk is always truthy for this model, since its UUIDField
+        # has default=uuid.uuid4 — the id exists client-side before the row is
+        # ever saved. _state.adding is the reliable "is this a real DB row yet?"
+        # check regardless of PK type.
+        is_existing_record = not self.instance._state.adding
+
+        if is_existing_record:
+            try:
+                self.fields['email'].initial = self.instance.user.email
+                self.fields['contact'].initial = self.instance.user.contact
+            except User.DoesNotExist:
+                pass
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        qs = User.objects.filter(email=email)
+        if not self.instance._state.adding:
+            qs = qs.exclude(pk=self.instance.user_id)
+        if qs.exists():
+            raise ValidationError("A user with this email already exists.")
+        return email
+
+    def clean_contact(self):
+        contact = self.cleaned_data['contact'].strip()
+        if not contact.isdigit() or len(contact) != 10:
+            raise ValidationError("Enter a valid 10-digit mobile number.")
+        qs = User.objects.filter(contact=contact)
+        if not self.instance._state.adding:
+            qs = qs.exclude(pk=self.instance.user_id)
+        if qs.exists():
+            raise ValidationError("A user with this contact number already exists.")
+        return contact
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.instance._state.adding and not cleaned_data.get('password'):
+            self.add_error('password', "Password is required when creating a new faculty account.")
+        return cleaned_data

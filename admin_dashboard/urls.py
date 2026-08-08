@@ -31,4 +31,7 @@ urlpatterns = [
     path('users/bulk-upload/', views.bulk_user_upload_view, name='bulk_user_upload'),
     path('users/bulk-upload/template/', views.download_upload_template_view, name='download_upload_template'),
 
+    path('faculty-home/', views.faculty_dashboard_home, name='faculty_home'),
+    path('admins/<uuid:admin_id>/toggle-course-permission/', views.toggle_admin_course_permission_view, name='toggle_admin_course_permission'),
+
 ]

@@ -1,0 +1,92 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Faculty Dashboard{% endblock %}
+{% block page_title %}Faculty Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-speedometer2"></i> Faculty Dashboard</h2>
+        <p>Welcome, {{ request.user.faculty_profile.full_name|default:request.user.email }}</p>
+    </div>
+</div>
+
+<div class="stat-grid stat-grid-4">
+    <a href="{% url 'admin_dashboard:registration_requests' %}" class="stat-mini-card stat-amber stat-link">
+        <div class="stat-mini-icon"><i class="bi bi-person-plus-fill"></i></div>
+        <div><div class="stat-mini-value">{{ pending_registrations }}</div><div class="stat-mini-label">New Registrations</div></div>
+    </a>
+    <a href="{% url 'course:enrollment_management' %}" class="stat-mini-card stat-blue stat-link">
+        <div class="stat-mini-icon"><i class="bi bi-journal-check"></i></div>
+        <div><div class="stat-mini-value">{{ pending_enrollments }}</div><div class="stat-mini-label">Enrollment Requests</div></div>
+    </a>
+    <a href="{% url 'assignment:manage_list' %}" class="stat-mini-card stat-purple stat-link">
+        <div class="stat-mini-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+        <div><div class="stat-mini-value">{{ pending_grading }}</div><div class="stat-mini-label">Pending Grading</div></div>
+    </a>
+    <a href="{% url 'admin_dashboard:registered_users' %}" class="stat-mini-card stat-green stat-link">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ total_students }}</div><div class="stat-mini-label">Active Students</div></div>
+    </a>
+</div>
+
+<div class="card-panel p-4 mt-4">
+    <h6 class="fw-bold mb-3"><i class="bi bi-lightning-fill me-1" style="color:#f59e0b;"></i> Quick Actions</h6>
+    <div class="quick-action-grid">
+        <a href="{% url 'admin_dashboard:registration_requests' %}" class="quick-action-item">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Review New Registrations</span>
+        </a>
+        <a href="{% url 'course:enrollment_management' %}" class="quick-action-item">
+            <i class="bi bi-journal-check"></i>
+            <span>Manage Course Enrollments</span>
+        </a>
+        <a href="{% url 'admin_dashboard:user_access_management' %}" class="quick-action-item">
+            <i class="bi bi-shield-lock-fill"></i>
+            <span>Manage Portal Access</span>
+        </a>
+        <a href="{% url 'assignment:manage_list' %}" class="quick-action-item">
+            <i class="bi bi-clipboard-check-fill"></i>
+            <span>Assignments &amp; Grading</span>
+        </a>
+        <a href="{% url 'admin_dashboard:registered_users' %}" class="quick-action-item">
+            <i class="bi bi-people-fill"></i>
+            <span>View Students</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .stat-grid { display: grid; gap: 1rem; grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-mini-card {
+        background: white; border: 1.5px solid #cbd5e1; border-left: 4px solid transparent;
+        border-radius: 10px; padding: 16px; display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.04); text-decoration: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stat-link:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(15,23,42,0.1); }
+    .stat-mini-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .stat-mini-value { font-size: 1.4rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .stat-mini-label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
+
+    .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-blue  { border-left-color: #2563eb; } .stat-blue  .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-purple{ border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
+
+    .quick-action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .quick-action-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 16px; border-radius: 10px; border: 1px solid #e9edf1;
+        text-decoration: none; color: #374151; font-size: 0.86rem; font-weight: 600;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .quick-action-item:hover { background: #eef4ff; border-color: #bfdbfe; color: #172281; }
+    .quick-action-item i { font-size: 1.1rem; color: #172281; flex-shrink: 0; }
+</style>
+{% endblock %}

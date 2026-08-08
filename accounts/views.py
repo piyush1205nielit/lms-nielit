@@ -5,9 +5,12 @@ from django.shortcuts import render, redirect,  get_object_or_404
 from .decorators import admin_required
 
 from .decorators import superadmin_required
-from .forms import AdminLoginForm, AdminCreateForm, AdminEditForm
-from .models import User, AdminProfile
+from .forms import AdminLoginForm, AdminCreateForm, AdminEditForm, FacultyForm
+from .models import User, AdminProfile, FacultyProfile
 from django.contrib.auth.forms import SetPasswordForm
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from admin_dashboard.notifications import notify_users
 
 
 
@@ -23,8 +26,10 @@ def admin_login_view(request):
         password = form.cleaned_data['password']
         user = authenticate(request, username=identifier, password=password)
 
-        if user is not None and user.is_admin_role:
+        if user is not None and user.is_active and user.is_staff_area_role:
             login(request, user)
+            if user.role == User.Role.FACULTY:
+                return redirect('admin_dashboard:faculty_home')
             return redirect('admin_dashboard:home')
 
         messages.error(request, "Invalid credentials or this account doesn't have admin access.")
@@ -119,3 +124,102 @@ def admin_delete_view(request, pk):
     target_user.delete()
     messages.success(request, f"Admin account {email} permanently deleted.")
     return redirect('accounts:admin_list')
+
+
+
+
+
+
+@superadmin_required
+def faculty_list_view(request):
+    faculty_members = FacultyProfile.objects.select_related('user', 'nielit_centre').order_by('full_name')
+    return render(request, 'accounts/faculty_list.html', {
+        'faculty_members': faculty_members,
+        'active_page': 'faculty',
+    })
+
+
+@superadmin_required
+def faculty_create_view(request):
+    form = FacultyForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = User(
+            email=form.cleaned_data['email'],
+            contact=form.cleaned_data['contact'],
+            role=User.Role.FACULTY,
+            is_staff=True,
+            is_active=True,
+            account_status=User.AccountStatus.ACTIVE,
+            account_status_updated_at=timezone.now(),
+        )
+        user.set_password(form.cleaned_data['password'])
+        user.save()
+
+        profile = form.save(commit=False)
+        profile.user = user
+        profile.created_by = request.user
+        profile.save()
+
+        notify_users(
+            [user],
+            title="Faculty Account Created",
+            message=(
+                f"A faculty account has been created for you on NIELIT LMS.\n\n"
+                f"Login email: {user.email}\nLogin contact: {user.contact}\n\n"
+                f"Use the password provided to you separately by the administrator to log in."
+            ),
+            created_by=request.user,
+        )
+        messages.success(request, f"Faculty account created for {profile.full_name}.")
+        return redirect('accounts:faculty_list')
+
+    return render(request, 'accounts/faculty_form.html', {'form': form, 'active_page': 'faculty'})
+
+
+@superadmin_required
+def faculty_edit_view(request, faculty_id):
+    profile = get_object_or_404(FacultyProfile, id=faculty_id)
+    form = FacultyForm(request.POST or None, instance=profile)
+
+    if request.method == 'POST' and form.is_valid():
+        profile.user.email = form.cleaned_data['email']
+        profile.user.contact = form.cleaned_data['contact']
+        if form.cleaned_data.get('password'):
+            profile.user.set_password(form.cleaned_data['password'])
+        profile.user.save()
+        form.save()
+        messages.success(request, f"Faculty account updated for {profile.full_name}.")
+        return redirect('accounts:faculty_list')
+
+    return render(request, 'accounts/faculty_form.html', {
+        'form': form, 'profile': profile, 'active_page': 'faculty',
+    })
+
+
+@superadmin_required
+@require_POST
+def faculty_toggle_active_view(request, faculty_id):
+    profile = get_object_or_404(FacultyProfile, id=faculty_id)
+    user = profile.user
+    if user.account_status == User.AccountStatus.ACTIVE:
+        user.account_status = User.AccountStatus.DISABLED
+        user.is_active = False
+        state = "disabled"
+    else:
+        user.account_status = User.AccountStatus.ACTIVE
+        user.is_active = True
+        state = "activated"
+    user.account_status_updated_at = timezone.now()
+    user.save(update_fields=['account_status', 'is_active', 'account_status_updated_at'])
+    messages.success(request, f"{profile.full_name}'s account has been {state}.")
+    return redirect('accounts:faculty_list')
+
+
+@superadmin_required
+@require_POST
+def faculty_delete_view(request, faculty_id):
+    profile = get_object_or_404(FacultyProfile, id=faculty_id)
+    name = profile.full_name
+    profile.user.delete()   # cascades to FacultyProfile
+    messages.success(request, f"Faculty account for {name} deleted.")
+    return redirect('accounts:faculty_list')

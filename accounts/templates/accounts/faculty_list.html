@@ -1,0 +1,171 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Manage Faculty{% endblock %}
+{% block page_title %}Manage Faculty{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-person-workspace"></i> Manage Faculty</h2>
+        <p>{{ faculty_members.count }} faculty account{{ faculty_members.count|pluralize }}</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'accounts:faculty_create' %}" class="btn-admin-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Faculty
+        </a>
+    </div>
+</div>
+
+<div class="card-panel">
+    <div class="card-panel-header">
+        <h5><i class="bi bi-list-ul"></i> Faculty Accounts</h5>
+        <span class="table-count-tag">{{ faculty_members.count }} record{{ faculty_members.count|pluralize }}</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-admin faculty-table mb-0">
+            <thead>
+                <tr>
+                    <th class="col-status"></th>
+                    <th style="min-width: 220px;">Faculty</th>
+                    <th>Designation</th>
+                    <th>Centre</th>
+                    <th>Contact</th>
+                    <th>Date Joined</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end" style="min-width: 160px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profile in faculty_members %}
+                <tr class="faculty-row {% if profile.user.account_status == 'active' %}row-active{% else %}row-disabled{% endif %}">
+                    <td class="col-status">
+                        <span class="status-rail {% if profile.user.account_status == 'active' %}rail-active{% else %}rail-disabled{% endif %}"></span>
+                    </td>
+                    <td>
+                        <div class="student-cell">
+                            <span class="student-avatar student-avatar-placeholder">{{ profile.full_name|slice:":1"|upper }}</span>
+                            <div class="student-cell-text">
+                                <div class="student-name">{{ profile.full_name }}</div>
+                                <div class="student-email">{{ profile.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="stat-cell-sm">{{ profile.designation|default:"—" }}</td>
+                    <td class="stat-cell-sm">{{ profile.nielit_centre.centre_name|default:"—" }}</td>
+                    <td class="stat-cell-sm">{{ profile.user.contact|default:"—" }}</td>
+                    <td class="stat-cell-sm">{{ profile.created_at|date:"d M Y" }}</td>
+                    <td class="text-center">
+                        {% if profile.user.account_status == 'active' %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
+                        {% else %}
+                            <span class="status-pill pill-pending"><i class="bi bi-pause-circle-fill"></i> Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="row-actions">
+                            <a href="{% url 'accounts:faculty_edit' profile.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">
+                                <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
+                            </a>
+                            <form method="post" action="{% url 'accounts:faculty_toggle_active' profile.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-admin-labeled btn-label-toggle" title="{% if profile.user.account_status == 'active' %}Disable{% else %}Activate{% endif %}">
+                                    <i class="bi bi-power"></i>
+                                    <span class="btn-label-text">{% if profile.user.account_status == 'active' %}Disable{% else %}Activate{% endif %}</span>
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'accounts:faculty_delete' profile.id %}" class="d-inline"
+                                  onsubmit="return confirm('Permanently delete the faculty account for {{ profile.full_name }}? This cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-admin-labeled btn-label-delete" title="Delete">
+                                    <i class="bi bi-trash3-fill"></i><span class="btn-label-text">Delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="empty-state-cell">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-person-workspace"></i></div>
+                            <div class="empty-state-title">No faculty accounts yet</div>
+                            <div class="empty-state-sub">Add faculty members to let them manage students, enrollments, and assignments.</div>
+                            <a href="{% url 'accounts:faculty_create' %}" class="btn-admin-primary mt-3">
+                                <i class="bi bi-plus-lg me-1"></i> Add Faculty
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-content { max-width: none; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+
+    .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
+
+    .faculty-table { border-collapse: separate; border-spacing: 0; }
+    .faculty-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .faculty-table thead th:last-child { border-right: none; }
+    .faculty-table thead th.col-status { border-right: none; padding: 0; }
+    .faculty-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .faculty-table tbody td:last-child { border-right: none; }
+    .faculty-table tbody td.col-status { border-right: none; padding: 0; }
+    .faculty-table tbody tr:last-child td { border-bottom: none; }
+    .faculty-table tbody tr.faculty-row:nth-of-type(even) { background: #fafbfd; }
+    .faculty-table tbody tr.faculty-row:hover { background: #eef4ff !important; }
+
+    .col-status { width: 5px; padding: 0 !important; }
+    .status-rail { display: block; width: 5px; height: 100%; min-height: 58px; }
+    .rail-active { background: #16a34a; }
+    .rail-disabled { background: #94a3b8; }
+    tr.row-disabled td:not(.col-status) { color: #94a3b8; }
+
+    .student-cell { display: flex; align-items: center; gap: 12px; }
+    .student-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+    .student-avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #7c3aed, #4c1d95); color: white; font-weight: 700; font-size: 0.82rem;
+    }
+    .student-cell-text { min-width: 0; }
+    .student-name { font-weight: 600; font-size: 0.87rem; color: #0f172a; }
+    .student-email { font-size: 0.73rem; color: #94a3b8; margin-top: 1px; }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .pill-ready { background: #dcfce7; color: #15803d; }
+    .pill-pending { background: #f1f5f9; color: #64748b; }
+
+    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
+    .btn-admin-labeled {
+        display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+        border-radius: 8px; border: 1px solid transparent; font-size: 0.78rem; font-weight: 600;
+        white-space: nowrap; transition: background 0.15s ease, transform 0.1s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .btn-admin-labeled:hover { transform: translateY(-1px); }
+    .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
+    .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+    .btn-label-toggle:hover { background: #fef3c7; }
+    .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 1100px) {
+        .btn-label-text { display: none; }
+        .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
+    }
+
+    .empty-state-cell { padding: 0 !important; border: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
+    .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 340px; }
+</style>
+{% endblock %}

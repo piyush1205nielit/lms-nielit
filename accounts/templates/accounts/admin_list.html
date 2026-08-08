@@ -32,7 +32,7 @@
 {% if request.user.role != 'superadmin' %}
 <div class="view-only-notice">
     <i class="bi bi-eye-fill"></i>
-    <span>You're viewing this list in read-only mode. Only superadmins can create, edit, or manage admin accounts.</span>
+    <span>You're viewing this list in read-only mode. Only superadmins can create, edit, or manage admin accounts and permissions.</span>
 </div>
 {% endif %}
 
@@ -40,6 +40,7 @@
 <div class="table-legend">
     <span class="legend-item"><span class="legend-dot dot-active"></span> Active account</span>
     <span class="legend-item"><span class="legend-dot dot-disabled"></span> Disabled account</span>
+    <span class="legend-item"><i class="bi bi-journal-bookmark-fill" style="color:#7c3aed; font-size:0.76rem;"></i> Course management permission (content admins only)</span>
 </div>
 
 <div class="card-panel">
@@ -57,6 +58,7 @@
                     <th>Contact</th>
                     <th>Designation</th>
                     <th class="text-center">Status</th>
+                    <th class="text-center">Course Access</th>
                     <th>Created By</th>
                     <th class="text-end" style="min-width: 240px;">Actions</th>
                 </tr>
@@ -83,6 +85,28 @@
                             <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
                         {% else %}
                             <span class="status-pill pill-failed"><i class="bi bi-slash-circle-fill"></i> Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if admin.user.role == 'admin' %}
+                            {% if request.user.role == 'superadmin' %}
+                            <form method="post" action="{% url 'admin_dashboard:toggle_admin_course_permission' admin.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="toggle-switch-btn {% if admin.can_manage_courses %}on{% endif %}"
+                                        title="{% if admin.can_manage_courses %}Revoke{% else %}Grant{% endif %} course management access">
+                                    <span class="toggle-knob"></span>
+                                </button>
+                            </form>
+                            <div class="toggle-status-label">{% if admin.can_manage_courses %}Granted{% else %}Revoked{% endif %}</div>
+                            {% else %}
+                                {% if admin.can_manage_courses %}
+                                    <span class="course-access-tag granted"><i class="bi bi-check-lg"></i> Granted</span>
+                                {% else %}
+                                    <span class="course-access-tag revoked"><i class="bi bi-x-lg"></i> Revoked</span>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted small">—</span>
                         {% endif %}
                     </td>
                     <td class="stat-cell-sm">{{ admin.created_by.email|default:"—" }}</td>
@@ -116,7 +140,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="empty-state-cell">
+                    <td colspan="8" class="empty-state-cell">
                         <div class="empty-state">
                             <div class="empty-state-icon"><i class="bi bi-person-badge"></i></div>
                             <div class="empty-state-title">No base admins created yet</div>
@@ -226,6 +250,27 @@
     .status-pill i { font-size: 0.72rem; }
     .pill-ready  { background: #dcfce7; color: #15803d; }
     .pill-failed { background: #fee2e2; color: #b91c1c; }
+
+    /* ═══ Course access toggle (superadmin) ═══ */
+    .toggle-switch-btn {
+        width: 40px; height: 21px; border-radius: 20px; background: #cbd5e1; border: none;
+        position: relative; padding: 0; cursor: pointer; transition: background 0.2s ease;
+    }
+    .toggle-switch-btn.on { background: #7c3aed; }
+    .toggle-switch-btn .toggle-knob {
+        position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%;
+        background: white; transition: transform 0.2s ease; display: block;
+    }
+    .toggle-switch-btn.on .toggle-knob { transform: translateX(19px); }
+    .toggle-status-label { font-size: 0.66rem; font-weight: 700; color: #64748b; margin-top: 4px; text-transform: uppercase; }
+
+    /* ═══ Course access tag (read-only, content admin view) ═══ */
+    .course-access-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    }
+    .course-access-tag.granted { background: #f5f3ff; color: #6d28d9; }
+    .course-access-tag.revoked { background: #f1f5f9; color: #64748b; }
 
     /* ═══ Row action buttons ═══ */
     .row-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; }

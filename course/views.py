@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
-from accounts.decorators import admin_required
+from accounts.decorators import admin_required, admin_or_faculty_required, course_management_required
 from .forms import CourseForm, ModuleForm, LessonForm, CoursePublishForm, DomainForm
 from .models import Course, Module, Lesson, Enrollment, Domain
 from django.contrib.auth.decorators import login_required
@@ -117,7 +117,7 @@ def courses_view(request):
         'selected_domain': domain_slug,
     })
 
-@admin_required
+@course_management_required
 def course_create_view(request):
     form = CourseForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -136,7 +136,7 @@ def course_create_view(request):
     })
 
 
-@admin_required
+@course_management_required
 def course_edit_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     was_active_before = course.status == Course.Status.ACTIVE
@@ -158,7 +158,7 @@ def course_edit_view(request, course_id):
 
 # ── Quick actions, used directly from the manage-list row ──────────────
 
-@admin_required
+@course_management_required
 @require_POST
 def course_toggle_active_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
@@ -173,7 +173,7 @@ def course_toggle_active_view(request, course_id):
     return redirect('course:manage_list')
 
 
-@admin_required
+@course_management_required
 @require_POST
 def course_toggle_featured_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
@@ -184,7 +184,7 @@ def course_toggle_featured_view(request, course_id):
     return redirect('course:manage_list')
 
 
-@admin_required
+@course_management_required
 @require_POST
 def course_delete_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
@@ -196,7 +196,7 @@ def course_delete_view(request, course_id):
 
 # ── Step 2: Modules & Lessons (enhanced with duration + status) ──────────
 
-@admin_required
+@course_management_required
 def course_modules_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     modules = course.modules.prefetch_related('lessons').order_by('order')
@@ -216,7 +216,7 @@ def course_modules_view(request, course_id):
         'active_page': 'courses',
     })
 
-@admin_required
+@course_management_required
 def module_create_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     next_order = course.modules.count()   # auto-suggest next order number
@@ -236,7 +236,7 @@ def module_create_view(request, course_id):
     })
 
 
-@admin_required
+@course_management_required
 def module_edit_view(request, module_id):
     module = get_object_or_404(Module, id=module_id)
     form = ModuleForm(request.POST or None, instance=module)
@@ -254,7 +254,7 @@ def module_edit_view(request, module_id):
     })
 
 
-@admin_required
+@course_management_required
 def module_delete_view(request, module_id):
     module = get_object_or_404(Module, id=module_id)
     course_id = module.course.id
@@ -265,7 +265,7 @@ def module_delete_view(request, module_id):
 
 # ── Lessons (within a module) ───────────────────────────────
 
-@admin_required
+@course_management_required
 def lesson_create_view(request, module_id):
     module = get_object_or_404(Module, id=module_id)
     next_order = module.lessons.count()
@@ -285,7 +285,7 @@ def lesson_create_view(request, module_id):
     })
 
 
-@admin_required
+@course_management_required
 def lesson_edit_view(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
 
@@ -315,7 +315,7 @@ def lesson_edit_view(request, lesson_id):
     })
 
 
-@admin_required
+@course_management_required
 def lesson_delete_view(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     course_id = lesson.module.course.id
@@ -326,7 +326,7 @@ def lesson_delete_view(request, lesson_id):
 
 # ── Step 3: Publish Settings ─────────────────────────────────
 
-@admin_required
+@course_management_required
 def course_publish_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     was_active_before = course.status == Course.Status.ACTIVE
@@ -348,21 +348,6 @@ def course_publish_view(request, course_id):
         'active_page': 'courses',
     })
 
-
-# ── Public: course detail page ──────────────────────────────
-
-# def course_detail_view(request, slug):
-#     course = get_object_or_404(Course, slug=slug, status=Course.Status.ACTIVE)
-#     modules = course.modules.prefetch_related('lessons').order_by('order')
-#     is_enrolled = False
-#     if request.user.is_authenticated and request.user.role == 'user':
-#         is_enrolled = course.enrollments.filter(user=request.user).exists()
-
-#     return render(request, 'course/course_detail.html', {
-#         'course': course,
-#         'modules': modules,
-#         'is_enrolled': is_enrolled,
-#     })
 
 def course_detail_view(request, course_id):
     course = get_object_or_404(Course, id=course_id, status=Course.Status.ACTIVE)
@@ -524,7 +509,7 @@ def course_overview_view(request, course_id):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def enrollment_management_view(request):
     enrollments = Enrollment.objects.select_related(
         'user', 'user__nielit_centre', 'course'
@@ -614,7 +599,7 @@ def _bulk_update_enrollment_status(request, new_status, title, message_template)
     return JsonResponse({'success': True, 'count': len(enrollments)})
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_grant_enrollment_view(request):
     return _bulk_update_enrollment_status(
@@ -623,7 +608,7 @@ def bulk_grant_enrollment_view(request):
     )
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_hold_enrollment_view(request):
     return _bulk_update_enrollment_status(
@@ -632,7 +617,7 @@ def bulk_hold_enrollment_view(request):
     )
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_revoke_enrollment_view(request):
     return _bulk_update_enrollment_status(
@@ -641,7 +626,7 @@ def bulk_revoke_enrollment_view(request):
     )
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_deny_enrollment_view(request):
     enrollment_ids = request.POST.getlist('enrollment_ids[]')

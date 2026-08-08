@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from admin_dashboard.models import Centre
-from accounts.decorators import admin_required
+from accounts.decorators import admin_required, admin_or_faculty_required
 from course.models import Course, Enrollment
 from .models import Assignment, AssignmentSubmission
 from .forms import AssignmentForm, SubmissionForm, GradeSubmissionForm
@@ -24,7 +24,7 @@ def _is_ajax(request):
 
 # ══════════════════ ADMIN ══════════════════
 
-@admin_required
+@admin_or_faculty_required
 def assignment_list_view(request):
     assignments = Assignment.objects.select_related('course').annotate(
         submission_count=Count('submissions', distinct=True),
@@ -65,7 +65,7 @@ def assignment_list_view(request):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def assignment_create_view(request):
     form = AssignmentForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -78,7 +78,7 @@ def assignment_create_view(request):
     return render(request, 'assignment/form.html', {'form': form, 'active_page': 'assignments'})
 
 
-@admin_required
+@admin_or_faculty_required
 def assignment_edit_view(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
     form = AssignmentForm(request.POST or None, request.FILES or None, instance=assignment)
@@ -89,7 +89,7 @@ def assignment_edit_view(request, assignment_id):
     return render(request, 'assignment/form.html', {'form': form, 'assignment': assignment, 'active_page': 'assignments'})
 
 
-@admin_required
+@admin_or_faculty_required
 def assignment_delete_view(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
     if request.method == 'POST':
@@ -99,7 +99,7 @@ def assignment_delete_view(request, assignment_id):
     return redirect('assignment:manage_list')
 
 
-@admin_required
+@admin_or_faculty_required
 def assignment_submissions_view(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
 
@@ -182,7 +182,7 @@ def assignment_submissions_view(request, assignment_id):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def submission_detail_json(request, submission_id):
     """AJAX endpoint powering the 'View Submission' modal."""
     submission = get_object_or_404(
@@ -209,7 +209,7 @@ def submission_detail_json(request, submission_id):
     return JsonResponse({'success': True, 'submission': data})
 
 
-@admin_required
+@admin_or_faculty_required
 def grade_submission_view(request, submission_id):
     submission = get_object_or_404(AssignmentSubmission, id=submission_id)
     ajax = _is_ajax(request)
@@ -247,7 +247,7 @@ def grade_submission_view(request, submission_id):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_grade_submissions_view(request, assignment_id):
     """AJAX endpoint for the bulk grading modal. Expects JSON body:

@@ -6,10 +6,10 @@ from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Q, Count, Prefetch
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from accounts.decorators import admin_required, superadmin_required
+from accounts.decorators import admin_required, superadmin_required, admin_or_faculty_required, faculty_required
 from django.views.decorators.http import require_POST
 from user.models import LearnerProfile
-from accounts.models import User
+from accounts.models import User, AdminProfile
 from .forms import AdminUserProfileEditForm, UserCredentialsForm
 from course.models import Course, Domain, Enrollment, Progress
 from user.forms import ProfileEditForm  
@@ -18,7 +18,7 @@ from .forms import CentreForm
 from django.utils import timezone
 from .notifications import notify_users
 from user.utils import generate_enrollment_number 
-
+from assignment.models import AssignmentSubmission
 
 @admin_required
 def dashboard_home(request):
@@ -61,7 +61,7 @@ def user_credentials_edit_view(request, user_id):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def registered_users_view(request):
     """Renders the page shell only — the table itself loads via AJAX."""
     return render(request, 'admin_dashboard/registered_users_list.html', {
@@ -79,7 +79,7 @@ def registered_users_view(request):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def registered_users_data_view(request):
     """
     AJAX endpoint — does all filtering on lightweight fields first,
@@ -189,7 +189,7 @@ def registered_users_data_view(request):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 def student_detail_modal_view(request, user_id):
     """Returns just the modal's inner HTML for the 'View' action (AJAX-loaded)."""
     student = get_object_or_404(User, id=user_id, role=User.Role.USER)
@@ -215,7 +215,7 @@ def student_detail_modal_view(request, user_id):
     return JsonResponse({'html': html})
 
 
-@admin_required
+@admin_or_faculty_required
 def student_edit_modal_view(request, user_id):
     """GET returns the edit form's inner HTML; POST saves and returns success/errors as JSON."""
     student = get_object_or_404(User, id=user_id, role=User.Role.USER)
@@ -251,7 +251,7 @@ def student_delete_view(request, user_id):
     return JsonResponse({'success': False}, status=405)
 
 
-@admin_required
+@superadmin_required
 def centre_list_view(request):
     centres = Centre.objects.annotate(user_count=Count('users')).order_by('centre_name')
     return render(request, 'admin_dashboard/centre_manage.html', {
@@ -259,7 +259,7 @@ def centre_list_view(request):
     })
 
 
-@admin_required
+@superadmin_required
 def centre_modal_view(request, centre_id=None):
     centre = get_object_or_404(Centre, id=centre_id) if centre_id else None
 
@@ -277,7 +277,7 @@ def centre_modal_view(request, centre_id=None):
     return JsonResponse({'html': html})
 
 
-@admin_required
+@superadmin_required
 @require_POST
 def centre_delete_view(request, centre_id):
     centre = get_object_or_404(Centre, id=centre_id)
@@ -286,7 +286,7 @@ def centre_delete_view(request, centre_id):
     centre.delete()
     return JsonResponse({'success': True})
 
-@admin_required
+@admin_or_faculty_required
 def registration_requests_view(request):
     users = User.objects.filter(
         role=User.Role.USER, account_status=User.AccountStatus.PENDING
@@ -329,7 +329,7 @@ def registration_requests_view(request):
     })
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_approve_registrations_view(request):
     user_ids = request.POST.getlist('user_ids[]')
@@ -347,7 +347,7 @@ def bulk_approve_registrations_view(request):
     return JsonResponse({'success': True, 'count': len(users)})
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_deny_registrations_view(request):
     user_ids = request.POST.getlist('user_ids[]')
@@ -355,7 +355,7 @@ def bulk_deny_registrations_view(request):
     User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).delete()
     return JsonResponse({'success': True, 'count': count})
 
-@admin_required
+@admin_or_faculty_required
 def user_access_management_view(request):
     users = User.objects.filter(role=User.Role.USER).select_related('nielit_centre').order_by('-date_joined')
 
@@ -432,7 +432,7 @@ def _bulk_update_account_status(request, new_status, is_active_flag, title, mess
     return JsonResponse({'success': True, 'count': len(users)})
 
 
-@admin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_grant_access_view(request):
     return _bulk_update_account_status(
@@ -543,3 +543,30 @@ def _send_credential_emails(users, common_password):
             )
         except Exception:
             pass
+
+
+@faculty_required
+def faculty_dashboard_home(request):
+    pending_registrations = User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.PENDING).count()
+    pending_enrollments = Enrollment.objects.filter(access_status=Enrollment.AccessStatus.PENDING).count()
+    pending_grading = AssignmentSubmission.objects.filter(status=AssignmentSubmission.Status.SUBMITTED).count()
+    total_students = User.objects.filter(role=User.Role.USER, account_status=User.AccountStatus.ACTIVE).count()
+
+    return render(request, 'admin_dashboard/faculty_home.html', {
+        'pending_registrations': pending_registrations,
+        'pending_enrollments': pending_enrollments,
+        'pending_grading': pending_grading,
+        'total_students': total_students,
+        'active_page': 'faculty_dashboard',
+    })
+
+
+@superadmin_required
+@require_POST
+def toggle_admin_course_permission_view(request, admin_id):
+    profile = get_object_or_404(AdminProfile, id=admin_id)
+    profile.can_manage_courses = not profile.can_manage_courses
+    profile.save(update_fields=['can_manage_courses'])
+    state = "granted" if profile.can_manage_courses else "revoked"
+    messages.success(request, f"Course management access {state} for {profile.name}.")
+    return redirect('accounts:admin_list')
