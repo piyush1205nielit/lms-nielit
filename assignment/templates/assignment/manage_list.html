@@ -43,6 +43,10 @@
     <div class="filter-panel-body">
         <form method="get" class="filter-grid">
             <div class="filter-field">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" class="form-control" placeholder="Search by title or course…" value="{{ search_query }}">
+            </div>
+            <div class="filter-field">
                 <label class="form-label">Course</label>
                 <select name="course" class="form-select" onchange="this.form.submit()">
                     <option value="">All Courses</option>
@@ -51,16 +55,27 @@
                     {% endfor %}
                 </select>
             </div>
-            {% if selected_course %}
-            <div class="filter-field filter-field-clear">
-                <a href="{% url 'assignment:manage_list' %}" class="btn-admin-secondary btn-clear-filters">
-                    <i class="bi bi-x-circle me-1"></i> Clear Filter
-                </a>
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active &amp; Open</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed (deadline passed)</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
             </div>
-            {% endif %}
+            <div class="filter-field filter-field-clear">
+                <button type="submit" class="btn-admin-primary btn-clear-filters"><i class="bi bi-search me-1"></i> Search</button>
+                {% if search_query or selected_course or status_filter %}
+                    <a href="{% url 'assignment:manage_list' %}" class="btn-admin-secondary btn-clear-filters">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
         </form>
     </div>
 </div>
+
 
 <!-- ═══ Legend ═══ -->
 <div class="table-legend">
@@ -140,8 +155,8 @@
                         <div class="row-actions">
                             <a href="{% url 'assignment:submissions_list' a.id %}" class="btn-admin-labeled btn-label-view" title="View Submissions">
                                 <i class="bi bi-people"></i><span class="btn-label-text">Submissions</span>
-                            {% if a.submission_count > a.graded_count %}
-                                  <span class="pending-count-badge">{{ a.pending_count }}</span>
+                              {% if a.ungraded_count > 0 %}
+                                  <span class="pending-count-badge">{{ a.ungraded_count }}</span>
                               {% endif %}
                             </a>
                             <a href="{% url 'assignment:edit' a.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">

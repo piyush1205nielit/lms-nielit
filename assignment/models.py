@@ -19,7 +19,7 @@ class Assignment(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     instructions = models.TextField(blank=True)
-    attachment = models.FileField(upload_to=assignment_attachment_path, null=True, blank=True)
+    attachment = models.FileField(upload_to=assignment_attachment_path, null=True, blank=True, max_length=255)
 
     max_marks = models.PositiveIntegerField(default=100)
     deadline = models.DateTimeField()
@@ -60,7 +60,7 @@ class AssignmentSubmission(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assignment_submissions')
 
     submission_text = models.TextField(blank=True)
-    submission_file = models.FileField(upload_to=submission_file_path, null=True, blank=True)
+    submission_file = models.FileField(upload_to=submission_file_path, null=True, blank=True, max_length=255)
 
     is_late = models.BooleanField(default=False)
     submitted_at = models.DateTimeField(auto_now_add=True)

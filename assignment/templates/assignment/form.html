@@ -41,9 +41,10 @@
                         {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
                     </div>
                     <div class="field-block field-block-last">
-                        <label class="form-label">Short Description</label>
+                        <label class="form-label">Assignment Questions <span class="required-star">*</span></label>
                         {{ form.description }}
-                        <div class="field-hint"><i class="bi bi-info-circle"></i> A one-line summary shown in the assignment list.</div>
+                        <div class="field-hint"><i class="bi bi-info-circle"></i> Type or paste the full assignment questions here — this is what students will read as the brief. If you have a formatted question paper instead, attach it as a PDF below (or in addition to typing here).</div>
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|join:", " }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -59,13 +60,13 @@
                         <label class="form-label">Detailed Instructions</label>
                         {{ form.instructions }}
                     </div>
-                    <div class="field-block field-block-last">
+                  <div class="field-block field-block-last">
                         <label class="form-label">Attachment <span class="optional-tag">Optional</span></label>
                         {{ form.attachment }}
                         {% if assignment.attachment %}
                             <div class="field-hint current-file-link"><i class="bi bi-file-earmark-check-fill" style="color:#16a34a;"></i> Current: <a href="{{ assignment.attachment.url }}" target="_blank">view file</a></div>
                         {% else %}
-                            <div class="field-hint"><i class="bi bi-info-circle"></i> A reference file students can download (e.g. dataset, template, problem statement).</div>
+                            <div class="field-hint"><i class="bi bi-info-circle"></i> Attach a formatted question paper (PDF), dataset, or reference material for students to download.</div>
                         {% endif %}
                     </div>
                 </div>

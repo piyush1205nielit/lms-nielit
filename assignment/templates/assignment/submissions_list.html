@@ -30,19 +30,70 @@
 <div class="stat-grid stat-grid-4">
     <div class="stat-mini-card stat-blue">
         <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
-        <div><div class="stat-mini-value">{{ roster|length }}</div><div class="stat-mini-label">Enrolled Students</div></div>
+        <div><div class="stat-mini-value">{{ roster|length }}</div><div class="stat-mini-label">Showing</div></div>
     </div>
     <div class="stat-mini-card stat-amber">
         <div class="stat-mini-icon"><i class="bi bi-hourglass-split"></i></div>
-        <div><div class="stat-mini-value">{{ pending_count|default:0 }}</div><div class="stat-mini-label">Not Submitted</div></div>
+        <div><div class="stat-mini-value" id="statPendingCount">{{ pending_count }}</div><div class="stat-mini-label">Not Submitted</div></div>
     </div>
     <div class="stat-mini-card stat-purple">
         <div class="stat-mini-icon"><i class="bi bi-inbox-fill"></i></div>
-        <div><div class="stat-mini-value">{{ awaiting_count|default:0 }}</div><div class="stat-mini-label">Awaiting Grading</div></div>
+        <div><div class="stat-mini-value" id="statAwaitingCount">{{ awaiting_count }}</div><div class="stat-mini-label">Awaiting Grading</div></div>
     </div>
     <div class="stat-mini-card stat-green">
         <div class="stat-mini-icon"><i class="bi bi-check-circle-fill"></i></div>
-        <div><div class="stat-mini-value">{{ graded_count|default:0 }}</div><div class="stat-mini-label">Graded</div></div>
+        <div><div class="stat-mini-value" id="statGradedCount">{{ graded_count }}</div><div class="stat-mini-label">Graded</div></div>
+    </div>
+</div>
+
+<!-- ═══ Search & filter ═══ -->
+<div class="card-panel filter-panel">
+    <div class="filter-panel-header">
+        <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
+    </div>
+    <div class="filter-panel-body">
+        <form method="get" class="filter-grid">
+            <div class="filter-field">
+                <label class="form-label">Search Student</label>
+                <input type="text" name="q" class="form-control" placeholder="Name, email, enrollment no., or phone…" value="{{ search_query }}">
+            </div>
+            <div class="filter-field">
+                <label class="form-label">NIELIT Centre</label>
+                <select name="centre" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Centres</option>
+                    {% for centre in all_centres %}
+                        <option value="{{ centre.id }}" {% if centre_id == centre.id|stringformat:"s" %}selected{% endif %}>{{ centre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Batch Code</label>
+                <select name="batch" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Batches</option>
+                    {% for batch in all_batches %}
+                        <option value="{{ batch }}" {% if batch_code == batch %}selected{% endif %}>{{ batch }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending (not submitted)</option>
+                    <option value="awaiting" {% if status_filter == 'awaiting' %}selected{% endif %}>Awaiting Grading</option>
+                    <option value="graded" {% if status_filter == 'graded' %}selected{% endif %}>Graded</option>
+                </select>
+            </div>
+            <div class="filter-field filter-field-clear">
+                <button type="submit" class="btn-admin-primary btn-clear-filters"><i class="bi bi-search me-1"></i> Search</button>
+                {% if search_query or status_filter or centre_id or batch_code or gender_filter %}
+                    <a href="{% url 'assignment:submissions_list' assignment.id %}" class="btn-admin-secondary btn-clear-filters">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
+        </form>
     </div>
 </div>
 
@@ -51,6 +102,20 @@
     <span class="legend-item"><span class="legend-dot dot-gray"></span> Pending (not submitted)</span>
     <span class="legend-item"><span class="legend-dot dot-blue"></span> Awaiting grading</span>
     <span class="legend-item"><span class="legend-dot dot-green"></span> Graded</span>
+</div>
+
+<!-- ═══ Bulk action toolbar ═══ -->
+<div class="bulk-toolbar" id="bulkActionToolbar" style="display:none;">
+    <div class="bulk-toolbar-left">
+        <i class="bi bi-check2-square"></i>
+        <span><span id="bulkSelectedCount">0</span> selected</span>
+    </div>
+    <div class="bulk-toolbar-right">
+        <button type="button" class="btn-admin-secondary btn-sm" id="clearSelectionBtn">Clear</button>
+        <button type="button" class="btn-admin-primary btn-sm" id="openBulkGradeBtn">
+            <i class="bi bi-award-fill me-1"></i> Bulk Grade Selected
+        </button>
+    </div>
 </div>
 
 <div class="card-panel">
@@ -64,11 +129,14 @@
             <thead>
                 <tr>
                     <th class="col-status"></th>
+                    <th class="col-check">
+                        <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select all gradeable submissions">
+                    </th>
                     <th style="min-width: 220px;">Student</th>
                     <th style="min-width: 170px;">Submitted On</th>
                     <th class="text-center">Status</th>
                     <th class="text-center">Marks</th>
-                    <th class="text-end" style="min-width: 180px;">Actions</th>
+                    <th class="text-end" style="min-width: 160px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -77,12 +145,24 @@
                 <tr class="submission-row
                     {% if not item.submission %}row-pending
                     {% elif item.submission.status == 'graded' %}row-graded
-                    {% else %}row-awaiting{% endif %}">
+                    {% else %}row-awaiting{% endif %}"
+                    {% if item.submission %}
+                        data-submission-id="{{ item.submission.id }}"
+                        data-student-name="{{ item.student.learner_profile.full_name|default:item.student.email }}"
+                        data-student-email="{{ item.student.email }}"
+                        data-current-marks="{{ item.submission.marks_obtained|default_if_none:'' }}"
+                        data-current-feedback="{{ item.submission.feedback|default:'' }}"
+                    {% endif %}>
                     <td class="col-status">
                         <span class="status-rail
                             {% if not item.submission %}rail-pending
                             {% elif item.submission.status == 'graded' %}rail-graded
                             {% else %}rail-awaiting{% endif %}"></span>
+                    </td>
+                    <td class="col-check">
+                        {% if item.submission %}
+                            <input type="checkbox" class="form-check-input submission-select-checkbox" value="{{ item.submission.id }}">
+                        {% endif %}
                     </td>
                     <td>
                         <div class="student-cell">
@@ -108,7 +188,7 @@
                             <span class="text-muted small">—</span>
                         {% endif %}
                     </td>
-                    <td class="text-center">
+                    <td class="text-center status-cell">
                         {% if not item.submission %}
                             <span class="status-pill pill-pending"><i class="bi bi-dash-circle-fill"></i> Pending</span>
                         {% elif item.submission.status == 'graded' %}
@@ -117,7 +197,7 @@
                             <span class="status-pill pill-processing"><i class="bi bi-hourglass-split"></i> Awaiting Grading</span>
                         {% endif %}
                     </td>
-                    <td class="text-center">
+                    <td class="text-center marks-cell">
                         {% if item.submission.status == 'graded' %}
                             <span class="mini-grade-badge {% if grade_pct >= 75 %}score-high{% elif grade_pct >= 40 %}score-mid{% else %}score-low{% endif %}">
                                 {{ item.submission.marks_obtained }}<span class="score-max">/{{ assignment.max_marks }}</span>
@@ -126,12 +206,12 @@
                             <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-                    <td class="text-end">
+                    <td class="text-end action-cell">
                         {% if item.submission %}
-                            <a href="{% url 'assignment:grade_submission' item.submission.id %}" class="btn-admin-labeled {% if item.submission.status == 'graded' %}btn-label-edit{% else %}btn-label-view{% endif %}">
-                                <i class="bi bi-check2-square"></i>
-                                <span class="btn-label-text">{% if item.submission.status == 'graded' %}Update Grade{% else %}Grade{% endif %}</span>
-                            </a>
+                            <button type="button" class="btn-admin-labeled btn-label-view view-submission-btn" data-id="{{ item.submission.id }}">
+                                <i class="bi bi-eye-fill"></i>
+                                <span class="btn-label-text">View Submission</span>
+                            </button>
                         {% else %}
                             <span class="text-muted small">—</span>
                         {% endif %}
@@ -139,11 +219,11 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="empty-state-cell">
+                    <td colspan="7" class="empty-state-cell">
                         <div class="empty-state">
                             <div class="empty-state-icon"><i class="bi bi-people"></i></div>
-                            <div class="empty-state-title">No students enrolled</div>
-                            <div class="empty-state-sub">No students are enrolled in this course yet.</div>
+                            <div class="empty-state-title">No students found</div>
+                            <div class="empty-state-sub">Try adjusting your search or filters.</div>
                         </div>
                     </td>
                 </tr>
@@ -151,6 +231,94 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- ═══════════ VIEW + GRADE MODAL (single submission) ═══════════ -->
+<div class="modal fade" id="viewSubmissionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-text-fill me-2"></i>Submission Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div id="viewSubmissionLoader" class="text-center py-5 text-muted">
+              <div class="spinner-border spinner-border-sm me-2" role="status"></div> Loading submission…
+          </div>
+          <div id="viewSubmissionContent" style="display:none;">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="summary-strip-avatar" id="vsAvatar" style="width:44px;height:44px;font-size:0.95rem;"></div>
+                  <div>
+                      <div class="fw-bold" id="vsStudentName"></div>
+                      <div class="text-muted small" id="vsStudentEmail"></div>
+                  </div>
+                  <span class="ms-auto status-pill" id="vsLateTag"></span>
+              </div>
+
+              <div class="mb-3">
+                  <div class="fw-semibold small text-muted mb-1">Written Response</div>
+                  <div class="submission-text-block" id="vsSubmissionText" style="white-space:pre-line;"></div>
+              </div>
+
+              <div class="mb-3" id="vsFileBlock" style="display:none;">
+                  <div class="fw-semibold small text-muted mb-1">Attached File</div>
+                  <a href="#" target="_blank" id="vsFileLink" class="btn btn-outline-secondary btn-sm">
+                      <i class="bi bi-download me-1"></i> <span id="vsFileName">Download</span>
+                  </a>
+              </div>
+
+              <div class="text-muted small mb-3"><i class="bi bi-clock me-1"></i> Submitted <span id="vsSubmittedAt"></span></div>
+
+              <hr>
+
+              <div id="vsGradeAlert"></div>
+              <div class="mb-3">
+                  <label class="form-label fw-semibold">Marks Obtained <span class="optional-tag">out of <span id="vsMaxMarks"></span></span></label>
+                  <input type="number" class="form-control" id="vsMarksInput" min="0">
+              </div>
+              <div class="mb-2">
+                  <label class="form-label fw-semibold">Feedback <span class="optional-tag">Optional</span></label>
+                  <textarea class="form-control" id="vsFeedbackInput" rows="3"></textarea>
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn-admin-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn-admin-primary" id="vsSaveGradeBtn"><i class="bi bi-check-lg me-1"></i> Save Grade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ BULK GRADE MODAL ═══════════ -->
+<div class="modal fade" id="bulkGradeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-award-fill me-2"></i>Bulk Grade Submissions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div id="bulkGradeAlert"></div>
+          <div class="table-responsive">
+              <table class="table table-sm align-middle" id="bulkGradeTable">
+                  <thead>
+                      <tr>
+                          <th>Student</th>
+                          <th style="width:130px;">Marks (/ <span id="bulkMaxMarks"></span>)</th>
+                          <th>Feedback</th>
+                      </tr>
+                  </thead>
+                  <tbody id="bulkGradeTableBody"></tbody>
+              </table>
+          </div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn-admin-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn-admin-primary" id="bulkGradeSubmitBtn"><i class="bi bi-check-lg me-1"></i> Save All Grades</button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -163,7 +331,6 @@
     .assignment-meta-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.85rem; color: #64748b; margin: 0; }
     .meta-sep { color: #cbd5e1; }
 
-    /* ═══ Status badge (reused) ═══ */
     .course-status-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 0.76rem; font-weight: 700; padding: 6px 13px; border-radius: 999px; }
     .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
     .status-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
@@ -171,7 +338,6 @@
     .status-inactive { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
     .status-inactive .status-dot { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
 
-    /* ═══ Stat grid ═══ */
     .stat-grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
     .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
     @media (max-width: 900px) { .stat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
@@ -191,6 +357,20 @@
     .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
     .stat-green  { border-left-color: #16a34a; } .stat-green  .stat-mini-icon { background: #dcfce7; color: #16a34a; }
 
+    /* ═══ Filter panel ═══ */
+    .filter-panel { margin-bottom: 1.25rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .filter-panel-header { padding: 0.9rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .filter-panel-header h5 i { color: #2563eb; }
+    .filter-panel-body { padding: 1.1rem 1.2rem; }
+    .filter-grid { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin: 0; }
+    .filter-field { min-width: 220px; }
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .filter-field .form-select, .filter-field .form-control { border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; padding: 0.45rem 0.7rem; }
+    .filter-field .form-select:focus, .filter-field .form-control:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
+    .filter-field-clear { display: flex; gap: 8px; }
+    .btn-clear-filters { height: 38px; padding: 0 14px; font-size: 0.82rem; display: inline-flex; align-items: center; border: none; }
+
     /* ═══ Legend ═══ */
     .table-legend {
         display: flex; flex-wrap: wrap; gap: 18px;
@@ -204,35 +384,46 @@
     .dot-blue  { background: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
     .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
 
+    /* ═══ Bulk toolbar ═══ */
+    .bulk-toolbar {
+        display: flex; align-items: center; justify-content: space-between;
+        background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px;
+        padding: 10px 16px; margin-bottom: 12px;
+        animation: bulkFadeIn 0.15s ease;
+    }
+    @keyframes bulkFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .bulk-toolbar-left { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #1d4ed8; }
+    .bulk-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .btn-sm { height: 32px; padding: 0 12px; font-size: 0.8rem; }
+
     /* ═══ Panel header ═══ */
     .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
 
-    /* ═══ Table structure: dark division lines ═══ */
+    /* ═══ Table structure ═══ */
     .submission-roster-table { border-collapse: separate; border-spacing: 0; }
     .submission-roster-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
     .submission-roster-table thead th:last-child { border-right: none; }
-    .submission-roster-table thead th.col-status { border-right: none; padding: 0; }
+    .submission-roster-table thead th.col-status, .submission-roster-table thead th.col-check { border-right: none; padding: 0; }
     .submission-roster-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
     .submission-roster-table tbody td:last-child { border-right: none; }
-    .submission-roster-table tbody td.col-status { border-right: none; padding: 0; }
+    .submission-roster-table tbody td.col-status, .submission-roster-table tbody td.col-check { border-right: none; padding: 0 10px; }
     .submission-roster-table tbody tr:last-child td { border-bottom: none; }
 
     .submission-roster-table tbody tr.submission-row:nth-of-type(even) { background: #fafbfd; }
     .submission-roster-table tbody tr.submission-row:hover { background: #eef4ff !important; }
     .submission-row { transition: background 0.12s ease; }
 
-    /* status rail — 3 states */
     .col-status { width: 5px; padding: 0 !important; }
     .status-rail { display: block; width: 5px; height: 100%; min-height: 62px; }
     .rail-pending  { background: #94a3b8; }
     .rail-awaiting { background: #2563eb; }
     .rail-graded   { background: #16a34a; }
+    .col-check { width: 40px; text-align: center; }
 
     tr.row-pending td:not(.col-status) { color: #94a3b8; }
     tr.row-pending .student-name { color: #64748b; }
     tr.row-pending .student-avatar { opacity: 0.55; filter: grayscale(0.4); }
 
-    /* ═══ Student cell ═══ */
     .student-cell { display: flex; align-items: center; gap: 12px; }
     .student-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #eef1f6; }
     .student-avatar-placeholder {
@@ -250,14 +441,13 @@
         background: #fef3c7; padding: 2px 8px; border-radius: 999px; margin-top: 4px;
     }
 
-    /* ═══ Status pills ═══ */
     .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .status-pill i { font-size: 0.72rem; }
     .pill-ready      { background: #dcfce7; color: #15803d; }
     .pill-processing { background: #dbeafe; color: #1d4ed8; }
     .pill-pending    { background: #f1f5f9; color: #64748b; }
+    .pill-failed     { background: #fee2e2; color: #b91c1c; }
 
-    /* ═══ Grade badge (mini, for table) ═══ */
     .mini-grade-badge {
         display: inline-flex; align-items: baseline; gap: 2px;
         font-size: 0.88rem; font-weight: 800;
@@ -268,30 +458,361 @@
     .score-mid  { background: #fef3c7; color: #b45309; }
     .score-low  { background: #fee2e2; color: #b91c1c; }
 
-    /* ═══ Action buttons ═══ */
     .btn-admin-labeled {
         display: inline-flex; align-items: center; gap: 6px;
         height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
         font-size: 0.78rem; font-weight: 600; white-space: nowrap; text-decoration: none;
         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        cursor: pointer;
     }
     .btn-admin-labeled i { font-size: 0.88rem; }
     .btn-admin-labeled:hover { transform: translateY(-1px); }
     .btn-label-view { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
     .btn-label-view:hover { background: #e0f2fe; color: #075985; }
-    .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
-    .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
 
     @media (max-width: 1100px) {
         .btn-label-text { display: none; }
         .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
     }
 
-    /* ═══ Empty state ═══ */
     .empty-state-cell { padding: 0 !important; border: none !important; }
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
     .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }
     .empty-state-title { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
     .empty-state-sub { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
+
+    /* ═══ Modal internals ═══ */
+    .summary-strip-avatar {
+        border-radius: 50%; flex-shrink: 0;
+        background: linear-gradient(135deg, #2563eb, #172281);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 700;
+    }
+    .submission-text-block {
+        font-size: 0.87rem; color: #374151; line-height: 1.7;
+        background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        padding: 14px 16px;
+    }
+    .optional-tag { font-size: 0.66rem; font-weight: 600; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
+    #bulkGradeTableBody td { vertical-align: middle; }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const MAX_MARKS = {{ assignment.max_marks|default:0 }};
+    const SUBMISSION_JSON_URL_TEMPLATE = "{% url 'assignment:submission_detail_json' '00000000-0000-0000-0000-000000000000' %}";
+    const GRADE_SUBMIT_URL_TEMPLATE = "{% url 'assignment:grade_submission' '00000000-0000-0000-0000-000000000000' %}";
+    const BULK_GRADE_URL = "{% url 'assignment:bulk_grade_submissions' assignment.id %}";
+    const PLACEHOLDER_UUID = '00000000-0000-0000-0000-000000000000';
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    /* ═══════════ Row selection / bulk toolbar ═══════════ */
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const bulkToolbar = document.getElementById('bulkActionToolbar');
+    const bulkCountLabel = document.getElementById('bulkSelectedCount');
+
+    function rowCheckboxes() {
+        return document.querySelectorAll('.submission-select-checkbox');
+    }
+
+    function updateBulkToolbar() {
+        const all = rowCheckboxes();
+        const checked = document.querySelectorAll('.submission-select-checkbox:checked');
+        bulkToolbar.style.display = checked.length > 0 ? 'flex' : 'none';
+        bulkCountLabel.textContent = checked.length;
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = all.length > 0 && checked.length === all.length;
+            selectAllCheckbox.indeterminate = checked.length > 0 && checked.length < all.length;
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            rowCheckboxes().forEach(cb => { cb.checked = selectAllCheckbox.checked; });
+            updateBulkToolbar();
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('submission-select-checkbox')) updateBulkToolbar();
+    });
+
+    document.getElementById('clearSelectionBtn').addEventListener('click', function () {
+        rowCheckboxes().forEach(cb => { cb.checked = false; });
+        updateBulkToolbar();
+    });
+
+    /* ═══════════ Shared: update a row + stat cards after grading ═══════════ */
+    function adjustStat(id, delta) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = Math.max(0, parseInt(el.textContent || '0', 10) + delta);
+    }
+
+    function updateRowAfterGrade(submissionId, marksObtained) {
+        const row = document.querySelector(`tr[data-submission-id="${submissionId}"]`);
+        if (!row) return;
+
+        const wasGraded = row.classList.contains('row-graded');
+        row.dataset.currentMarks = marksObtained;
+        row.classList.remove('row-awaiting', 'row-pending');
+        row.classList.add('row-graded');
+
+        const rail = row.querySelector('.status-rail');
+        if (rail) rail.className = 'status-rail rail-graded';
+
+        const statusCell = row.querySelector('.status-cell');
+        if (statusCell) statusCell.innerHTML = '<span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Graded</span>';
+
+        const marksCell = row.querySelector('.marks-cell');
+        if (marksCell && MAX_MARKS > 0) {
+            const pct = (marksObtained / MAX_MARKS) * 100;
+            const cls = pct >= 75 ? 'score-high' : (pct >= 40 ? 'score-mid' : 'score-low');
+            marksCell.innerHTML = `<span class="mini-grade-badge ${cls}">${marksObtained}<span class="score-max">/${MAX_MARKS}</span></span>`;
+        }
+
+        if (!wasGraded) {
+            adjustStat('statAwaitingCount', -1);
+            adjustStat('statGradedCount', 1);
+        }
+    }
+
+    /* ═══════════ View + grade single submission modal ═══════════ */
+    let currentSubmissionId = null;
+    const viewModalEl = document.getElementById('viewSubmissionModal');
+    const viewModal = new bootstrap.Modal(viewModalEl);
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.view-submission-btn');
+        if (!btn) return;
+        currentSubmissionId = btn.dataset.id;
+        openViewModal(currentSubmissionId);
+    });
+
+    function openViewModal(id) {
+        document.getElementById('viewSubmissionLoader').style.display = 'block';
+        document.getElementById('viewSubmissionLoader').innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Loading submission…';
+        document.getElementById('viewSubmissionContent').style.display = 'none';
+        document.getElementById('vsGradeAlert').innerHTML = '';
+        viewModal.show();
+
+        fetch(SUBMISSION_JSON_URL_TEMPLATE.replace(PLACEHOLDER_UUID, id), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error('load-failed');
+                populateViewModal(data.submission);
+            })
+            .catch(() => {
+                document.getElementById('viewSubmissionLoader').innerHTML = '<div class="text-danger small">Failed to load submission. Please close and try again.</div>';
+            });
+    }
+
+    function populateViewModal(sub) {
+        document.getElementById('viewSubmissionLoader').style.display = 'none';
+        document.getElementById('viewSubmissionContent').style.display = 'block';
+
+        document.getElementById('vsAvatar').textContent = (sub.student_name || sub.student_email || '?').charAt(0).toUpperCase();
+        document.getElementById('vsStudentName').textContent = sub.student_name;
+        document.getElementById('vsStudentEmail').textContent = sub.student_email;
+
+        const lateTag = document.getElementById('vsLateTag');
+        if (sub.is_late) {
+            lateTag.className = 'ms-auto status-pill pill-failed';
+            lateTag.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Late Submission';
+        } else {
+            lateTag.className = 'ms-auto status-pill pill-ready';
+            lateTag.innerHTML = '<i class="bi bi-check-circle-fill"></i> On Time';
+        }
+
+        document.getElementById('vsSubmissionText').textContent = sub.submission_text || 'No written response submitted.';
+
+        const fileBlock = document.getElementById('vsFileBlock');
+        if (sub.submission_file_url) {
+            fileBlock.style.display = 'block';
+            document.getElementById('vsFileLink').href = sub.submission_file_url;
+            document.getElementById('vsFileName').textContent = sub.submission_file_name || 'Download file';
+        } else {
+            fileBlock.style.display = 'none';
+        }
+
+        document.getElementById('vsSubmittedAt').textContent = sub.submitted_at;
+        document.getElementById('vsMaxMarks').textContent = sub.max_marks;
+        document.getElementById('vsMarksInput').value = (sub.marks_obtained !== null && sub.marks_obtained !== undefined) ? sub.marks_obtained : '';
+        document.getElementById('vsMarksInput').max = sub.max_marks;
+        document.getElementById('vsFeedbackInput').value = sub.feedback || '';
+    }
+
+    document.getElementById('vsSaveGradeBtn').addEventListener('click', function () {
+        if (!currentSubmissionId) return;
+        const btn = this;
+        const marks = document.getElementById('vsMarksInput').value;
+        const feedback = document.getElementById('vsFeedbackInput').value;
+        const alertBox = document.getElementById('vsGradeAlert');
+        alertBox.innerHTML = '';
+
+        if (marks === '') {
+            alertBox.innerHTML = '<div class="alert alert-danger py-2 small">Please enter marks.</div>';
+            return;
+        }
+
+        btn.disabled = true;
+        const original = btn.innerHTML;
+        btn.innerHTML = 'Saving…';
+
+        const url = GRADE_SUBMIT_URL_TEMPLATE.replace(PLACEHOLDER_UUID, currentSubmissionId);
+        const formData = new FormData();
+        formData.append('marks_obtained', marks);
+        formData.append('feedback', feedback);
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData,
+        })
+            .then(res => res.json().then(data => ({ status: res.status, data })))
+            .then(({ status, data }) => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                if (status === 200 && data.success) {
+                    updateRowAfterGrade(currentSubmissionId, data.marks_obtained);
+                    viewModal.hide();
+                } else {
+                    const errMsg = data.errors ? Object.values(data.errors).flat().join(' ') : 'Failed to save grade.';
+                    alertBox.innerHTML = `<div class="alert alert-danger py-2 small">${errMsg}</div>`;
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                alertBox.innerHTML = '<div class="alert alert-danger py-2 small">Something went wrong. Please try again.</div>';
+            });
+    });
+
+    /* ═══════════ Bulk grade modal ═══════════ */
+    const bulkModalEl = document.getElementById('bulkGradeModal');
+    const bulkModal = new bootstrap.Modal(bulkModalEl);
+
+    document.getElementById('openBulkGradeBtn').addEventListener('click', function () {
+        const checked = document.querySelectorAll('.submission-select-checkbox:checked');
+        if (checked.length === 0) return;
+
+        document.getElementById('bulkGradeAlert').innerHTML = '';
+        document.getElementById('bulkMaxMarks').textContent = MAX_MARKS;
+
+        const tbody = document.getElementById('bulkGradeTableBody');
+        tbody.innerHTML = '';
+
+        checked.forEach(cb => {
+            const row = cb.closest('tr');
+            const subId = cb.value;
+            const name = row.dataset.studentName;
+            const email = row.dataset.studentEmail;
+            const currentMarks = row.dataset.currentMarks || '';
+            const currentFeedback = row.dataset.currentFeedback || '';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-semibold small">${name}</div>
+                    <div class="text-muted" style="font-size:0.74rem;">${email}</div>
+                </td>
+                <td><input type="number" class="form-control form-control-sm bulk-marks-input" min="0" max="${MAX_MARKS}" value="${currentMarks}" data-submission-id="${subId}"></td>
+                <td><input type="text" class="form-control form-control-sm bulk-feedback-input" placeholder="Optional feedback" value="${currentFeedback}" data-submission-id="${subId}"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        bulkModal.show();
+    });
+
+    document.getElementById('bulkGradeSubmitBtn').addEventListener('click', function () {
+        const marksInputs = document.querySelectorAll('.bulk-marks-input');
+        if (marksInputs.length === 0) return;
+
+        const grades = [];
+        let hasError = false;
+
+        marksInputs.forEach(input => {
+            const subId = input.dataset.submissionId;
+            const feedbackInput = document.querySelector(`.bulk-feedback-input[data-submission-id="${subId}"]`);
+            const marks = input.value;
+
+            if (marks === '' || isNaN(marks) || Number(marks) < 0 || Number(marks) > MAX_MARKS) {
+                hasError = true;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+
+            grades.push({
+                submission_id: subId,
+                marks_obtained: marks,
+                feedback: feedbackInput ? feedbackInput.value : '',
+            });
+        });
+
+        if (hasError) {
+            document.getElementById('bulkGradeAlert').innerHTML = `<div class="alert alert-danger py-2 small">Please enter a valid mark (0–${MAX_MARKS}) for every student.</div>`;
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        const original = btn.innerHTML;
+        btn.innerHTML = 'Saving…';
+
+        fetch(BULK_GRADE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ grades }),
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+
+                if (data.graded && data.graded.length) {
+                    data.graded.forEach(g => updateRowAfterGrade(g.submission_id, g.marks_obtained));
+                }
+
+                if (data.errors && data.errors.length) {
+                    document.getElementById('bulkGradeAlert').innerHTML =
+                        `<div class="alert alert-warning py-2 small">${data.graded_count} saved successfully. ${data.errors.length} failed — please retry those individually via "View Submission".</div>`;
+                } else {
+                    bulkModal.hide();
+                    document.querySelectorAll('.submission-select-checkbox:checked').forEach(cb => { cb.checked = false; });
+                    updateBulkToolbar();
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                document.getElementById('bulkGradeAlert').innerHTML = '<div class="alert alert-danger py-2 small">Something went wrong. Please try again.</div>';
+            });
+    });
+});
+</script>
 {% endblock %}

@@ -1,54 +1,355 @@
 {% extends "public/base.html" %}
 {% block title %}Submit Assignment{% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #172281;
+        --primary-mid: #2338a8;
+        --accent: #f59e0b;
+        --text: #0e1b2e;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+    }
+
+    /* ═══ Top bar ═══ */
+    .submit-page-header {
+        position: relative;
+        background:
+            radial-gradient(ellipse 800px 360px at 10% -20%, rgba(245,158,11,0.20), transparent 60%),
+            radial-gradient(ellipse 600px 420px at 100% 100%, rgba(76,95,217,0.30), transparent 65%),
+            linear-gradient(120deg, #0a1440 0%, var(--primary) 55%, var(--primary-mid) 100%);
+        border-radius: 16px;
+        padding: 24px 28px;
+        color: white;
+        margin-bottom: 1.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(10,20,64,0.22);
+        border-bottom: 3px solid var(--accent);
+    }
+    .submit-page-header::after {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .submit-header-inner { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .submit-header-top { display: flex; align-items: center; gap: 14px; }
+    .submit-header-icon {
+        width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--accent), #fbbf24);
+        color: #0a1440;
+        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+    }
+    .submit-page-header h2 { font-weight: 700; font-size: 1.35rem; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+    .submit-course-name { font-size: 0.82rem; color: rgba(255,255,255,0.75); margin-top: 2px; }
+    .submit-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .submit-meta-chip {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+        backdrop-filter: blur(6px);
+        border-radius: 10px; padding: 8px 14px;
+        font-size: 0.82rem; color: rgba(255,255,255,0.92);
+    }
+    .submit-meta-chip i { font-size: 0.95rem; color: #fcd34d; }
+    .submit-status-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.78rem; font-weight: 700; padding: 7px 15px; border-radius: 999px;
+        flex-shrink: 0;
+    }
+    .status-open { background: rgba(34,197,94,0.18); color: #86efac; border: 1px solid rgba(134,239,172,0.35); }
+    .status-closed { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(252,165,165,0.35); }
+
+    @media (max-width: 576px) {
+        .submit-page-header { padding: 20px; }
+        .submit-header-icon { width: 38px; height: 38px; font-size: 1rem; }
+        .submit-page-header h2 { font-size: 1.1rem; }
+    }
+
+    /* ═══ Panels ═══ */
+    .panel-card {
+        background: white; border: 1.5px solid var(--border); border-radius: 14px;
+        padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+        height: 100%;
+    }
+    .panel-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 12px; }
+    .panel-title i { color: var(--primary); }
+    .panel-title-sub { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+    .panel-title-sub i { color: #94a3b8; }
+    .instructions-text { font-size: 0.87rem; color: #475569; line-height: 1.7; white-space: pre-line; }
+    .instructions-text-sub { font-size: 0.84rem; color: #64748b; }
+    .instructions-divider { height: 1px; background: var(--border); margin: 18px 0; }
+    .empty-questions-note { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.85rem; padding: 6px 0; }
+
+    .attachment-download {
+        display: flex; align-items: center; gap: 10px;
+        background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px;
+        padding: 12px 14px; margin-top: 14px; text-decoration: none;
+    }
+    .attachment-download i { font-size: 1.2rem; color: #2563eb; }
+    .attachment-download-text { font-size: 0.83rem; font-weight: 600; color: #1d4ed8; }
+    .attachment-download-sub { font-size: 0.72rem; color: #64748b; }
+
+    .deadline-warning {
+        display: flex; align-items: flex-start; gap: 10px;
+        background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px;
+        padding: 12px 14px; font-size: 0.83rem; color: #92400e; margin-bottom: 1rem;
+    }
+    .deadline-warning i { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+
+    .field-block { margin-bottom: 1.1rem; }
+    .field-block .form-label { font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .field-block textarea.form-control {
+        border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.88rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .field-block textarea.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23,34,129,0.1); outline: none; }
+
+    /* ═══ File dropzone ═══ */
+    .file-dropzone {
+        position: relative;
+        border: 2px dashed #cbd5e1; border-radius: 12px;
+        padding: 22px 16px; text-align: center;
+        background: #f8fafc; cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .file-dropzone:hover, .file-dropzone.dragover { border-color: var(--primary); background: #f0f2fc; }
+    .file-dropzone.has-file { border-style: solid; border-color: #16a34a; background: #f0fdf4; }
+    .file-dropzone.file-error { border-style: solid; border-color: #dc2626; background: #fef2f2; }
+    .file-dropzone input[type="file"] {
+        position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+    }
+    .dropzone-icon { font-size: 1.6rem; color: #94a3b8; margin-bottom: 6px; }
+    .file-dropzone.has-file .dropzone-icon { color: #16a34a; }
+    .file-dropzone.file-error .dropzone-icon { color: #dc2626; }
+    .dropzone-text { font-size: 0.85rem; font-weight: 600; color: #374151; }
+    .dropzone-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
+
+    .file-size-hint { font-size: 0.75rem; color: #94a3b8; margin-top: 6px; display: flex; align-items: center; gap: 5px; }
+    .file-error-msg { font-size: 0.78rem; color: #dc2626; margin-top: 6px; display: none; align-items: center; gap: 5px; }
+    .file-error-msg.show { display: flex; }
+
+    .current-file-note {
+        font-size: 0.78rem; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .current-file-note a { font-weight: 600; }
+
+    .submit-btn {
+        background: linear-gradient(90deg, var(--primary), var(--primary-mid));
+        color: white; font-weight: 600; font-size: 0.92rem;
+        padding: 11px; border-radius: 10px; border: none; width: 100%;
+        box-shadow: 0 3px 10px rgba(23,34,129,0.28);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(23,34,129,0.38); }
+    .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header mb-4">
-    <h2>{{ assignment.title }}</h2>
-    <p>{{ assignment.course.course_name }} &middot; Max Marks: {{ assignment.max_marks }} &middot; Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}</p>
+<div class="submit-page-header">
+    <div class="submit-header-inner">
+        <div>
+            <div class="submit-header-top">
+                <div class="submit-header-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                <div>
+                    <h2>{{ assignment.title }}</h2>
+                    <div class="submit-course-name"><i class="bi bi-journal-bookmark me-1"></i> {{ assignment.course.course_name }}</div>
+                </div>
+            </div>
+            <div class="submit-meta">
+                <div class="submit-meta-chip"><i class="bi bi-award-fill"></i> Max Marks: {{ assignment.max_marks }}</div>
+                <div class="submit-meta-chip"><i class="bi bi-clock-fill"></i> Deadline: {{ assignment.deadline|date:"d M Y, g:i A" }}</div>
+                {% if existing_submission %}
+                    <div class="submit-meta-chip"><i class="bi bi-check2-circle"></i> Last submitted {{ existing_submission.submitted_at|date:"d M Y, g:i A" }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% if assignment.is_past_deadline %}
+            <span class="submit-status-pill status-closed"><i class="bi bi-lock-fill"></i> Deadline Passed</span>
+        {% else %}
+            <span class="submit-status-pill status-open"><i class="bi bi-unlock-fill"></i> Open for Submission</span>
+        {% endif %}
+    </div>
 </div>
 
 <div class="row g-4">
     <div class="col-lg-7">
-        <div class="card-glow p-4">
-            <h6 class="fw-bold mb-2">Instructions</h6>
-            <p class="text-muted small" style="white-space: pre-line;">{{ assignment.instructions|default:assignment.description }}</p>
+        <div class="panel-card">
+            <div class="panel-title"><i class="bi bi-patch-question-fill"></i> Assignment Questions</div>
+            {% if assignment.description %}
+                <div class="instructions-text">{{ assignment.description }}</div>
+            {% else %}
+                <div class="empty-questions-note"><i class="bi bi-dash-circle"></i> No questions text provided — check the attachment below.</div>
+            {% endif %}
+
+            {% if assignment.instructions %}
+                <div class="instructions-divider"></div>
+                <div class="panel-title panel-title-sub"><i class="bi bi-info-circle-fill"></i> Additional Instructions</div>
+                <div class="instructions-text instructions-text-sub">{{ assignment.instructions }}</div>
+            {% endif %}
+
             {% if assignment.attachment %}
-                <a href="{{ assignment.attachment.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-paperclip me-1"></i> Download Reference File
+                <a href="{{ assignment.attachment.url }}" target="_blank" class="attachment-download">
+                    <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                    <div>
+                        <div class="attachment-download-text">Download Reference File</div>
+                        <div class="attachment-download-sub">Question paper / supporting material</div>
+                    </div>
                 </a>
             {% endif %}
         </div>
     </div>
 
     <div class="col-lg-5">
-        <div class="card-glow p-4">
-            <h6 class="fw-bold mb-3">{% if existing_submission %}Update Your Submission{% else %}Submit Your Work{% endif %}</h6>
+        <div class="panel-card">
+            <div class="panel-title">
+                <i class="bi bi-upload"></i>
+                {% if existing_submission %}Update Your Submission{% else %}Submit Your Work{% endif %}
+            </div>
 
             {% if assignment.is_past_deadline %}
-                <div class="alert alert-warning py-2 small">The deadline has passed. You're editing a previously submitted response.</div>
+                <div class="deadline-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>The deadline has passed. You're editing a previously submitted response.</span>
+                </div>
             {% endif %}
 
-            <form method="post" enctype="multipart/form-data" novalidate>
+            <form method="post" enctype="multipart/form-data" novalidate id="submissionForm">
                 {% csrf_token %}
                 {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
 
-                <div class="mb-3">
+                <div class="field-block">
                     <label class="form-label">Written Response</label>
                     {{ form.submission_text }}
+                    {% if form.submission_text.errors %}<div class="text-danger small mt-1">{{ form.submission_text.errors|join:", " }}</div>{% endif %}
                 </div>
-                <div class="mb-4">
-                    <label class="form-label">Attach File</label>
-                    {{ form.submission_file }}
+
+                <div class="field-block">
+                    <label class="form-label">Attach File <span class="text-muted fw-normal">(optional)</span></label>
+
+                    <div class="file-dropzone" id="fileDropzone">
+                        <input type="file" name="{{ form.submission_file.name }}" id="{{ form.submission_file.id_for_label }}" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg">
+                        <div class="dropzone-icon" id="dropzoneIcon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                        <div class="dropzone-text" id="dropzoneText">Click to choose a file or drag it here</div>
+                        <div class="dropzone-sub" id="dropzoneSub">PDF, DOC, ZIP, or image — up to 5 MB</div>
+                    </div>
+
+                    <div class="file-error-msg" id="fileErrorMsg"><i class="bi bi-exclamation-circle-fill"></i> <span id="fileErrorText"></span></div>
+                    {% if form.submission_file.errors %}<div class="text-danger small mt-1">{{ form.submission_file.errors|join:", " }}</div>{% endif %}
+
                     {% if existing_submission.submission_file %}
-                        <div class="form-text">Current: <a href="{{ existing_submission.submission_file.url }}" target="_blank">view file</a></div>
+                        <div class="current-file-note">
+                            <i class="bi bi-paperclip"></i> Current file: <a href="{{ existing_submission.submission_file.url }}" target="_blank">view file</a> — uploading a new one will replace it
+                        </div>
                     {% endif %}
                 </div>
 
-                <button type="submit" class="btn text-white w-100" style="background: linear-gradient(90deg, #4facfe, #00f2fe); font-weight: 600;">
+                <button type="submit" class="submit-btn" id="submitBtn">
                     {% if existing_submission %}Update Submission{% else %}Submit Assignment{% endif %}
                 </button>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    const dropzone = document.getElementById('fileDropzone');
+    const fileInput = document.getElementById('{{ form.submission_file.id_for_label }}');
+    const dropzoneIcon = document.getElementById('dropzoneIcon');
+    const dropzoneText = document.getElementById('dropzoneText');
+    const dropzoneSub = document.getElementById('dropzoneSub');
+    const errorMsg = document.getElementById('fileErrorMsg');
+    const errorText = document.getElementById('fileErrorText');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('submissionForm');
+
+    function formatSize(bytes) {
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function resetDropzone() {
+        dropzone.classList.remove('has-file', 'file-error');
+        dropzoneIcon.innerHTML = '<i class="bi bi-cloud-arrow-up-fill"></i>';
+        dropzoneText.textContent = 'Click to choose a file or drag it here';
+        dropzoneSub.textContent = 'PDF, DOC, ZIP, or image — up to 5 MB';
+        errorMsg.classList.remove('show');
+        submitBtn.disabled = false;
+    }
+
+    function showError(message) {
+        dropzone.classList.remove('has-file');
+        dropzone.classList.add('file-error');
+        dropzoneIcon.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+        dropzoneText.textContent = 'File not accepted';
+        dropzoneSub.textContent = 'Choose a different file';
+        errorText.textContent = message;
+        errorMsg.classList.add('show');
+        submitBtn.disabled = true;
+    }
+
+    function showFile(file) {
+        dropzone.classList.remove('file-error');
+        dropzone.classList.add('has-file');
+        dropzoneIcon.innerHTML = '<i class="bi bi-file-earmark-check-fill"></i>';
+        dropzoneText.textContent = file.name;
+        dropzoneSub.textContent = formatSize(file.size) + ' — ready to upload';
+        errorMsg.classList.remove('show');
+        submitBtn.disabled = false;
+    }
+
+    function validateFile() {
+        const file = fileInput.files[0];
+        if (!file) {
+            resetDropzone();
+            return true;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            showError(`"${file.name}" is ${formatSize(file.size)}. Maximum allowed size is 5 MB.`);
+            return false;
+        }
+        showFile(file);
+        return true;
+    }
+
+    fileInput.addEventListener('change', validateFile);
+
+    // Drag & drop visual feedback (native input still receives the file via change event)
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+    });
+    dropzone.addEventListener('drop', function (e) {
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            validateFile();
+        }
+    });
+
+    // Belt-and-suspenders: block submit client-side too, even though the server also validates.
+    form.addEventListener('submit', function (e) {
+        if (!validateFile()) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize state in case of a validation-error reload with a file already chosen
+    if (fileInput.files.length) validateFile();
+});
+</script>
 {% endblock %}

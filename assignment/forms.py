@@ -14,12 +14,22 @@ class AssignmentForm(forms.ModelForm):
         widgets = {
             'course': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. Week 3 — Python Functions Assignment'}),
-            'description': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3}),
-            'instructions': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 4, 'placeholder': 'Detailed instructions for students'}),
+            'description': forms.Textarea(attrs={
+                'class': TEXT_INPUT_CLASS, 'rows': 6,
+                'placeholder': 'Type or paste the assignment questions here, e.g.\n\nQ1. Write a function that...\nQ2. Explain the difference between...'
+            }),
+            'instructions': forms.Textarea(attrs={
+                'class': TEXT_INPUT_CLASS, 'rows': 4,
+                'placeholder': 'Submission format, word limit, grading rubric, or any other guidance (optional)'
+            }),
             'attachment': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'max_marks': forms.NumberInput(attrs={'class': TEXT_INPUT_CLASS, 'min': 1}),
             'deadline': forms.DateTimeInput(attrs={'class': TEXT_INPUT_CLASS, 'type': 'datetime-local'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'description': "This is treated as the assignment's question paper — type or paste the full questions here. "
+                            "If you'd rather share a formatted question paper, attach a PDF below instead (or in addition).",
         }
 
     def __init__(self, *args, **kwargs):
@@ -35,14 +45,23 @@ class AssignmentForm(forms.ModelForm):
         return deadline
 
 
+MAX_SUBMISSION_FILE_SIZE = 5 * 1024 * 1024 
+
 class SubmissionForm(forms.ModelForm):
     class Meta:
         model = AssignmentSubmission
         fields = ['submission_text', 'submission_file']
         widgets = {
             'submission_text': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 5, 'placeholder': 'Write your answer or notes here (optional if attaching a file)'}),
-            'submission_file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'submission_file': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.zip,.png,.jpg,.jpeg'}),
         }
+
+    def clean_submission_file(self):
+        file = self.cleaned_data.get('submission_file')
+        if file and hasattr(file, 'size') and file.size > MAX_SUBMISSION_FILE_SIZE:
+            size_mb = file.size / (1024 * 1024)
+            raise ValidationError(f"File is too large ({size_mb:.1f} MB). Maximum allowed size is 5 MB.")
+        return file
 
     def clean(self):
         cleaned_data = super().clean()

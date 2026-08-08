@@ -13,4 +13,7 @@ urlpatterns = [
 
     path('my-assignments/', views.my_assignments_view, name='my_assignments'),
     path('<uuid:assignment_id>/submit/', views.assignment_submit_view, name='submit'),
+
+    path('submissions/<uuid:submission_id>/json/', views.submission_detail_json, name='submission_detail_json'),
+    path('<uuid:assignment_id>/bulk-grade/', views.bulk_grade_submissions_view, name='bulk_grade_submissions'),
 ]
