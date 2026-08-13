@@ -1,3 +1,4 @@
+#views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
@@ -16,6 +17,9 @@ from django.template.loader import render_to_string
 from admin_dashboard.models import Centre
 from certificate.models import StudentCertificate
 from certificate.eligibility import is_eligible_for_certificate
+from admin_dashboard.notifications import notify_users, get_display_name, EMAIL_SUBJECT_PREFIX, EMAIL_SIGNATURE
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 # ── Admin: domain management ──────────────────────────────
@@ -588,14 +592,31 @@ def enrollment_management_view(request):
     })
 
 
-def _bulk_update_enrollment_status(request, new_status, title, message_template):
+def _bulk_update_enrollment_status(request, new_status, title, app_reason, email_reason):
     enrollment_ids = request.POST.getlist('enrollment_ids[]')
-    enrollments = list(Enrollment.objects.filter(id__in=enrollment_ids).select_related('user', 'course'))
+    enrollments = list(
+        Enrollment.objects.filter(id__in=enrollment_ids).select_related('user', 'user__nielit_centre', 'course')
+    )
     Enrollment.objects.filter(id__in=[e.id for e in enrollments]).update(
         access_status=new_status, access_status_updated_at=timezone.now()
     )
-    users = [e.user for e in enrollments]
-    notify_users(users, title=title, message=message_template, created_by=request.user)
+
+    for enrollment in enrollments:
+        name = get_display_name(enrollment.user)
+        notify_users(
+            [enrollment.user],
+            title=title,
+            app_message=f"{app_reason} \u2014 {enrollment.course.course_name}",
+            email_message=(
+                f"Dear {name},\n\n"
+                f"{email_reason}\n\n"
+                f"Course: {enrollment.course.course_name}\n"
+                f"Batch Code: {enrollment.user.batch_code or '—'}\n"
+                f"Centre: {enrollment.user.nielit_centre.centre_name if enrollment.user.nielit_centre else '—'}\n\n"
+                f"Visit \u201cMy Courses\u201d on your dashboard for details."
+            ),
+            created_by=request.user,
+        )
     return JsonResponse({'success': True, 'count': len(enrollments)})
 
 
@@ -604,7 +625,9 @@ def _bulk_update_enrollment_status(request, new_status, title, message_template)
 def bulk_grant_enrollment_view(request):
     return _bulk_update_enrollment_status(
         request, Enrollment.AccessStatus.GRANTED,
-        "Course Access Granted", "Your enrollment request has been approved. You can now access the course content.",
+        "Course Access Granted",
+        app_reason="Your enrollment request has been approved",
+        email_reason="Your enrollment request has been approved. You can now access the course content.",
     )
 
 
@@ -613,7 +636,9 @@ def bulk_grant_enrollment_view(request):
 def bulk_hold_enrollment_view(request):
     return _bulk_update_enrollment_status(
         request, Enrollment.AccessStatus.HOLD,
-        "Course Access On Hold", "Your access to a course has been temporarily put on hold by an administrator.",
+        "Course Access On Hold",
+        app_reason="Your course access has been put on hold",
+        email_reason="Your access to this course has been temporarily put on hold by an administrator.",
     )
 
 
@@ -622,7 +647,9 @@ def bulk_hold_enrollment_view(request):
 def bulk_revoke_enrollment_view(request):
     return _bulk_update_enrollment_status(
         request, Enrollment.AccessStatus.REVOKED,
-        "Course Access Revoked", "Your access to a course has been revoked by an administrator.",
+        "Course Access Revoked",
+        app_reason="Your course access has been revoked",
+        email_reason="Your access to this course has been revoked by an administrator.",
     )
 
 
@@ -630,7 +657,27 @@ def bulk_revoke_enrollment_view(request):
 @require_POST
 def bulk_deny_enrollment_view(request):
     enrollment_ids = request.POST.getlist('enrollment_ids[]')
-    count = Enrollment.objects.filter(id__in=enrollment_ids).count()
+    enrollments = list(Enrollment.objects.filter(id__in=enrollment_ids).select_related('user', 'course'))
+
+    for enrollment in enrollments:
+        name = get_display_name(enrollment.user)
+        try:
+            send_mail(
+                subject=f"{EMAIL_SUBJECT_PREFIX}Enrollment Request Denied",
+                message=(
+                    f"Dear {name},\n\n"
+                    f"Your enrollment request for \u201c{enrollment.course.course_name}\u201d was not approved. "
+                    f"Contact your NIELIT centre administrator for details."
+                    + EMAIL_SIGNATURE
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[enrollment.user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    count = len(enrollments)
     Enrollment.objects.filter(id__in=enrollment_ids).delete()
     return JsonResponse({'success': True, 'count': count})
 

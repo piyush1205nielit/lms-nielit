@@ -1,3 +1,4 @@
+#assignment/views.py
 import json
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -16,7 +17,7 @@ from course.models import Course, Enrollment
 from .models import Assignment, AssignmentSubmission
 from .forms import AssignmentForm, SubmissionForm, GradeSubmissionForm
 from user_dashboard.services import mark_notifications_seen
-
+from admin_dashboard.notifications import notify_users, get_display_name
 
 def _is_ajax(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
@@ -384,39 +385,40 @@ def assignment_submit_view(request, assignment_id):
 # ══════════════════ Notifications (plain SMTP, reuses existing email config) ══════════════════
 
 def _notify_course_students(assignment):
-    students = [e.user for e in Enrollment.objects.filter(course=assignment.course).select_related('user')]
-    for student in students:
-        try:
-            send_mail(
-                subject=f"New Assignment: {assignment.title}",
-                message=(
-                    f"A new assignment has been posted for {assignment.course.course_name}.\n\n"
-                    f"Title: {assignment.title}\n"
-                    f"Max Marks: {assignment.max_marks}\n"
-                    f"Deadline: {assignment.deadline.strftime('%d %b %Y, %I:%M %p')}\n\n"
-                    f"Log in to your dashboard to view details and submit."
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[student.email],
-                fail_silently=True,
-            )
-        except Exception:
-            pass  # never let an email failure block assignment creation
+    enrollments = Enrollment.objects.filter(
+        course=assignment.course, access_status=Enrollment.AccessStatus.GRANTED
+    ).select_related('user')
+
+    for enrollment in enrollments:
+        name = get_display_name(enrollment.user)
+        notify_users(
+            [enrollment.user],
+            title=f"New Assignment: {assignment.title}",
+            app_message=f"New assignment posted for {assignment.course.course_name} — due {assignment.deadline.strftime('%d %b %Y')}.",
+            email_message=(
+                f"Dear {name},\n\n"
+                f"A new assignment has been posted for {assignment.course.course_name}.\n\n"
+                f"Title: {assignment.title}\n"
+                f"Max Marks: {assignment.max_marks}\n"
+                f"Deadline: {assignment.deadline.strftime('%d %B %Y, %I:%M %p')}\n\n"
+                f"Log in to your dashboard to view details and submit."
+            ),
+            created_by=assignment.created_by,
+        )
 
 
 def _notify_student_graded(submission):
-    try:
-        send_mail(
-            subject=f"Assignment Graded: {submission.assignment.title}",
-            message=(
-                f"Your submission for '{submission.assignment.title}' has been graded.\n\n"
-                f"Marks: {submission.marks_obtained} / {submission.assignment.max_marks}\n"
-                f"Feedback: {submission.feedback or 'No feedback provided.'}\n\n"
-                f"Log in to your dashboard to view details."
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[submission.student.email],
-            fail_silently=True,
-        )
-    except Exception:
-        pass
+    name = get_display_name(submission.student)
+    notify_users(
+        [submission.student],
+        title=f"Assignment Graded: {submission.assignment.title}",
+        app_message=f"You scored {submission.marks_obtained}/{submission.assignment.max_marks} on {submission.assignment.title}.",
+        email_message=(
+            f"Dear {name},\n\n"
+            f"Your submission for \u201c{submission.assignment.title}\u201d ({submission.assignment.course.course_name}) has been graded.\n\n"
+            f"Marks: {submission.marks_obtained} / {submission.assignment.max_marks}\n"
+            f"Feedback: {submission.feedback or 'No feedback provided.'}\n\n"
+            f"Log in to your dashboard to view details."
+        ),
+        created_by=submission.graded_by,
+    )

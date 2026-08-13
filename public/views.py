@@ -1,3 +1,4 @@
+#public/views.py
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from course.models import *
@@ -6,6 +7,7 @@ from django.db.models import Q
 from event.forms import EventForm
 from event.models import Event, EventDisplaySettings
 from django.shortcuts import get_object_or_404
+from admin_dashboard.models import Centre
 
 
 def home_view(request):
@@ -19,6 +21,8 @@ def home_view(request):
         'public_announcements': public_announcements,
         "events": Event.objects.filter(is_active=True),
         "event_display_mode": display_settings.display_mode,
+        'centres': Centre.objects.filter(is_active=True).order_by('centre_name'),
+        'active_domains': Domain.objects.filter(is_active=True).order_by('name'),
     }
     return render(request, 'public/home.html', context)
 

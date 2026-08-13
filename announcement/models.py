@@ -54,7 +54,7 @@ class Announcement(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     title = models.CharField(max_length=255)
-    message = models.TextField()
+    message = models.TextField(null=True, blank=True)
 
     announcement_type = models.CharField(max_length=10, choices=Type.choices, default=Type.PUBLIC)
 
@@ -78,6 +78,13 @@ class Announcement(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='announcements_created'
     )
+    is_system_generated = models.BooleanField(
+        default=False,
+        help_text="True for notices auto-created by the platform (approvals, grading, etc.) "
+                   "rather than manually written by an admin. Hidden from the main "
+                   "Announcements management list by default."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

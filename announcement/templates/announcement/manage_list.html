@@ -6,7 +6,7 @@
 <div class="page-header">
     <div>
         <h2><i class="bi bi-megaphone-fill"></i> Manage Announcements</h2>
-        <p>{{ announcements.count }} total announcement{{ announcements.count|pluralize }}</p>
+        <p>{{ announcements.count }} announcement{{ announcements.count|pluralize }}{% if not show_system %} <span class="text-muted">(system-generated notices hidden)</span>{% endif %}</p>
     </div>
     <div class="page-header-actions">
         <a href="{% url 'announcement:create' %}" class="btn-admin-primary">
@@ -17,113 +17,160 @@
 
 <!-- ═══ Summary stat cards ═══ -->
 <div class="stat-grid stat-grid-4">
-    <div class="stat-mini-card stat-green">
-        <div class="stat-mini-icon"><i class="bi bi-broadcast"></i></div>
-        <div><div class="stat-mini-value">{{ live_count|default:0 }}</div><div class="stat-mini-label">Live Now</div></div>
+    <div class="stat-mini-card stat-blue">
+        <div class="stat-mini-icon"><i class="bi bi-globe-americas"></i></div>
+        <div><div class="stat-mini-value">{{ public_count|default:0 }}</div><div class="stat-mini-label">Public</div></div>
+    </div>
+    <div class="stat-mini-card stat-purple">
+        <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-mini-value">{{ internal_count|default:0 }}</div><div class="stat-mini-label">Internal</div></div>
     </div>
     <div class="stat-mini-card stat-amber">
-        <div class="stat-mini-icon"><i class="bi bi-clock-history"></i></div>
-        <div><div class="stat-mini-value">{{ scheduled_count|default:0 }}</div><div class="stat-mini-label">Scheduled</div></div>
+        <div class="stat-mini-icon"><i class="bi bi-pin-angle-fill"></i></div>
+        <div><div class="stat-mini-value">{{ pinned_count|default:0 }}</div><div class="stat-mini-label">Pinned</div></div>
     </div>
     <div class="stat-mini-card stat-gray">
-        <div class="stat-mini-icon"><i class="bi bi-slash-circle"></i></div>
-        <div><div class="stat-mini-value">{{ disabled_count|default:0 }}</div><div class="stat-mini-label">Disabled</div></div>
+        <div class="stat-mini-icon"><i class="bi bi-robot"></i></div>
+        <div><div class="stat-mini-value">{{ system_count|default:0 }}</div><div class="stat-mini-label">System-Generated</div></div>
     </div>
-    <div class="stat-mini-card stat-red">
-        <div class="stat-mini-icon"><i class="bi bi-calendar-x"></i></div>
-        <div><div class="stat-mini-value">{{ expired_count|default:0 }}</div><div class="stat-mini-label">Expired</div></div>
+</div>
+
+<!-- ═══ Filter panel ═══ -->
+<div class="card-panel filter-panel">
+    <div class="filter-panel-header">
+        <h5><i class="bi bi-funnel-fill"></i> Filters</h5>
     </div>
+    <div class="filter-panel-body">
+        <form method="get" id="filterForm" class="filter-grid">
+            {% if show_system %}<input type="hidden" name="show_system" value="1">{% endif %}
+            <div class="filter-field filter-field-search">
+                <label class="form-label">Search</label>
+                <div class="search-input-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="q" value="{{ query }}" class="form-control filter-input" placeholder="Title or message">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="public" {% if selected_type == 'public' %}selected{% endif %}>Public</option>
+                    <option value="internal" {% if selected_type == 'internal' %}selected{% endif %}>Internal</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Audience</label>
+                <select name="target" class="form-select">
+                    <option value="">All Audiences</option>
+                    <option value="all_users" {% if selected_target == 'all_users' %}selected{% endif %}>All Users</option>
+                    <option value="specific_course" {% if selected_target == 'specific_course' %}selected{% endif %}>Specific Course</option>
+                    <option value="specific_users" {% if selected_target == 'specific_users' %}selected{% endif %}>Specific Users</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="filter-field filter-field-actions">
+                <button type="submit" class="btn-filter-apply"><i class="bi bi-funnel-fill"></i> Apply</button>
+                {% if query or selected_type or selected_target or selected_status %}
+                    <a href="{% if show_system %}?show_system=1{% else %}{% url 'announcement:manage_list' %}{% endif %}" class="btn-filter-clear" title="Clear filters">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══ System-notice toggle ═══ -->
+<div class="system-toggle-bar">
+    {% if show_system %}
+        <a href="{% url 'announcement:manage_list' %}{% if query %}?q={{ query }}{% endif %}" class="system-toggle-link">
+            <i class="bi bi-eye-slash me-1"></i> Hide system-generated notices
+        </a>
+    {% else %}
+        <a href="?show_system=1{% if query %}&q={{ query }}{% endif %}" class="system-toggle-link">
+            <i class="bi bi-eye me-1"></i> Show system-generated notices ({{ system_count }})
+        </a>
+    {% endif %}
+    <span class="system-toggle-hint">System notices are auto-created by approvals, grading, and access changes \u2014 hidden by default to keep this list focused on real announcements.</span>
 </div>
 
 <!-- ═══ Legend ═══ -->
 <div class="table-legend">
-    <span class="legend-item"><span class="legend-dot dot-green"></span> Live</span>
-    <span class="legend-item"><span class="legend-dot dot-amber"></span> Scheduled</span>
-    <span class="legend-item"><span class="legend-dot dot-gray"></span> Disabled</span>
-    <span class="legend-item"><span class="legend-dot dot-red"></span> Expired</span>
-    <span class="legend-item"><i class="bi bi-pin-angle-fill" style="color:#d97706;"></i> Pinned to top</span>
+    <span class="legend-item"><span class="legend-dot dot-active"></span> Active</span>
+    <span class="legend-item"><span class="legend-dot dot-inactive"></span> Inactive</span>
+    <span class="legend-item"><i class="bi bi-pin-angle-fill" style="color:#d97706; font-size:0.76rem;"></i> Pinned</span>
+    {% if show_system %}<span class="legend-item"><span class="badge bg-secondary" style="font-size:0.68rem;">System</span> Auto-generated notice</span>{% endif %}
 </div>
 
 <div class="card-panel">
     <div class="card-panel-header">
-        <h5><i class="bi bi-list-ul"></i> All Announcements</h5>
+        <h5><i class="bi bi-list-ul"></i> Announcements</h5>
         <span class="table-count-tag">{{ announcements.count }} record{{ announcements.count|pluralize }}</span>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-admin announcement-manage-table mb-0">
+        <table class="table table-admin announcement-table mb-0">
             <thead>
                 <tr>
                     <th class="col-status"></th>
-                    <th style="min-width: 220px;">Title</th>
-                    <th class="text-center">Type</th>
-                    <th style="min-width: 150px;">Audience</th>
+                    <th style="min-width: 260px;">Title</th>
+                    <th>Type</th>
+                    <th>Audience</th>
                     <th>Publish Date</th>
                     <th class="text-center">Status</th>
-                    <th class="text-end" style="min-width: 260px;">Actions</th>
+                    <th class="text-end" style="min-width: 200px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for a in announcements %}
-                {% if a.is_currently_visible %}{% with row_state='live' %}{% endwith %}
-                {% elif not a.is_active %}{% with row_state='disabled' %}{% endwith %}
-                {% elif a.publish_at > now %}{% with row_state='scheduled' %}{% endwith %}
-                {% else %}{% with row_state='expired' %}{% endwith %}
-                {% endif %}
-                <tr class="announcement-row
-                    {% if a.is_currently_visible %}row-live
-                    {% elif not a.is_active %}row-disabled
-                    {% elif a.publish_at > now %}row-scheduled
-                    {% else %}row-expired{% endif %}">
+                <tr class="announcement-row {% if a.is_active %}row-active{% else %}row-inactive{% endif %}">
                     <td class="col-status">
-                        <span class="status-rail
-                            {% if a.is_currently_visible %}rail-live
-                            {% elif not a.is_active %}rail-disabled
-                            {% elif a.publish_at > now %}rail-scheduled
-                            {% else %}rail-expired{% endif %}"></span>
+                        <span class="status-rail {% if a.is_active %}rail-active{% else %}rail-inactive{% endif %}"></span>
                     </td>
                     <td>
-                        <div class="title-cell">
-                            {% if a.is_pinned %}<i class="bi bi-pin-angle-fill pin-icon" title="Pinned"></i>{% endif %}
-                            <strong class="announcement-title-text">{{ a.title }}</strong>
+                        <div class="announcement-title-cell">
+                            {% if a.is_pinned %}<i class="bi bi-pin-angle-fill" style="color:#d97706;" title="Pinned"></i>{% endif %}
+                            <strong>{{ a.title }}</strong>
+                            {% if a.is_system_generated %}<span class="badge bg-secondary ms-1" style="font-size:0.64rem;">System</span>{% endif %}
                         </div>
+                        <div class="announcement-message-preview">{{ a.message|truncatechars:70 }}</div>
                     </td>
-                    <td class="text-center">
+                    <td>
                         {% if a.announcement_type == 'public' %}
-                            <span class="type-badge type-public"><i class="bi bi-globe2"></i> Public</span>
+                            <span class="type-pill type-public"><i class="bi bi-globe-americas"></i> Public</span>
                         {% else %}
-                            <span class="type-badge type-internal"><i class="bi bi-people-fill"></i> Internal</span>
-                        {% endif %}
-                    </td>
-                    <td class="audience-cell">
-                        {% if a.announcement_type == 'internal' %}
-                            {% if a.target_type == 'all_users' %}
-                                <i class="bi bi-people"></i> All Users
-                            {% elif a.target_type == 'specific_course' %}
-                                <i class="bi bi-journal-bookmark"></i> {{ a.target_course.course_name|default:"—" }}
-                            {% elif a.target_type == 'specific_users' %}
-                                <i class="bi bi-person-check"></i> {{ a.target_users.count }} student{{ a.target_users.count|pluralize }}
-                            {% endif %}
-                        {% else %}
-                            <i class="bi bi-house-door"></i> Homepage visitors
+                            <span class="type-pill type-internal"><i class="bi bi-people-fill"></i> Internal</span>
                         {% endif %}
                     </td>
                     <td class="stat-cell-sm">
-                        <div>{{ a.publish_at|date:"d M Y" }}</div>
-                        <div class="text-muted" style="font-size:0.72rem;">{{ a.publish_at|date:"g:i A" }}</div>
-                    </td>
-                    <td class="text-center">
-                        {% if a.is_currently_visible %}
-                            <span class="status-pill pill-ready"><i class="bi bi-broadcast"></i> Live</span>
-                        {% elif not a.is_active %}
-                            <span class="status-pill pill-pending"><i class="bi bi-slash-circle-fill"></i> Disabled</span>
-                        {% elif a.publish_at > now %}
-                            <span class="status-pill pill-scheduled"><i class="bi bi-clock-history"></i> Scheduled</span>
+                        {% if a.announcement_type == 'internal' %}
+                            {% if a.target_type == 'all_users' %}All Users
+                            {% elif a.target_type == 'specific_course' %}{{ a.target_course.course_name|default:"—" }}
+                            {% elif a.target_type == 'specific_users' %}{{ a.target_users.count }} student{{ a.target_users.count|pluralize }}
+                            {% endif %}
                         {% else %}
-                            <span class="status-pill pill-failed"><i class="bi bi-calendar-x"></i> Expired</span>
+                            Homepage visitors
+                        {% endif %}
+                    </td>
+                    <td class="stat-cell-sm">{{ a.publish_at|date:"d M Y, g:i A" }}</td>
+                    <td class="text-center">
+                        {% if a.is_active %}
+                            <span class="status-pill pill-ready"><i class="bi bi-check-circle-fill"></i> Active</span>
+                        {% else %}
+                            <span class="status-pill pill-failed"><i class="bi bi-slash-circle-fill"></i> Inactive</span>
                         {% endif %}
                     </td>
                     <td class="text-end">
+                        {% if a.is_system_generated %}
+                            <span class="view-only-tag"><i class="bi bi-lock-fill"></i> System notice</span>
+                        {% else %}
                         <div class="row-actions">
                             <a href="{% url 'announcement:edit' a.id %}" class="btn-admin-labeled btn-label-edit" title="Edit">
                                 <i class="bi bi-pencil-square"></i><span class="btn-label-text">Edit</span>
@@ -142,6 +189,7 @@
                                 </button>
                             </form>
                         </div>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
@@ -149,11 +197,17 @@
                     <td colspan="7" class="empty-state-cell">
                         <div class="empty-state">
                             <div class="empty-state-icon"><i class="bi bi-megaphone"></i></div>
-                            <div class="empty-state-title">No announcements yet</div>
-                            <div class="empty-state-sub">Create your first announcement to broadcast updates to learners.</div>
-                            <a href="{% url 'announcement:create' %}" class="btn-admin-primary mt-3">
-                                <i class="bi bi-plus-lg me-1"></i> New Announcement
-                            </a>
+                            {% if query or selected_type or selected_target or selected_status %}
+                                <div class="empty-state-title">No announcements match your filters</div>
+                                <div class="empty-state-sub">Try clearing the search or filters above.</div>
+                                <a href="{% if show_system %}?show_system=1{% else %}{% url 'announcement:manage_list' %}{% endif %}" class="btn-filter-clear-cta">Clear Filters</a>
+                            {% else %}
+                                <div class="empty-state-title">No announcements yet</div>
+                                <div class="empty-state-sub">Create your first announcement to notify students.</div>
+                                <a href="{% url 'announcement:create' %}" class="btn-admin-primary mt-3">
+                                    <i class="bi bi-plus-lg me-1"></i> New Announcement
+                                </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -185,10 +239,76 @@
     .stat-mini-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
     .stat-mini-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin-top: 2px; }
 
-    .stat-green { border-left-color: #16a34a; } .stat-green .stat-mini-icon { background: #dcfce7; color: #16a34a; }
-    .stat-amber { border-left-color: #d97706; } .stat-amber .stat-mini-icon { background: #fef3c7; color: #d97706; }
-    .stat-gray  { border-left-color: #64748b; } .stat-gray  .stat-mini-icon { background: #f1f5f9; color: #64748b; }
-    .stat-red   { border-left-color: #dc2626; } .stat-red   .stat-mini-icon { background: #fee2e2; color: #dc2626; }
+    .stat-blue   { border-left-color: #2563eb; } .stat-blue   .stat-mini-icon { background: #dbeafe; color: #2563eb; }
+    .stat-purple { border-left-color: #7c3aed; } .stat-purple .stat-mini-icon { background: #ede9fe; color: #7c3aed; }
+    .stat-amber  { border-left-color: #d97706; } .stat-amber  .stat-mini-icon { background: #fef3c7; color: #d97706; }
+    .stat-gray   { border-left-color: #64748b; } .stat-gray   .stat-mini-icon { background: #f1f5f9; color: #64748b; }
+
+    /* ═══ Filter panel ═══ */
+    .filter-panel { margin-bottom: 1rem; overflow: hidden; border: 1.5px solid #cbd5e1 !important; }
+    .filter-panel-header { padding: 0.9rem 1.2rem; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+    .filter-panel-header h5 { font-size: 0.88rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .filter-panel-header h5 i { color: #2563eb; }
+    .filter-panel-body { padding: 1.1rem 1.2rem; }
+
+    .filter-grid { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .filter-field { display: flex; flex-direction: column; gap: 5px; }
+    .filter-field-search { flex: 1; min-width: 220px; }
+    .filter-field .form-label { font-size: 0.76rem; font-weight: 600; color: #475569; margin-bottom: 0; }
+    .filter-field .form-select, .filter-field .filter-input {
+        border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem;
+        padding: 0.45rem 0.7rem; height: 38px; min-width: 160px;
+    }
+    .filter-field .form-select:focus, .filter-field .filter-input:focus {
+        border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none;
+    }
+    .search-input-wrap { position: relative; }
+    .search-input-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.82rem; }
+    .filter-input { width: 100%; padding-left: 34px !important; }
+
+    .filter-field-actions { flex-direction: row; gap: 8px; }
+    .btn-filter-apply {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+        background: #2563eb; color: white; font-size: 0.84rem; font-weight: 600;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-apply:hover { background: #1d4ed8; }
+    .btn-filter-clear {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 8px;
+        border: 1.5px solid #cbd5e1; background: white; color: #64748b;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-filter-clear:hover { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .btn-filter-clear-cta {
+        display: inline-block; margin-top: 12px; padding: 7px 18px;
+        border-radius: 8px; border: 1.5px solid #cbd5e1; color: #374151;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .btn-filter-clear-cta:hover { background: #f8fafc; }
+
+    @media (max-width: 700px) {
+        .filter-grid { flex-direction: column; align-items: stretch; }
+        .filter-field { width: 100%; }
+        .filter-field .form-select, .filter-field .filter-input { width: 100%; }
+        .filter-field-actions { width: 100%; }
+        .btn-filter-apply { flex: 1; justify-content: center; }
+    }
+
+    /* ═══ System toggle bar ═══ */
+    .system-toggle-bar {
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        padding: 10px 16px; margin-bottom: 12px;
+        background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 9px;
+    }
+    .system-toggle-link {
+        font-size: 0.82rem; font-weight: 600; color: #2563eb; text-decoration: none;
+        white-space: nowrap;
+    }
+    .system-toggle-link:hover { text-decoration: underline; }
+    .system-toggle-hint { font-size: 0.76rem; color: #94a3b8; }
 
     /* ═══ Legend ═══ */
     .table-legend {
@@ -199,90 +319,69 @@
     }
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .dot-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
-    .dot-amber { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
-    .dot-gray  { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
-    .dot-red   { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+    .dot-active { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+    .dot-inactive { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,0.15); }
 
-    /* ═══ Panel header ═══ */
     .table-count-tag { font-size: 0.72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px; }
 
-    /* ═══ Table structure: dark division lines ═══ */
-    .announcement-manage-table { border-collapse: separate; border-spacing: 0; }
-    .announcement-manage-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
-    .announcement-manage-table thead th:last-child { border-right: none; }
-    .announcement-manage-table thead th.col-status { border-right: none; padding: 0; }
-    .announcement-manage-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
-    .announcement-manage-table tbody td:last-child { border-right: none; }
-    .announcement-manage-table tbody td.col-status { border-right: none; padding: 0; }
-    .announcement-manage-table tbody tr:last-child td { border-bottom: none; }
+    /* ═══ Table structure ═══ */
+    .announcement-table { border-collapse: separate; border-spacing: 0; }
+    .announcement-table thead th { border-bottom: 2px solid #94a3b8 !important; border-right: 1px solid #cbd5e1; }
+    .announcement-table thead th:last-child { border-right: none; }
+    .announcement-table thead th.col-status { border-right: none; padding: 0; }
+    .announcement-table tbody td { border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e9edf1; vertical-align: middle; }
+    .announcement-table tbody td:last-child { border-right: none; }
+    .announcement-table tbody td.col-status { border-right: none; padding: 0; }
+    .announcement-table tbody tr:last-child td { border-bottom: none; }
 
-    .announcement-manage-table tbody tr.announcement-row:nth-of-type(even) { background: #fafbfd; }
-    .announcement-manage-table tbody tr.announcement-row:hover { background: #eef4ff !important; }
-    .announcement-row { transition: background 0.12s ease; }
+    .announcement-table tbody tr.announcement-row:nth-of-type(even) { background: #fafbfd; }
+    .announcement-table tbody tr.announcement-row:hover { background: #eef4ff !important; }
 
-    /* status rail — 4 states */
     .col-status { width: 5px; padding: 0 !important; }
     .status-rail { display: block; width: 5px; height: 100%; min-height: 60px; }
-    .rail-live      { background: #16a34a; }
-    .rail-scheduled { background: #d97706; }
-    .rail-disabled  { background: #94a3b8; }
-    .rail-expired   { background: #dc2626; }
+    .rail-active { background: #16a34a; }
+    .rail-inactive { background: #94a3b8; }
+    tr.row-inactive td:not(.col-status) { color: #94a3b8; }
 
-    tr.row-disabled td:not(.col-status),
-    tr.row-expired td:not(.col-status) { color: #94a3b8; }
-    tr.row-disabled .announcement-title-text,
-    tr.row-expired .announcement-title-text { color: #64748b; }
+    .announcement-title-cell { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+    .announcement-message-preview { font-size: 0.78rem; color: #94a3b8; margin-top: 2px; }
+    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; }
 
-    /* ═══ Title cell ═══ */
-    .title-cell { display: flex; align-items: center; gap: 7px; }
-    .pin-icon { color: #d97706; font-size: 0.9rem; flex-shrink: 0; }
-    .announcement-title-text { font-size: 0.88rem; color: #0f172a; }
-
-    /* ═══ Type badge ═══ */
-    .type-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-    .type-public   { background: #dbeafe; color: #1d4ed8; }
+    .type-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .type-public { background: #dbeafe; color: #1d4ed8; }
     .type-internal { background: #ede9fe; color: #6d28d9; }
 
-    .audience-cell { font-size: 0.82rem; color: #64748b; }
-    .audience-cell i { font-size: 0.78rem; margin-right: 4px; color: #94a3b8; }
-
-    .stat-cell-sm { font-size: 0.8rem; color: #64748b; font-weight: 500; white-space: nowrap; }
-
-    /* ═══ Status pills (extended: scheduled added) ═══ */
     .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-    .status-pill i { font-size: 0.72rem; }
-    .pill-ready     { background: #dcfce7; color: #15803d; }
-    .pill-scheduled { background: #fef3c7; color: #b45309; }
-    .pill-pending   { background: #f1f5f9; color: #64748b; }
-    .pill-failed    { background: #fee2e2; color: #b91c1c; }
+    .pill-ready { background: #dcfce7; color: #15803d; }
+    .pill-failed { background: #f1f5f9; color: #64748b; }
 
-    /* ═══ Row action buttons ═══ */
-    .row-actions { display: inline-flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
-
+    .row-actions { display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
     .btn-admin-labeled {
-        display: inline-flex; align-items: center; gap: 6px;
-        height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
-        font-size: 0.78rem; font-weight: 600; white-space: nowrap;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px;
+        border-radius: 8px; border: 1px solid transparent; font-size: 0.76rem; font-weight: 600;
+        white-space: nowrap; transition: background 0.15s ease, transform 0.1s ease;
         cursor: pointer; text-decoration: none;
     }
-    .btn-admin-labeled i { font-size: 0.88rem; }
     .btn-admin-labeled:hover { transform: translateY(-1px); }
-
-    .btn-label-edit   { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .btn-label-edit { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
     .btn-label-edit:hover { background: #dbeafe; color: #1e40af; }
     .btn-label-toggle { background: #fffbeb; border-color: #fde68a; color: #b45309; }
-    .btn-label-toggle:hover { background: #fef3c7; color: #92400e; }
+    .btn-label-toggle:hover { background: #fef3c7; }
     .btn-label-delete { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
     .btn-label-delete:hover { background: #fee2e2; color: #991b1b; }
 
-    @media (max-width: 1250px) {
+    .view-only-tag {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.76rem; color: #94a3b8; font-weight: 500;
+        background: #f8fafc; border: 1px solid #eef1f6;
+        padding: 4px 10px; border-radius: 999px;
+    }
+
+    @media (max-width: 1300px) {
         .btn-label-text { display: none; }
         .btn-admin-labeled { padding: 0; width: 32px; justify-content: center; }
     }
 
-    /* ═══ Empty state ═══ */
     .empty-state-cell { padding: 0 !important; border: none !important; }
     .empty-state { display: flex; flex-direction: column; align-items: center; padding: 3.5rem 1rem; text-align: center; }
     .empty-state-icon { width: 60px; height: 60px; border-radius: 16px; background: #f1f5f9; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem; }

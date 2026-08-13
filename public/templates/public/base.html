@@ -74,6 +74,11 @@
         margin: 0;
         line-height: 1.4;
       }
+      @media (min-width: 992px) {
+        .nav-guest-wrap {
+          display: none;
+        }
+      }
       @media (max-width: 768px) {
         .top-header .logo-img {
           height: 40px;
@@ -587,34 +592,54 @@
         font-size: 0.75rem;
         color: #94a3b8;
       }
-      .user-dropdown a {
+   .user-dropdown a {
         display: flex;
         align-items: center;
         gap: 10px;
         padding: 9px 12px;
         font-size: 0.86rem;
+        font-weight: 500;
         color: #374151;
         text-decoration: none;
         border-radius: 8px;
-        transition: background 0.15s ease, color 0.15s ease;
-      }
-      .user-dropdown a:hover {
-        background: #f0f4ff;
-        color: var(--primary);
+        transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
       }
       .user-dropdown a i {
         width: 16px;
         text-align: center;
         color: #94a3b8;
+        transition: color 0.15s ease;
       }
+      /* Same amber hover treatment as the Technology Domains dropdown */
+      .user-dropdown a:hover {
+        background: var(--accent);
+        color: #000;
+        font-weight: 700;
+        transform: translateX(2px);
+      }
+      .user-dropdown a:hover i {
+        color: #000;
+      }
+
+      /* Logout — visually separated + a real destructive-action hover */
       .user-dropdown a.logout-item {
         color: #dc2626;
+        margin-top: 6px;
+        padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+        border-radius: 0 0 8px 8px;
       }
       .user-dropdown a.logout-item i {
         color: #dc2626;
       }
       .user-dropdown a.logout-item:hover {
-        background: #fef2f2;
+        background: #dc2626;
+        color: #ffffff;
+        transform: translateX(2px);
+        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+      }
+      .user-dropdown a.logout-item:hover i {
+        color: #ffffff;
       }
       .nav-user-wrap,
       .nav-guest-wrap {
@@ -1225,7 +1250,7 @@
                 <p class="footer-brand-sub mb-0">Ministry of Electronics &amp; IT, Govt. of India</p>
               </div>
             </div>
-            <p class="footer-about-text">National Institute of Electronics &amp; Information Technology, Delhi Centre — empowering learners with quality IT &amp; electronics education, skill development programs, and government-recognized certifications.</p>
+            <p class="footer-about-text">National Institute of Electronics &amp; Information Technology, Delhi Centre </p>
             <div class="footer-social">
               <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
               <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
@@ -1241,9 +1266,7 @@
               <li>
                 <a href="{% url 'public:home' %}"><i class="fas fa-chevron-right"></i>Home</a>
               </li>
-              <li>
-                <a href="#"><i class="fas fa-chevron-right"></i>Announcements</a>
-              </li>
+    
               <li>
                 <a href="{% url 'public:courses' %}"><i class="fas fa-chevron-right"></i>Courses</a>
               </li>
@@ -1272,18 +1295,18 @@
           </div>
 
           <div class="col-lg-3 col-md-6">
-            <p class="footer-col-title">Get in Touch</p>
+            <p class="footer-col-title">Contact Us</p>
             <div class="footer-contact-item">
               <i class="fas fa-map-marker-alt"></i>
-              <span>NIELIT Delhi Centre, New Delhi, India</span>
+              <span>NIELIT Delhi Centre - Inderlok, 2nd Floor Parsvnath Metro Mall, Near Inderlok Metro Station, Inderlok, Delhi- 110052</span>
             </div>
             <div class="footer-contact-item">
               <i class="fas fa-envelope"></i>
-              <span>info@nielitdelhi.gov.in</span>
+              <span>delhi.training@nielit.gov.in</span>
             </div>
             <div class="footer-contact-item">
               <i class="fas fa-phone-alt"></i>
-              <span>+91-11-XXXXXXXX</span>
+              <span>+91-8447795337, 011-23644849</span>
             </div>
           </div>
         </div>
@@ -1292,11 +1315,7 @@
           <p class="mb-0">
             <i class="fas fa-copyright me-1"></i>2026 NIELIT Delhi. All Rights Reserved. Developed &amp; Maintained by <strong>NIELIT Delhi Web Team</strong>
           </p>
-          <div class="footer-bottom-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Use</a>
-            <a href="#">Sitemap</a>
-          </div>
+  
         </div>
       </div>
     </footer>

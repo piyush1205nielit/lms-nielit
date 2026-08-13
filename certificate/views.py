@@ -1,3 +1,4 @@
+#certificate/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,6 +17,7 @@ from .forms import CertificateDesignForm, ManualIssueForm
 from .eligibility import is_eligible_for_certificate
 from .utils import get_or_generate_qr_code
 import requests
+from admin_dashboard.notifications import *
 
 
 def build_certificate_context(request, certificate):
@@ -114,24 +116,6 @@ def certificate_qr_code(request, cert_number):
         return response
     except StudentCertificate.DoesNotExist:
         return HttpResponse(status=404)
-
-
-# @csrf_exempt
-# def image_proxy(request):
-#     """Proxies S3-hosted logos/signatures/QR around CORS restrictions for html2canvas."""
-#     import requests
-#     url = request.GET.get('url', '')
-#     if not url:
-#         return HttpResponse(status=400)
-#     try:
-#         resp = requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
-#         content_type = resp.headers.get('Content-Type', 'image/png')
-#         response = HttpResponse(resp.content, content_type=content_type)
-#         response['Access-Control-Allow-Origin'] = '*'
-#         response['Cache-Control'] = 'public, max-age=3600'
-#         return response
-#     except Exception:
-#         return HttpResponse(status=500)
 
 
 # ══════════════════ ADMIN: Certificate Designs ══════════════════
@@ -298,7 +282,9 @@ def certificate_management_view(request):
 
 def _bulk_update_certificate_status(request, action):
     cert_ids = request.POST.getlist('certificate_ids[]')
-    certificates = list(StudentCertificate.objects.filter(id__in=cert_ids).select_related('user', 'course'))
+    certificates = list(
+        StudentCertificate.objects.filter(id__in=cert_ids).select_related('user', 'user__nielit_centre', 'course')
+    )
 
     for certificate in certificates:
         if action == 'approve':
@@ -312,18 +298,39 @@ def _bulk_update_certificate_status(request, action):
             certificate.status_updated_at = timezone.now()
             certificate.save(update_fields=['status', 'status_updated_at'])
 
-    messages_map = {
-        'approve': ("Certificate Approved", "Your certificate for {course} has been approved! You can now view and download it from your dashboard."),
-        'revoke': ("Certificate Revoked", "Your certificate for {course} has been revoked by an administrator."),
-        'deny': ("Certificate Request Denied", "Your certificate request for {course} has been denied. Contact the administrator for details."),
-    }
-    title, template = messages_map[action]
-
     for certificate in certificates:
+        name = get_display_name(certificate.user)
+
+        if action == 'approve':
+            title = "Certificate Approved"
+            app_message = f"Your certificate for {certificate.course.course_name} has been approved."
+            email_message = (
+                f"Dear {name},\n\n"
+                f"Congratulations! Your certificate for \u201c{certificate.course.course_name}\u201d has been approved.\n\n"
+                f"Certificate Number: {certificate.certificate_number}\n"
+                f"Issue Date: {certificate.issue_date.strftime('%d %B %Y')}\n\n"
+                f"You can view and download it from \u201cMy Certificates\u201d on your dashboard."
+            )
+        elif action == 'revoke':
+            title = "Certificate Revoked"
+            app_message = f"Your certificate for {certificate.course.course_name} has been revoked."
+            email_message = (
+                f"Dear {name},\n\n"
+                f"Your certificate for \u201c{certificate.course.course_name}\u201d has been revoked by an administrator.\n\n"
+                f"Contact your NIELIT centre administrator for details."
+            )
+        else:  # deny
+            title = "Certificate Request Denied"
+            app_message = f"Your certificate request for {certificate.course.course_name} was denied."
+            email_message = (
+                f"Dear {name},\n\n"
+                f"Your certificate request for \u201c{certificate.course.course_name}\u201d has been denied.\n\n"
+                f"Contact your NIELIT centre administrator for details."
+            )
+
         notify_users(
-            [certificate.user],
-            title=title,
-            message=template.format(course=certificate.course.course_name),
+            [certificate.user], title=title,
+            app_message=app_message, email_message=email_message,
             created_by=request.user,
         )
 

@@ -217,6 +217,13 @@
         animation: fadeUp 0.5s 0.7s ease forwards;
     }
 
+      .logo-img {
+        height: 44px;
+        width: auto;
+        object-fit: contain;
+        transition: height 0.3s ease;
+      }
+
     @media (prefers-reduced-motion: reduce) {
         .auth-wrapper, .auth-orb, .auth-card, .auth-icon-wrap, .auth-card h4,
         .auth-card p.subtitle, .field-group, .form-utility-row, .btn-auth-primary, .auth-footer-link {
@@ -236,8 +243,10 @@
 
     <div class="auth-card">
         <div class="text-center mb-4">
-            <div class="auth-icon-wrap"><i class="fas fa-graduation-cap"></i></div>
-            <h4>Welcome Back</h4>
+            <div class="auth-icon-wrap">
+                <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT Logo" class="logo-img" onerror="this.src='https://via.placeholder.com/70?text=NIELIT'" />
+            </div>
+            <h4>User / Student Login</h4>
             <p class="subtitle">Sign in to continue learning</p>
         </div>
 

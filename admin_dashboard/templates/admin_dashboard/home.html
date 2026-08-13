@@ -1,0 +1,514 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="console-wrap">
+
+    <!-- ═══ Header ═══ -->
+    <div class="console-header">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Command Console</h2>
+            <p>
+                {% if role == 'superadmin' %}Full platform overview{% elif role == 'admin' %}Content &amp; student management overview{% else %}Student &amp; approvals overview{% endif %}
+                &middot; {% now "l, d F Y" %}
+            </p>
+        </div>
+        <span class="console-role-badge role-{{ role }}">
+            <i class="bi bi-shield-fill-check"></i>
+            {% if role == 'superadmin' %}Superadmin{% elif role == 'admin' %}Content Admin{% else %}Faculty{% endif %}
+        </span>
+    </div>
+
+    <!-- ═══ SECTION: Key Metrics ═══ -->
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-grid-1x2-fill"></i> Key Metrics</div>
+        <div class="stat-grid stat-grid-4">
+            <a href="{% url 'admin_dashboard:registered_users' %}" class="stat-card stat-link">
+                <div class="stat-card-icon icon-blue"><i class="bi bi-people-fill"></i></div>
+                <div class="stat-card-body">
+                    <div class="stat-card-value">{{ total_students }}</div>
+                    <div class="stat-card-label">Total Students</div>
+                    <div class="stat-card-delta {% if registrations_change_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">
+                        <i class="bi bi-arrow-{% if registrations_change_pct >= 0 %}up{% else %}down{% endif %}-right"></i>
+                        {{ registrations_change_pct }}% vs last week &middot; {{ registrations_this_week }} new
+                    </div>
+                </div>
+            </a>
+            <a href="{% url 'admin_dashboard:registration_requests' %}" class="stat-card stat-link">
+                <div class="stat-card-icon icon-amber"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stat-card-body">
+                    <div class="stat-card-value">{{ pending_registrations }}</div>
+                    <div class="stat-card-label">Pending Registrations</div>
+                    <div class="stat-card-delta delta-neutral"><i class="bi bi-clock-history"></i> Awaiting review</div>
+                </div>
+            </a>
+            <a href="{% url 'course:enrollment_management' %}" class="stat-card stat-link">
+                <div class="stat-card-icon icon-purple"><i class="bi bi-journal-check"></i></div>
+                <div class="stat-card-body">
+                    <div class="stat-card-value">{{ pending_enrollments }}</div>
+                    <div class="stat-card-label">Pending Enrollments</div>
+                    <div class="stat-card-delta {% if enrollments_change_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">
+                        <i class="bi bi-arrow-{% if enrollments_change_pct >= 0 %}up{% else %}down{% endif %}-right"></i>
+                        {{ enrollments_change_pct }}% vs last week &middot; {{ enrollments_this_week }} new
+                    </div>
+                </div>
+            </a>
+            <a href="{% url 'assignment:manage_list' %}" class="stat-card stat-link">
+                <div class="stat-card-icon icon-green"><i class="bi bi-clipboard-check-fill"></i></div>
+                <div class="stat-card-body">
+                    <div class="stat-card-value">{{ pending_grading }}</div>
+                    <div class="stat-card-label">Pending Grading</div>
+                    <div class="stat-card-delta delta-neutral"><i class="bi bi-file-earmark-text"></i> {{ total_submissions }} total submissions</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="stat-grid stat-grid-{% if total_courses is not None and total_admins is not None %}6{% elif total_courses is not None or total_admins is not None %}5{% else %}4{% endif %} mt-3">
+            <div class="stat-card-sm">
+                <div class="stat-card-sm-icon icon-teal"><i class="bi bi-check-circle-fill"></i></div>
+                <div><div class="stat-card-sm-value">{{ active_students }}</div><div class="stat-card-sm-label">Active Students</div></div>
+            </div>
+            <div class="stat-card-sm">
+                <div class="stat-card-sm-icon icon-slate"><i class="bi bi-mortarboard-fill"></i></div>
+                <div><div class="stat-card-sm-value">{{ completed_enrollments }}</div><div class="stat-card-sm-label">Completions</div></div>
+            </div>
+            <div class="stat-card-sm">
+                <div class="stat-card-sm-icon icon-rose"><i class="bi bi-award-fill"></i></div>
+                <div><div class="stat-card-sm-value">{{ pending_certificates }}</div><div class="stat-card-sm-label">Cert. Requests</div></div>
+            </div>
+            {% if total_courses is not None %}
+            <a href="{% url 'course:manage_list' %}" class="stat-card-sm stat-link">
+                <div class="stat-card-sm-icon icon-indigo"><i class="bi bi-journal-bookmark-fill"></i></div>
+                <div><div class="stat-card-sm-value">{{ active_courses }}/{{ total_courses }}</div><div class="stat-card-sm-label">Active Courses</div></div>
+            </a>
+            {% endif %}
+            {% if total_admins is not None %}
+            <a href="{% url 'accounts:admin_list' %}" class="stat-card-sm stat-link">
+                <div class="stat-card-sm-icon icon-violet"><i class="bi bi-person-badge-fill"></i></div>
+                <div><div class="stat-card-sm-value">{{ total_admins }}</div><div class="stat-card-sm-label">Content Admins</div></div>
+            </a>
+            {% endif %}
+            {% if total_faculty is not None %}
+            <a href="{% url 'accounts:faculty_list' %}" class="stat-card-sm stat-link">
+                <div class="stat-card-sm-icon icon-fuchsia"><i class="bi bi-person-workspace"></i></div>
+                <div><div class="stat-card-sm-value">{{ total_faculty }}</div><div class="stat-card-sm-label">Faculty</div></div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══ SECTION: Growth & Trends ═══ -->
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-graph-up-arrow"></i> Growth &amp; Trends</div>
+        <div class="console-grid-2">
+            <div class="console-panel">
+                <div class="console-panel-head">Registrations &amp; Enrollments <span class="panel-subtitle">Last 14 days</span></div>
+                <div class="console-panel-body"><canvas id="trendChart" height="100"></canvas></div>
+            </div>
+            <div class="console-panel">
+                <div class="console-panel-head">Student Account Status</div>
+                <div class="console-panel-body donut-body"><canvas id="accountStatusChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION: System Health (progress bars) ═══ -->
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-heart-pulse-fill"></i> System Health</div>
+        <div class="console-panel">
+            <div class="health-bar-grid">
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Active Accounts</span><strong>{{ active_account_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-blue" style="width:{{ active_account_rate }}%;"></div></div>
+                </div>
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Profile Completion</span><strong>{{ profile_completion_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-amber" style="width:{{ profile_completion_rate }}%;"></div></div>
+                </div>
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Enrollment Grant Rate</span><strong>{{ enrollment_grant_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-purple" style="width:{{ enrollment_grant_rate }}%;"></div></div>
+                </div>
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Course Completion Rate</span><strong>{{ course_completion_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-green" style="width:{{ course_completion_rate }}%;"></div></div>
+                </div>
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Assignment Grading Rate</span><strong>{{ grading_completion_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-teal" style="width:{{ grading_completion_rate }}%;"></div></div>
+                </div>
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Certificate Approval Rate</span><strong>{{ certificate_approval_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-rose" style="width:{{ certificate_approval_rate }}%;"></div></div>
+                </div>
+                {% if course_active_rate is not None %}
+                <div class="health-bar-item">
+                    <div class="health-bar-top"><span>Courses Active</span><strong>{{ course_active_rate }}%</strong></div>
+                    <div class="health-bar-track"><div class="health-bar-fill fill-indigo" style="width:{{ course_active_rate }}%;"></div></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION: Content Overview (admin+) ═══ -->
+    {% if total_courses is not None %}
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-journal-richtext"></i> Content Overview</div>
+        <div class="console-grid-3">
+            <div class="console-panel">
+                <div class="console-panel-head">Course Status</div>
+                <div class="console-panel-body donut-body"><canvas id="courseStatusChart"></canvas></div>
+            </div>
+            <div class="console-panel span-2">
+                <div class="console-panel-head">Top Courses by Enrollment</div>
+                <div class="console-panel-body"><canvas id="topCoursesChart" height="140"></canvas></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ SECTION: Assignments & Certificates ═══ -->
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-award-fill"></i> Assignments &amp; Certificates</div>
+        <div class="console-grid-2">
+            <div class="console-panel">
+                <div class="console-panel-head">Assignment Grading Status</div>
+                <div class="console-panel-body"><canvas id="assignmentChart" height="110"></canvas></div>
+            </div>
+            <div class="console-panel">
+                <div class="console-panel-head">Certificate Requests</div>
+                <div class="console-panel-body donut-body"><canvas id="certificateChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION: Staff & Centres (superadmin only) ═══ -->
+    {% if total_centres is not None %}
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-building"></i> Staff &amp; Centres</div>
+        <div class="console-grid-3">
+            <div class="console-panel">
+                <div class="console-panel-head">Platform Staff</div>
+                <div class="console-panel-body staff-summary">
+                    <div class="staff-row"><span><i class="bi bi-person-badge-fill icon-violet-text"></i> Content Admins</span><strong>{{ total_admins }}</strong></div>
+                    <div class="staff-row"><span><i class="bi bi-person-workspace icon-fuchsia-text"></i> Faculty</span><strong>{{ total_faculty }}</strong></div>
+                    <div class="staff-row"><span><i class="bi bi-building icon-orange-text"></i> Active Centres</span><strong>{{ total_centres }}</strong></div>
+                </div>
+            </div>
+            <div class="console-panel span-2">
+                <div class="console-panel-head">Students by Centre</div>
+                <div class="console-panel-body"><canvas id="centreChart" height="140"></canvas></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ SECTION: Quick Actions + Activity ═══ -->
+    <div class="console-section">
+        <div class="console-section-head"><i class="bi bi-lightning-fill"></i> Actions &amp; Activity</div>
+        <div class="console-grid-2">
+            <div class="console-panel">
+                <div class="console-panel-head">Quick Actions</div>
+                <div class="quick-action-grid">
+                    <a href="{% url 'admin_dashboard:registration_requests' %}" class="quick-action-item">
+                        <i class="bi bi-person-plus-fill"></i><span>Review Registrations</span>
+                        {% if pending_registrations %}<span class="qa-badge">{{ pending_registrations }}</span>{% endif %}
+                    </a>
+                    <a href="{% url 'course:enrollment_management' %}" class="quick-action-item">
+                        <i class="bi bi-journal-check"></i><span>Manage Enrollments</span>
+                        {% if pending_enrollments %}<span class="qa-badge">{{ pending_enrollments }}</span>{% endif %}
+                    </a>
+                    <a href="{% url 'assignment:manage_list' %}" class="quick-action-item">
+                        <i class="bi bi-clipboard-check-fill"></i><span>Grade Assignments</span>
+                        {% if pending_grading %}<span class="qa-badge">{{ pending_grading }}</span>{% endif %}
+                    </a>
+                    <a href="{% url 'admin_dashboard:user_access_management' %}" class="quick-action-item">
+                        <i class="bi bi-shield-lock-fill"></i><span>Account Access</span>
+                    </a>
+                    {% if total_courses is not None %}
+                    <a href="{% url 'certificate:certificate_management' %}" class="quick-action-item">
+                        <i class="bi bi-award-fill"></i><span>Certificate Requests</span>
+                        {% if pending_certificates %}<span class="qa-badge">{{ pending_certificates }}</span>{% endif %}
+                    </a>
+                    <a href="{% url 'course:manage_list' %}" class="quick-action-item">
+                        <i class="bi bi-journal-bookmark-fill"></i><span>Manage Courses</span>
+                    </a>
+                    <a href="{% url 'announcement:manage_list' %}" class="quick-action-item">
+                        <i class="bi bi-megaphone-fill"></i><span>Announcements</span>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'admin_dashboard:registered_users' %}" class="quick-action-item">
+                        <i class="bi bi-people-fill"></i><span>Student Directory</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="console-panel">
+                <div class="console-panel-head">Recent Activity</div>
+                <div class="activity-feed">
+                    {% for item in recent_activity %}
+                    <div class="activity-item">
+                        <span class="activity-icon activity-{{ item.color }}"><i class="bi {{ item.icon }}"></i></span>
+                        <div class="activity-text-wrap">
+                            <div class="activity-text">{{ item.text }}</div>
+                            <div class="activity-time">{{ item.timestamp|timesince }} ago</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="activity-empty"><i class="bi bi-inbox"></i><p>No recent activity yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --console-bg: #0a1330;
+        --console-bg-alt: #0e1a3f;
+        --console-border: #1e2d5c;
+        --console-border-strong: #2c3f7a;
+        --console-text: #e2e8f5;
+        --console-text-muted: #8896c4;
+    }
+    .main-content { max-width: none; background: var(--console-bg) !important; }
+
+    .console-wrap { padding: 4px 2px 30px; }
+
+    /* ═══ Header ═══ */
+    .console-header {
+        display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;
+        margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--console-border);
+    }
+    .console-header h2 { color: #fff; font-size: 1.5rem; font-weight: 700; margin: 0; }
+    .console-header p { color: var(--console-text-muted); font-size: 0.86rem; margin: 4px 0 0; }
+    .console-role-badge {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: linear-gradient(135deg, #172281, #2d3ba8);
+        color: #fff; font-size: 0.78rem; font-weight: 700;
+        padding: 8px 16px; border-radius: 999px; border: 1px solid #3b4fc4;
+    }
+
+    /* ═══ Sections ═══ */
+    .console-section { margin-bottom: 30px; }
+    .console-section-head {
+        display: flex; align-items: center; gap: 9px;
+        font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+        color: #9fb0e8; margin-bottom: 14px; padding-bottom: 10px;
+        border-bottom: 1px dashed var(--console-border-strong);
+    }
+    .console-section-head i { color: #f59e0b; }
+
+    /* ═══ Big stat cards ═══ */
+    .stat-grid { display: grid; gap: 14px; }
+    .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .stat-grid-5 { grid-template-columns: repeat(5, 1fr); }
+    .stat-grid-6 { grid-template-columns: repeat(6, 1fr); }
+    @media (max-width: 1200px) { .stat-grid-5, .stat-grid-6 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px) { .stat-grid-4, .stat-grid-5, .stat-grid-6 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .stat-grid-4, .stat-grid-5, .stat-grid-6 { grid-template-columns: 1fr; } }
+
+    .stat-card {
+        background: var(--console-bg-alt); border: 1px solid var(--console-border);
+        border-radius: 14px; padding: 18px; display: flex; gap: 14px; align-items: flex-start;
+        text-decoration: none; color: inherit;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .stat-link:hover { transform: translateY(-3px); border-color: var(--console-border-strong); box-shadow: 0 10px 26px rgba(0,0,0,0.35); }
+    .stat-card-icon {
+        width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .stat-card-value { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.1; }
+    .stat-card-label { font-size: 0.76rem; color: var(--console-text-muted); font-weight: 600; margin-top: 2px; }
+    .stat-card-delta { font-size: 0.72rem; margin-top: 8px; display: flex; align-items: center; gap: 5px; font-weight: 600; }
+    .delta-up { color: #4ade80; } .delta-down { color: #f87171; } .delta-neutral { color: #94a3b8; }
+
+    .stat-card-sm {
+        background: var(--console-bg-alt); border: 1px solid var(--console-border);
+        border-radius: 12px; padding: 13px; display: flex; align-items: center; gap: 11px;
+        text-decoration: none; color: inherit; transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .stat-card-sm.stat-link:hover { transform: translateY(-2px); border-color: var(--console-border-strong); }
+    .stat-card-sm-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+    .stat-card-sm-value { font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1.1; }
+    .stat-card-sm-label { font-size: 0.68rem; color: var(--console-text-muted); font-weight: 600; margin-top: 1px; }
+
+    .icon-blue    { background: rgba(37,99,235,0.18); color: #60a5fa; }
+    .icon-amber   { background: rgba(217,119,6,0.18); color: #fbbf24; }
+    .icon-purple  { background: rgba(124,58,237,0.18); color: #a78bfa; }
+    .icon-green   { background: rgba(22,163,74,0.18); color: #4ade80; }
+    .icon-teal    { background: rgba(13,148,136,0.18); color: #2dd4bf; }
+    .icon-slate   { background: rgba(100,116,139,0.2); color: #cbd5e1; }
+    .icon-rose    { background: rgba(225,29,72,0.18); color: #fb7185; }
+    .icon-indigo  { background: rgba(79,70,229,0.2); color: #a5b4fc; }
+    .icon-violet  { background: rgba(147,51,234,0.18); color: #c084fc; }
+    .icon-fuchsia { background: rgba(192,38,211,0.18); color: #e879f9; }
+    .icon-orange  { background: rgba(234,88,12,0.18); color: #fb923c; }
+    .icon-violet-text { color: #c084fc; }
+    .icon-fuchsia-text { color: #e879f9; }
+    .icon-orange-text { color: #fb923c; }
+
+    /* ═══ Panels ═══ */
+    .console-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+    .console-grid-3 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+    @media (max-width: 992px) { .console-grid-2, .console-grid-3 { grid-template-columns: 1fr; } }
+
+    .console-panel {
+        background: var(--console-bg-alt); border: 1px solid var(--console-border);
+        border-radius: 14px; overflow: hidden;
+    }
+    .console-panel-head {
+        padding: 14px 18px; font-size: 0.86rem; font-weight: 700; color: #fff;
+        border-bottom: 1px solid var(--console-border);
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-subtitle { font-size: 0.7rem; color: var(--console-text-muted); font-weight: 500; }
+    .console-panel-body { padding: 18px; }
+    .donut-body { display: flex; align-items: center; justify-content: center; height: 240px; padding: 20px; }
+
+    /* ═══ Health bars ═══ */
+    .health-bar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 32px; padding: 22px; }
+    @media (max-width: 700px) { .health-bar-grid { grid-template-columns: 1fr; } }
+    .health-bar-top { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 7px; }
+    .health-bar-top span { color: var(--console-text-muted); }
+    .health-bar-top strong { color: #fff; }
+    .health-bar-track { height: 8px; background: #14204a; border-radius: 6px; overflow: hidden; border: 1px solid var(--console-border); }
+    .health-bar-fill { height: 100%; border-radius: 6px; transition: width 0.6s cubic-bezier(0.22,1,0.36,1); }
+    .fill-blue   { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+    .fill-amber  { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .fill-purple { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+    .fill-green  { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .fill-teal   { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
+    .fill-rose   { background: linear-gradient(90deg, #e11d48, #fb7185); }
+    .fill-indigo { background: linear-gradient(90deg, #4f46e5, #a5b4fc); }
+
+    /* ═══ Staff summary ═══ */
+    .staff-summary { padding: 18px; }
+    .staff-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; border-bottom: 1px solid var(--console-border); font-size: 0.85rem; color: var(--console-text-muted);
+    }
+    .staff-row:last-child { border-bottom: none; }
+    .staff-row strong { color: #fff; font-size: 1rem; }
+
+    /* ═══ Quick actions ═══ */
+    .quick-action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; padding: 16px; }
+    .quick-action-item {
+        position: relative; display: flex; align-items: center; gap: 11px;
+        padding: 13px 14px; border-radius: 10px; border: 1px solid var(--console-border);
+        background: #0d1836; text-decoration: none; color: var(--console-text); font-size: 0.83rem; font-weight: 600;
+        transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .quick-action-item:hover { background: #142150; border-color: var(--console-border-strong); color: #fff; transform: translateY(-2px); }
+    .quick-action-item i { font-size: 1.05rem; color: #f59e0b; flex-shrink: 0; }
+    .qa-badge {
+        position: absolute; top: 8px; right: 9px;
+        background: #dc2626; color: white; font-size: 0.64rem; font-weight: 700;
+        padding: 1px 6px; border-radius: 999px;
+    }
+
+    /* ═══ Activity feed ═══ */
+    .activity-feed { padding: 6px 16px 16px; max-height: 400px; overflow-y: auto; }
+    .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--console-border); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .activity-amber  { background: rgba(217,119,6,0.18); color: #fbbf24; }
+    .activity-blue   { background: rgba(37,99,235,0.18); color: #60a5fa; }
+    .activity-purple { background: rgba(124,58,237,0.18); color: #a78bfa; }
+    .activity-green  { background: rgba(22,163,74,0.18); color: #4ade80; }
+    .activity-text { font-size: 0.82rem; color: var(--console-text); font-weight: 500; line-height: 1.4; }
+    .activity-time { font-size: 0.7rem; color: var(--console-text-muted); margin-top: 2px; }
+    .activity-empty { text-align: center; padding: 40px 10px; color: var(--console-text-muted); }
+    .activity-empty i { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Chart.defaults.color = '#8896c4';
+    Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+    const registrationTrend = {{ registration_trend|safe }};
+    const enrollmentTrend = {{ enrollment_trend|safe }};
+    const assignmentBreakdown = {{ assignment_breakdown|safe }};
+    const accountStatus = {{ account_status_breakdown|safe }};
+    const certificateBreakdown = {{ certificate_breakdown|safe }};
+    {% if course_status_breakdown %}const courseBreakdown = {{ course_status_breakdown|safe }};{% endif %}
+    {% if top_courses %}const topCourses = {{ top_courses|safe }};{% endif %}
+    {% if centre_distribution %}const centreDist = {{ centre_distribution|safe }};{% endif %}
+
+    const gridColor = 'rgba(255,255,255,0.06)';
+
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: registrationTrend.map(d => d.date),
+            datasets: [
+                { label: 'Registrations', data: registrationTrend.map(d => d.count), borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.12)', tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: '#60a5fa' },
+                { label: 'Enrollments', data: enrollmentTrend.map(d => d.count), borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)', tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: '#a78bfa' },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColor } },
+                x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+            },
+        },
+    });
+
+    new Chart(document.getElementById('accountStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Pending', 'Disabled', 'Revoked'],
+            datasets: [{ data: [accountStatus.active, accountStatus.pending, accountStatus.disabled, accountStatus.revoked], backgroundColor: ['#4ade80', '#fbbf24', '#94a3b8', '#f87171'], borderWidth: 0 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, cutout: '68%' },
+    });
+
+    {% if course_status_breakdown %}
+    new Chart(document.getElementById('courseStatusChart'), {
+        type: 'doughnut',
+        data: { labels: ['Active', 'Inactive'], datasets: [{ data: [courseBreakdown.active, courseBreakdown.inactive], backgroundColor: ['#4ade80', '#475569'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, cutout: '68%' },
+    });
+
+    new Chart(document.getElementById('topCoursesChart'), {
+        type: 'bar',
+        data: { labels: topCourses.map(c => c.name), datasets: [{ data: topCourses.map(c => c.count), backgroundColor: '#60a5fa', borderRadius: 6, barThickness: 26 }] },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColor } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } } },
+    });
+    {% endif %}
+
+    new Chart(document.getElementById('assignmentChart'), {
+        type: 'bar',
+        data: { labels: ['Graded', 'Pending Review'], datasets: [{ data: [assignmentBreakdown.graded, assignmentBreakdown.pending], backgroundColor: ['#4ade80', '#fbbf24'], borderRadius: 6, barThickness: 42 }] },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColor } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } } },
+    });
+
+    new Chart(document.getElementById('certificateChart'), {
+        type: 'doughnut',
+        data: { labels: ['Approved', 'Requested', 'Revoked', 'Denied'], datasets: [{ data: [certificateBreakdown.approved, certificateBreakdown.requested, certificateBreakdown.revoked, certificateBreakdown.denied], backgroundColor: ['#4ade80', '#fbbf24', '#94a3b8', '#f87171'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, cutout: '68%' },
+    });
+
+    {% if centre_distribution %}
+    new Chart(document.getElementById('centreChart'), {
+        type: 'bar',
+        data: { labels: centreDist.map(c => c.name), datasets: [{ data: centreDist.map(c => c.count), backgroundColor: '#f59e0b', borderRadius: 6, barThickness: 26 }] },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } }, grid: { color: gridColor } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } } },
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

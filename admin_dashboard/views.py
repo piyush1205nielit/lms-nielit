@@ -1,3 +1,4 @@
+#admin_dashboard/views.py
 from django.shortcuts import render
 from accounts.decorators import admin_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -19,10 +20,19 @@ from django.utils import timezone
 from .notifications import notify_users
 from user.utils import generate_enrollment_number 
 from assignment.models import AssignmentSubmission
+from .notifications import notify_users, get_display_name, EMAIL_SIGNATURE, EMAIL_SUBJECT_PREFIX
+from django.core.mail import send_mail
+from django.conf import settings
 
-@admin_required
+from .analytics import get_dashboard_analytics
+
+@admin_or_faculty_required
 def dashboard_home(request):
-    return render(request, 'admin_dashboard/main_dashboard.html', {'active_page': 'dashboard'})
+    analytics = get_dashboard_analytics(request.user)
+    return render(request, 'admin_dashboard/home.html', {
+        **analytics,
+        'active_page': 'dashboard',
+    })
 
 
 
@@ -333,17 +343,30 @@ def registration_requests_view(request):
 @require_POST
 def bulk_approve_registrations_view(request):
     user_ids = request.POST.getlist('user_ids[]')
-    users = list(User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING))
+    users = list(User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).select_related('nielit_centre'))
 
     User.objects.filter(id__in=[u.id for u in users]).update(
         account_status=User.AccountStatus.ACTIVE, is_active=True, account_status_updated_at=timezone.now()
     )
-    notify_users(
-        users,
-        title="Your account has been approved",
-        message="Your NIELIT LMS account has been approved. You can now log in and enroll in courses.",
-        created_by=request.user,
-    )
+
+    for user in users:
+        name = get_display_name(user)
+        centre_name = user.nielit_centre.centre_name if user.nielit_centre else "your centre"
+
+        notify_users(
+            [user],
+            title="Account Access Granted",
+            app_message="Your account has been approved. You can now log in and enroll in courses.",
+            email_message=(
+                f"Dear {name},\n\n"
+                f"Your NIELIT LMS account has been approved and is now active.\n\n"
+                f"Registered Centre: {centre_name}\n"
+                f"Batch Code: {user.batch_code or '—'}\n"
+                f"Login Email: {user.email}\n\n"
+                f"You can now log in and enroll in courses."
+            ),
+            created_by=request.user,
+        )
     return JsonResponse({'success': True, 'count': len(users)})
 
 
@@ -351,9 +374,30 @@ def bulk_approve_registrations_view(request):
 @require_POST
 def bulk_deny_registrations_view(request):
     user_ids = request.POST.getlist('user_ids[]')
-    count = User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).count()
+    users = list(User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING))
+    count = len(users)
+
+    for user in users:
+        name = get_display_name(user)
+        try:
+            send_mail(
+                subject=f"{EMAIL_SUBJECT_PREFIX}Registration Request Denied",
+                message=(
+                    f"Dear {name},\n\n"
+                    f"Your registration request on NIELIT LMS was not approved. "
+                    f"Contact the administrator at your NIELIT centre for details."
+                    + EMAIL_SIGNATURE
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
     User.objects.filter(id__in=user_ids, account_status=User.AccountStatus.PENDING).delete()
     return JsonResponse({'success': True, 'count': count})
+
 
 @admin_or_faculty_required
 def user_access_management_view(request):
@@ -422,13 +466,29 @@ def user_access_management_view(request):
     })
 
 
-def _bulk_update_account_status(request, new_status, is_active_flag, title, message_template):
+def _bulk_update_account_status(request, new_status, is_active_flag, title, app_reason, email_reason):
     user_ids = request.POST.getlist('user_ids[]')
-    users = list(User.objects.filter(id__in=user_ids, role=User.Role.USER))
+    users = list(User.objects.filter(id__in=user_ids, role=User.Role.USER).select_related('nielit_centre'))
+
     User.objects.filter(id__in=[u.id for u in users]).update(
         account_status=new_status, is_active=is_active_flag, account_status_updated_at=timezone.now()
     )
-    notify_users(users, title=title, message=message_template, created_by=request.user)
+
+    for user in users:
+        name = get_display_name(user)
+        notify_users(
+            [user],
+            title=title,
+            app_message=app_reason,
+            email_message=(
+                f"Dear {name},\n\n"
+                f"{email_reason}\n\n"
+                f"Batch Code: {user.batch_code or '—'}\n"
+                f"Centre: {user.nielit_centre.centre_name if user.nielit_centre else '—'}\n\n"
+                f"Contact your NIELIT centre administrator if you have questions."
+            ),
+            created_by=request.user,
+        )
     return JsonResponse({'success': True, 'count': len(users)})
 
 
@@ -437,27 +497,32 @@ def _bulk_update_account_status(request, new_status, is_active_flag, title, mess
 def bulk_grant_access_view(request):
     return _bulk_update_account_status(
         request, User.AccountStatus.ACTIVE, True,
-        "Account Access Granted", "Your account access has been granted. You can now log in.",
+        "Account Access Granted",
+        app_reason="Your account access has been granted. You can now log in.",
+        email_reason="Your account access has been granted. You can now log in to NIELIT LMS.",
     )
 
 
-@superadmin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_revoke_access_view(request):
     return _bulk_update_account_status(
         request, User.AccountStatus.REVOKED, False,
-        "Account Access Revoked", "Your account access has been revoked. Contact the administrator for details.",
+        "Account Access Revoked",
+        app_reason="Your account access has been revoked by an administrator.",
+        email_reason="Your account access has been revoked by an administrator.",
     )
 
 
-@superadmin_required
+@admin_or_faculty_required
 @require_POST
 def bulk_disable_access_view(request):
     return _bulk_update_account_status(
         request, User.AccountStatus.DISABLED, False,
-        "Account Temporarily Disabled", "Your account has been temporarily disabled by an administrator.",
+        "Account Temporarily Disabled",
+        app_reason="Your account has been temporarily disabled.",
+        email_reason="Your account has been temporarily disabled by an administrator.",
     )
-
 
 @superadmin_required
 @require_POST
@@ -490,11 +555,12 @@ def bulk_user_upload_view(request):
             notify_users(
                 created_users,
                 title="Your NIELIT LMS account has been created",
-                message=(
-                    f"An account has been created for you on NIELIT LMS.\n\n"
-                    f"Login using your registered email or contact number with the password "
-                    f"sent to your email. Please complete your profile after logging in to "
-                    f"access courses."
+                app_message="Your account has been created. Check your email for login credentials.",
+                email_message=(
+                    "An account has been created for you on NIELIT LMS.\n\n"
+                    "Login using your registered email or contact number with the password "
+                    "sent to your email. Please complete your profile after logging in to "
+                    "access courses."
                 ),
                 created_by=request.user,
             )
@@ -524,10 +590,12 @@ def _send_credential_emails(users, common_password):
     from django.conf import settings
 
     for user in users:
+        name = get_display_name(user)
         try:
             send_mail(
-                subject="Your NIELIT LMS Login Credentials",
+                subject=f"{EMAIL_SUBJECT_PREFIX}Your Login Credentials",
                 message=(
+                    f"Dear {name},\n\n"
                     f"Your NIELIT LMS account has been created.\n\n"
                     f"Login Email: {user.email}\n"
                     f"Login Contact: {user.contact}\n"
@@ -536,6 +604,7 @@ def _send_credential_emails(users, common_password):
                     f"along with the password above. For security, we recommend completing "
                     f"your profile immediately after your first login.\n\n"
                     f"Note: this is a shared initial password. Please do not share it further."
+                    + EMAIL_SIGNATURE
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
@@ -570,3 +639,5 @@ def toggle_admin_course_permission_view(request, admin_id):
     state = "granted" if profile.can_manage_courses else "revoked"
     messages.success(request, f"Course management access {state} for {profile.name}.")
     return redirect('accounts:admin_list')
+
+

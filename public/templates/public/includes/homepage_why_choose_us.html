@@ -1,0 +1,89 @@
+<section class="home-why-section">
+    <div class="container">
+        <div class="section-header reveal-up">
+            <span class="section-eyebrow why-eyebrow"><i class="fas fa-star me-1"></i> Why NIELIT LMS</span>
+            <h2 class="section-title">Built for Real Learning Outcomes</h2>
+            <p class="section-desc">Everything you need to learn, practice, and get certified — in one place.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-sm-6 col-lg-3 reveal-up" style="--delay: 100ms;">
+                <div class="why-card">
+                    <div class="why-icon why-icon-blue"><i class="fas fa-video"></i></div>
+                    <h6>Adaptive Video Learning</h6>
+                    <p>Smooth, buffer-free lessons that adjust quality automatically to your connection.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3 reveal-up" style="--delay: 200ms;">
+                <div class="why-card">
+                    <div class="why-icon why-icon-amber"><i class="fas fa-chart-line"></i></div>
+                    <h6>Track Your Progress</h6>
+                    <p>Pick up exactly where you left off, on any device, with real-time progress tracking.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3 reveal-up" style="--delay: 300ms;">
+                <div class="why-card">
+                    <div class="why-icon why-icon-purple"><i class="fas fa-clipboard-check"></i></div>
+                    <h6>Hands-On Assignments</h6>
+                    <p>Apply what you learn with real assignments, reviewed and graded by instructors.</p>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3 reveal-up" style="--delay: 400ms;">
+                <div class="why-card">
+                    <div class="why-icon why-icon-green"><i class="fas fa-award"></i></div>
+                    <h6>Verified Certificates</h6>
+                    <p>Earn a government-backed certificate with a public, scannable verification page.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .home-why-section { padding: 72px 0; background: #ffffff; }
+    .why-eyebrow { color: #15803d; background: #ecfdf5; border-color: #bbf7d0; }
+    .home-why-section .section-title::after { background: linear-gradient(90deg, #059669, #172281); }
+
+    .why-card {
+        background: #ffffff; border: 1px solid #eef1f6; border-radius: 16px;
+        padding: 30px 24px; height: 100%;
+        transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+    .why-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 36px rgba(15,23,42,0.1);
+        border-color: transparent;
+    }
+    .why-icon {
+        width: 52px; height: 52px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; margin-bottom: 18px; color: #ffffff;
+        transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .why-card:hover .why-icon { transform: rotate(-10deg) scale(1.1); }
+    .why-icon-blue   { background: linear-gradient(135deg, #172281, #3346c9); }
+    .why-icon-amber  { background: linear-gradient(135deg, #b45309, #f59e0b); }
+    .why-icon-purple { background: linear-gradient(135deg, #6d28d9, #a855f7); }
+    .why-icon-green  { background: linear-gradient(135deg, #047857, #10b981); }
+
+    .why-card h6 { font-size: 1rem; font-weight: 700; color: #101828; margin-bottom: 10px; }
+    .why-card p { font-size: 0.85rem; color: #64748b; line-height: 1.65; margin: 0; }
+
+    @media (max-width: 576px) { .home-why-section { padding: 48px 0; } }
+</style>
+
+<script>
+(function () {
+    const targets = document.querySelectorAll('.home-why-section .reveal-up');
+    if (!('IntersectionObserver' in window) || targets.length === 0) {
+        targets.forEach(el => el.classList.add('is-visible'));
+        return;
+    }
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) { entry.target.classList.add('is-visible'); io.unobserve(entry.target); }
+        });
+    }, { threshold: 0.15 });
+    targets.forEach(el => io.observe(el));
+})();
+</script>

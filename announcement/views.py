@@ -1,3 +1,4 @@
+#announcement/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,11 +10,54 @@ from .forms import AnnouncementForm
 
 # ── Admin: manage announcements ─────────────────────────────
 
+from django.db.models import Q
+
 @admin_required
 def announcement_list_view(request):
-    announcements = Announcement.objects.select_related('target_course', 'created_by').all()
+    show_system = request.GET.get('show_system') == '1'
+
+    announcements = Announcement.objects.select_related('target_course', 'created_by')
+    if not show_system:
+        announcements = announcements.filter(is_system_generated=False)
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        announcements = announcements.filter(
+            Q(title__icontains=query) | Q(message__icontains=query)
+        )
+
+    type_filter = request.GET.get('type', '').strip()
+    if type_filter:
+        announcements = announcements.filter(announcement_type=type_filter)
+
+    target_filter = request.GET.get('target', '').strip()
+    if target_filter:
+        announcements = announcements.filter(target_type=target_filter)
+
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter == 'active':
+        announcements = announcements.filter(is_active=True)
+    elif status_filter == 'inactive':
+        announcements = announcements.filter(is_active=False)
+
+    announcements = announcements.order_by('-is_pinned', '-publish_at')
+
+    system_count = Announcement.objects.filter(is_system_generated=True).count()
+    public_count = Announcement.objects.filter(is_system_generated=False, announcement_type=Announcement.Type.PUBLIC).count()
+    internal_count = Announcement.objects.filter(is_system_generated=False, announcement_type=Announcement.Type.INTERNAL).count()
+    pinned_count = Announcement.objects.filter(is_system_generated=False, is_pinned=True).count()
+
     return render(request, 'announcement/manage_list.html', {
         'announcements': announcements,
+        'show_system': show_system,
+        'system_count': system_count,
+        'public_count': public_count,
+        'internal_count': internal_count,
+        'pinned_count': pinned_count,
+        'query': query,
+        'selected_type': type_filter,
+        'selected_target': target_filter,
+        'selected_status': status_filter,
         'active_page': 'announcements',
     })
 

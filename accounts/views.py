@@ -1,3 +1,4 @@
+#account/views.py
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -10,7 +11,8 @@ from .models import User, AdminProfile, FacultyProfile
 from django.contrib.auth.forms import SetPasswordForm
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from admin_dashboard.notifications import notify_users
+from admin_dashboard.notifications import *
+
 
 
 
@@ -163,9 +165,12 @@ def faculty_create_view(request):
         notify_users(
             [user],
             title="Faculty Account Created",
-            message=(
+            app_message="Your faculty account has been created. Contact the administrator for your login password.",
+            email_message=(
+                f"Dear {profile.full_name},\n\n"
                 f"A faculty account has been created for you on NIELIT LMS.\n\n"
-                f"Login email: {user.email}\nLogin contact: {user.contact}\n\n"
+                f"Login Email: {user.email}\n"
+                f"Login Contact: {user.contact}\n\n"
                 f"Use the password provided to you separately by the administrator to log in."
             ),
             created_by=request.user,

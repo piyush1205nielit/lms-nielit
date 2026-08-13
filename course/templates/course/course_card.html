@@ -67,15 +67,7 @@
                     <span>{{ course.modules.count }} Modules</span>
                 </div>
                 <div class="meta-divider"></div>
-                <div class="meta-item">
-                    <i class="fas fa-clock"></i>
-                    <span>{{ course.total_duration|default:"8" }}h</span>
-                </div>
-                <div class="meta-divider"></div>
-                <div class="meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>{{ course.enrolled_count|default:"0" }}</span>
-                </div>
+             
             </div>
             <a href="{% url 'course:detail' course.id %}" class="course-card-btn">
                 <span>Explore</span>

@@ -9,6 +9,7 @@ from accounts.models import User
 from user.models import LearnerProfile
 from admin_dashboard.models import Centre
 from user.utils import generate_enrollment_number
+from admin_dashboard.notifications import notify_users, get_display_name, EMAIL_SUBJECT_PREFIX, EMAIL_SIGNATURE
 
 REQUIRED_HEADERS = ['Email', 'Contact', 'NIELIT Centre', 'Batch Code', 'Full Name', 'Gender']
 VALID_GENDERS = {'male': 'male', 'female': 'female', 'other': 'other', 'm': 'male', 'f': 'female'}
@@ -226,3 +227,33 @@ def create_users_from_rows(valid_rows, created_by):
         created_users.append(user)
 
     return created_users, common_password
+
+
+
+def _send_credential_emails(users, common_password):
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    for user in users:
+        name = get_display_name(user)
+        try:
+            send_mail(
+                subject=f"{EMAIL_SUBJECT_PREFIX}Your Login Credentials",
+                message=(
+                    f"Dear {name},\n\n"
+                    f"Your NIELIT LMS account has been created.\n\n"
+                    f"Login Email: {user.email}\n"
+                    f"Login Contact: {user.contact}\n"
+                    f"Password: {common_password}\n\n"
+                    f"Log in at the LMS portal using either your email or contact number, "
+                    f"along with the password above. For security, we recommend completing "
+                    f"your profile immediately after your first login.\n\n"
+                    f"Note: this is a shared initial password. Please do not share it further."
+                    + EMAIL_SIGNATURE
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
