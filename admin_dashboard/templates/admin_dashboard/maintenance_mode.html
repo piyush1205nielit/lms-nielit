@@ -1,0 +1,133 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% block title %}Maintenance Mode{% endblock %}
+{% block page_title %}Maintenance Mode{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-cone-striped"></i> Maintenance Mode</h2>
+        <p>Temporarily restrict the entire portal to staff only, while you perform course uploads, publishing, or other admin work.</p>
+    </div>
+</div>
+
+<div class="maint-status-banner {% if maintenance.is_enabled %}status-on{% else %}status-off{% endif %}">
+    <div class="maint-status-icon"><i class="bi {% if maintenance.is_enabled %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %}"></i></div>
+    <div>
+        <div class="maint-status-title">
+            {% if maintenance.is_enabled %}Maintenance Mode is currently ON{% else %}Portal is currently live{% endif %}
+        </div>
+        <div class="maint-status-sub">
+            {% if maintenance.is_enabled %}
+                Enabled by {{ maintenance.enabled_by.email|default:"—" }} on {{ maintenance.enabled_at|date:"d M Y, g:i A" }}
+            {% else %}
+                All students and visitors have full access.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if not maintenance.is_enabled %}
+    <div class="col-lg-7">
+        <div class="card-panel p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-power text-danger me-1"></i> Enable Maintenance Mode</h6>
+            <p class="text-muted small mb-3">
+                While enabled, every student and public visitor will see a maintenance page instead of the site.
+                Superadmins, content admins, and faculty retain full access to the admin panel and all related
+                actions (course uploads, publishing, grading, etc.) throughout.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="enable">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Message shown to visitors</label>
+                    <textarea name="message" class="form-control" rows="3">{{ maintenance.message }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Estimated return time <span class="text-muted fw-normal">(optional)</span></label>
+                    <input type="datetime-local" name="estimated_end_time" class="form-control">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold text-danger">
+                        Type <code>CONFIRM</code> to proceed
+                    </label>
+                    <input type="text" name="confirm_text" class="form-control" placeholder="CONFIRM" autocomplete="off" required>
+                    <div class="form-text">This action immediately blocks portal access for every student and visitor.</div>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Enable Maintenance Mode
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-lg-7">
+        <div class="card-panel p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-power text-success me-1"></i> Disable Maintenance Mode</h6>
+            <p class="text-muted small mb-3">Turn the portal back on for students and public visitors immediately.</p>
+
+            <div class="maint-preview mb-3">
+                <div class="maint-preview-label">Current message</div>
+                <div class="maint-preview-text">{{ maintenance.message }}</div>
+                {% if maintenance.estimated_end_time %}
+                    <div class="maint-preview-eta"><i class="bi bi-clock"></i> Expected back: {{ maintenance.estimated_end_time|date:"d M Y, g:i A" }}</div>
+                {% endif %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="disable">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle-fill me-1"></i> Disable Maintenance Mode &amp; Go Live
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-5">
+        <div class="card-panel p-4" style="background:#f8fafc;">
+            <h6 class="fw-bold small mb-2"><i class="bi bi-info-circle-fill me-1"></i> What stays available during maintenance</h6>
+            <ul class="small text-muted mb-0 ps-3">
+                <li>Full admin panel — all superadmin, content admin, and faculty tools</li>
+                <li>Course, module, and lesson management (including video upload)</li>
+                <li>Student, enrollment, assignment, and certificate management</li>
+                <li>Static files, media, and the MediaConvert completion webhook</li>
+            </ul>
+            <hr>
+            <h6 class="fw-bold small mb-2"><i class="bi bi-x-circle-fill me-1"></i> What gets blocked</h6>
+            <ul class="small text-muted mb-0 ps-3">
+                <li>The public homepage, course catalog, and all public pages</li>
+                <li>Student login, signup, and the entire learner dashboard</li>
+                <li>Video playback and all student-facing actions</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .maint-status-banner {
+        display: flex; align-items: center; gap: 16px;
+        padding: 18px 22px; border-radius: 12px; margin-bottom: 24px;
+    }
+    .status-on { background: #fef2f2; border: 1.5px solid #fecaca; }
+    .status-off { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+    .maint-status-icon { font-size: 1.8rem; }
+    .status-on .maint-status-icon { color: #dc2626; }
+    .status-off .maint-status-icon { color: #16a34a; }
+    .maint-status-title { font-weight: 700; font-size: 1rem; color: #1e293b; }
+    .maint-status-sub { font-size: 0.82rem; color: #64748b; margin-top: 2px; }
+
+    .maint-preview { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px; }
+    .maint-preview-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #92400e; margin-bottom: 6px; }
+    .maint-preview-text { font-size: 0.86rem; color: #78350f; }
+    .maint-preview-eta { font-size: 0.78rem; color: #92400e; margin-top: 8px; }
+</style>
+{% endblock %}

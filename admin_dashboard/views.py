@@ -641,3 +641,43 @@ def toggle_admin_course_permission_view(request, admin_id):
     return redirect('accounts:admin_list')
 
 
+
+from django.utils import timezone
+from django.contrib import messages
+from accounts.decorators import superadmin_required
+from .models import MaintenanceMode
+
+
+@superadmin_required
+def maintenance_mode_view(request):
+    maintenance = MaintenanceMode.get_solo()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'enable':
+            confirm_text = request.POST.get('confirm_text', '').strip()
+            if confirm_text != 'CONFIRM':
+                messages.error(request, 'You must type CONFIRM exactly to enable maintenance mode.')
+                return redirect('admin_dashboard:maintenance_mode')
+
+            maintenance.is_enabled = True
+            maintenance.message = request.POST.get('message', '').strip() or maintenance.message
+            end_time_raw = request.POST.get('estimated_end_time', '').strip()
+            maintenance.estimated_end_time = end_time_raw or None
+            maintenance.enabled_by = request.user
+            maintenance.enabled_at = timezone.now()
+            maintenance.save()
+            messages.success(request, 'Maintenance mode is now ON. The portal is restricted to staff only.')
+
+        elif action == 'disable':
+            maintenance.is_enabled = False
+            maintenance.save()
+            messages.success(request, 'Maintenance mode is now OFF. The portal is live again.')
+
+        return redirect('admin_dashboard:maintenance_mode')
+
+    return render(request, 'admin_dashboard/maintenance_mode.html', {
+        'maintenance': maintenance,
+        'active_page': 'maintenance',
+    })

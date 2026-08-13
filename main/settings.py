@@ -149,6 +149,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 
     # Custom — enforces profile completion before learners can access course content
+    'admin_dashboard.middleware.MaintenanceModeMiddleware',
     "user.middleware.ProfileCompletionMiddleware",
 ]
 

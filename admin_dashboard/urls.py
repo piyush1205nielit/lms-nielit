@@ -34,4 +34,6 @@ urlpatterns = [
     path('faculty-home/', views.faculty_dashboard_home, name='faculty_home'),
     path('admins/<uuid:admin_id>/toggle-course-permission/', views.toggle_admin_course_permission_view, name='toggle_admin_course_permission'),
 
+    path('maintenance/', views.maintenance_mode_view, name='maintenance_mode'),
+
 ]

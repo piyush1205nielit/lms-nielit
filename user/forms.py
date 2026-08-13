@@ -180,15 +180,6 @@ class ProfileCompletionForm(forms.ModelForm):
 
 
 class ProfileEditForm(forms.ModelForm):
-    """Self-service profile editing. Deliberately excludes email and contact —
-    those live on the User model and can only be changed by an admin, via the
-    separate admin_dashboard credentials-edit page."""
-
-    state = forms.ChoiceField(
-        choices=INDIAN_STATES_UTS,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-
     class Meta:
         model = LearnerProfile
         fields = [
@@ -197,28 +188,43 @@ class ProfileEditForm(forms.ModelForm):
             'highest_qualification', 'profile_image',
         ]
         widgets = {
-            'full_name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
+            'full_name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'Full name'}),
             'date_of_birth': forms.DateInput(attrs={'class': TEXT_INPUT_CLASS, 'type': 'date'}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
-            'aadhar_number': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'maxlength': '12'}),
-            'address': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 3}),
+            'aadhar_number': forms.TextInput(attrs={
+                'class': TEXT_INPUT_CLASS, 'placeholder': '12-digit Aadhar number',
+                'maxlength': '12', 'inputmode': 'numeric',
+            }),
+            'address': forms.Textarea(attrs={'class': TEXT_INPUT_CLASS, 'rows': 2}),
             'city': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
-            'pin_code': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'maxlength': '6'}),
-            'highest_qualification': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
+            'state': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS}),
+            'pin_code': forms.TextInput(attrs={
+                'class': TEXT_INPUT_CLASS, 'placeholder': '6-digit PIN code',
+                'maxlength': '6', 'inputmode': 'numeric',
+            }),
+            'highest_qualification': forms.TextInput(attrs={'class': TEXT_INPUT_CLASS, 'placeholder': 'e.g. B.Tech, 12th, Diploma'}),
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # gender isn't in the model's required set (blank=True), but a genuinely
+        # completed profile should have one — enforce it here at the form layer
+        # without touching the model's own leniency (used during partial/bulk creation)
+        self.fields['gender'].required = True
+        self.fields['full_name'].required = True
+
     def clean_aadhar_number(self):
-        aadhar = self.cleaned_data.get('aadhar_number', '').strip()
-        if aadhar and (not aadhar.isdigit() or len(aadhar) != 12):
-            raise ValidationError("Aadhar number must be exactly 12 digits.")
-        return aadhar
+        value = self.cleaned_data.get('aadhar_number', '').strip()
+        if value and (not value.isdigit() or len(value) != 12):
+            raise forms.ValidationError("Aadhar number must be exactly 12 digits.")
+        return value
 
     def clean_pin_code(self):
-        pin = self.cleaned_data.get('pin_code', '').strip()
-        if pin and (not pin.isdigit() or len(pin) != 6):
-            raise ValidationError("Enter a valid 6-digit PIN code.")
-        return pin
+        value = self.cleaned_data.get('pin_code', '').strip()
+        if value and (not value.isdigit() or len(value) != 6):
+            raise forms.ValidationError("Enter a valid 6-digit PIN code.")
+        return value
 
     def clean_profile_image(self):
         image = self.cleaned_data.get('profile_image')
