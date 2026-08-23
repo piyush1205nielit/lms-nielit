@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}NIELIT Delhi Forms Management{% endblock %}</title>
+<style>
+  :root{
+    --navy:#0b1f3f; --navy-deep:#081730; --navy-mid:#12285a;
+    --yellow:#f5b400; --yellow-dark:#d99a00;
+    --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0;
+    --card:#ffffff; --bg:#f4f6fb;
+    --green:#16a34a; --green-bg:#dcfce7;
+    --amber:#b45309; --amber-bg:#fef3c7;
+    --red:#dc2626; --red-bg:#fee2e2;
+    --radius:14px;
+    --shadow:0 1px 3px rgba(11,31,63,.08),0 10px 26px rgba(11,31,63,.07);
+    --header-h:66px; --sidebar-w:270px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5}
+  a{color:var(--navy);text-decoration:none}
+
+  /* ================= Top header ================= */
+  .site-header{
+    position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:100;
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+    display:flex;align-items:center;gap:16px;padding:0 20px;
+    box-shadow:0 2px 10px rgba(11,31,63,.25);
+  }
+  .header-toggle{
+    display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+    color:#fff;width:38px;height:38px;border-radius:9px;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;
+  }
+  .header-logos{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .header-logos img{height:38px;width:auto;border-radius:6px;background:#fff;padding:3px;display:block}
+  .header-divider{width:1px;height:32px;background:rgba(255,255,255,.25);flex-shrink:0}
+  .header-titles{overflow:hidden}
+  .header-titles h1{margin:0;font-size:1.02rem;color:#fff;font-weight:800;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-titles p{margin:1px 0 0;font-size:.71rem;color:#c3cbe6;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .header-spacer{flex:1}
+  .header-user{
+    display:flex;align-items:center;gap:9px;color:#fff;font-size:.82rem;font-weight:600;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+    padding:7px 13px;border-radius:10px;flex-shrink:0;
+  }
+  .header-user .avatar{
+    width:26px;height:26px;border-radius:50%;background:var(--yellow);color:var(--navy-deep);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;flex-shrink:0;
+  }
+
+  /* ================= Sidebar ================= */
+  .sidebar{
+    position:fixed;top:var(--header-h);left:0;bottom:0;width:var(--sidebar-w);z-index:90;
+    background:#fff;border-right:1px solid var(--line);overflow-y:auto;
+    padding:18px 14px 30px;transition:transform .2s ease;
+  }
+  .sidebar-section{margin-bottom:20px}
+  .sidebar-label{
+    font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);padding:0 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;
+  }
+  .sidebar-label svg{width:12px;height:12px;flex-shrink:0}
+
+  .side-link{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+    color:var(--ink);font-size:.87rem;font-weight:600;margin-bottom:3px;transition:.15s;
+  }
+  .side-link:hover{background:#f1f4fb;color:var(--navy)}
+  .side-link.active{background:var(--navy);color:#fff}
+  .side-link svg{width:17px;height:17px;flex-shrink:0}
+
+  .pin-item{
+    display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;
+    font-size:.81rem;color:var(--ink);margin-bottom:2px;transition:.15s;
+  }
+  .pin-item:hover{background:#f7f8fc}
+  .pin-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .pin-item .dot.on{background:var(--green)}
+  .pin-item .dot.off{background:var(--amber)}
+  .pin-item .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .pin-empty{padding:6px 10px;font-size:.76rem;color:var(--muted);font-style:italic}
+
+  .sidebar-divider{height:1px;background:var(--line);margin:14px 4px}
+
+  /* ================= Main layout ================= */
+  .main-wrap{
+    margin-top:var(--header-h);margin-left:var(--sidebar-w);
+    padding:24px 26px 50px;min-height:calc(100vh - var(--header-h));
+  }
+  .main-wrap:not(.wide){max-width:1180px}
+
+  .sidebar-backdrop{
+    display:none;position:fixed;inset:0;top:var(--header-h);background:rgba(8,23,48,.45);z-index:85;
+  }
+
+  .msg{padding:12px 16px;border-radius:10px;margin-bottom:14px;font-weight:600;font-size:.88rem}
+  .msg.success{background:var(--green-bg);color:var(--green)}
+  .msg.error{background:var(--red-bg);color:var(--red)}
+  .msg.info{background:#eef2ff;color:var(--navy)}
+
+  /* ================= Responsive ================= */
+  @media(max-width:960px){
+    .header-toggle{display:flex}
+    .header-titles p{display:none}
+    .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(11,31,63,.3)}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-backdrop.open{display:block}
+    .main-wrap{margin-left:0;padding:18px 14px 40px}
+  }
+  @media(max-width:480px){
+    .header-logos img{height:30px}
+    .header-titles h1{font-size:.86rem}
+  }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ================= Header ================= -->
+<header class="site-header">
+  <button class="header-toggle" id="sidebar-toggle" aria-label="Toggle menu">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+
+  <div class="header-logos">
+    <!-- Replace these src values with your actual logo URLs / static paths -->
+    <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT logo">
+  </div>
+
+  <div class="header-divider"></div>
+
+  <div class="header-titles">
+    <h1>NIELIT Delhi Forms Management</h1>
+    <p>Admin Panel</p>
+  </div>
+
+  <div class="header-spacer"></div>
+
+  {% if request.user.is_authenticated %}
+  <div class="header-user">
+    <span class="avatar">{{ request.user.admin_profile.name|default:request.user.email|slice:":1"|upper }}</span>
+    <span>{{ request.user.admin_profile.name|default:request.user.email }}</span>
+  </div>
+  {% endif %}
+</header>
+
+<!-- ================= Sidebar ================= -->
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+<nav class="sidebar" id="sidebar">
+
+  <div class="sidebar-section">
+    <a class="side-link {% if request.resolver_match.url_name == 'form_list' %}active{% endif %}"
+       href="{% url 'formbuilder:form_list' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg>
+      Form Console
+    </a>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+      Active (Published)
+    </div>
+    {% for f in fb2_pinned_active %}
+      <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
+        <span class="dot on"></span>
+        <span class="pname">{{ f.title }}</span>
+      </a>
+    {% empty %}
+      <div class="pin-empty">No pinned published forms</div>
+    {% endfor %}
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Inactive (Unpublished)
+    </div>
+    {% for f in fb2_pinned_inactive %}
+      <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
+        <span class="dot off"></span>
+        <span class="pname">{{ f.title }}</span>
+      </a>
+    {% empty %}
+      <div class="pin-empty">No pinned draft forms</div>
+    {% endfor %}
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-section">
+    <a class="side-link" href="{% url 'admin_dashboard:home' %}" >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Portal Management
+    </a>
+    <a class="side-link" href="{% url 'public:home' %}" target="_blank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+      Public Site
+    </a>
+  </div>
+
+</nav>
+
+<!-- ================= Main content ================= -->
+<main class="main-wrap {% block body_class %}{% endblock %}">
+  {% if messages %}
+    {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+(function(){
+  const sidebar = document.getElementById("sidebar");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  const toggleBtn = document.getElementById("sidebar-toggle");
+  function openSidebar(){ sidebar.classList.add("open"); backdrop.classList.add("open"); }
+  function closeSidebar(){ sidebar.classList.remove("open"); backdrop.classList.remove("open"); }
+  if(toggleBtn){
+    toggleBtn.addEventListener("click", ()=> sidebar.classList.contains("open") ? closeSidebar() : openSidebar());
+    backdrop.addEventListener("click", closeSidebar);
+  }
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

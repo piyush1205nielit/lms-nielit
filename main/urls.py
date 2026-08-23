@@ -17,6 +17,7 @@ urlpatterns = [
     path('announcements/', include('announcement.urls')),
     path('assignments/', include('assignment.urls')),
     path('certificate/', include('certificate.urls')),
+    path('form/', include('formbuilder.urls')),
 ]
 
 # Media is served by S3 in production (USE_S3=True) and never touches local

@@ -398,6 +398,71 @@
         .stat-card .stat-value { font-size: 1.35rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
         .stat-card .stat-label { font-size: 0.78rem; color: #64748b; font-weight: 500; }
 
+        /* Forms Management — yellow background, black text */
+ /* Forms Management — highlighted sidebar button */
+.sidebar .nav-link-forms {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+
+    color: #111827 !important;
+    background: #fbbf24;
+
+    padding: 0.62rem 1.5rem;
+    margin: 0.1rem 0.65rem;
+
+    font-size: 0.87rem;
+    font-weight: 700;
+
+    border-radius: 9px;
+    text-decoration: none !important;
+
+    border: 1px solid #f59e0b;
+
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+/* Icon */
+.sidebar .nav-link-forms i {
+    font-size: 0.98rem;
+    color: #111827;
+    flex-shrink: 0;
+}
+
+/* Hover */
+.sidebar .nav-link-forms:hover {
+    background: #fcd34d;
+    color: #000 !important;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 5px 12px rgba(245, 158, 11, 0.35);
+}
+
+/* Active */
+.sidebar .nav-link-forms.active {
+    background: #f59e0b;
+    color: #111827 !important;
+
+    font-weight: 700;
+
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+}
+
+/* Active icon */
+.sidebar .nav-link-forms.active i {
+    color: #111827;
+}
+
+
+
+
         /* Tables inside admin pages */
         .table-admin {
             font-size: 0.87rem;
@@ -429,6 +494,16 @@
             flex-shrink: 0;
         }
         body.sidebar-collapsed .sidebar .nav-link .nav-badge { display: none; }
+
+        body.sidebar-collapsed .sidebar .nav-link-forms {
+            justify-content: center;
+            padding: 0.62rem 0;
+            margin: 0.1rem 0.6rem;
+        }
+
+        body.sidebar-collapsed .sidebar .nav-link-forms span {
+            display: none;
+        }
 
         /* ═══════════════ Mobile ═══════════════ */
         @media (max-width: 768px) {
@@ -506,6 +581,16 @@
             <span class="nav-label">Dashboard</span>
         </a>
     {% endif %}
+
+
+{% if request.user.role != 'faculty' %}
+<a class="nav-link-forms {% if request.resolver_match.url_name == 'form_list' %}active{% endif %}"
+   href="{% url 'formbuilder:form_list' %}" target="_blank">
+    <i class="fas fa-clipboard-list"></i>
+    <span>Forms Management</span>
+</a>
+{% endif %}
+
 
     {% if request.user.role != 'faculty' %}
     <div class="sidebar-section-label"><span class="label-text">Content Management</span></div>

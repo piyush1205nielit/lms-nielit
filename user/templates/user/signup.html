@@ -361,6 +361,13 @@
                     <li><i class="fas fa-check-circle"></i> You'll be notified by email once your account is approved and ready to use.</li>
                 </ul>
             </div>
+            <div class="guide-block">
+                <h6><i class="fas fa-circle-info"></i> Mandatory Batch Code</h6>
+                <ul>
+                    <li><i class="fas fa-info-circle"></i> Correct Batch Code required for your account approval and course access.</li>
+                    <li><i class="fas fa-info-circle"></i> Please Contact your respective NIELIT Centre LMS Admin for Batch Code. </li>
+                </ul>
+            </div>
         </aside>
 
         <!-- ── Form card ────────────────────────────────── -->
@@ -422,11 +429,12 @@
                         <label class="form-label"><i class="fas fa-hashtag text-muted" style="font-size:0.72rem;"></i> Batch Code</label>
                         {{ form.batch_code }}
                         <div class="field-error" id="batchError">{% if form.batch_code.errors %}{{ form.batch_code.errors|join:", " }}{% endif %}</div>
+                        *** Please contact your NIELIT Centre Admin for Batch Code
                     </div>
                 </div>
 
                 <div class="field-group {% if form.password1.errors %}has-error{% endif %}" id="pwd1Group">
-                    <label class="form-label">Password</label>
+                    <label class="form-label">Create Password</label>
                     {{ form.password1 }}
                     <button type="button" class="pwd-toggle-btn" id="pwd1Toggle" tabindex="-1" aria-label="Show password">
                         <i class="fas fa-eye"></i>

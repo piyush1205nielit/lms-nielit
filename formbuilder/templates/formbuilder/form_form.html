@@ -1,0 +1,605 @@
+{% extends "formbuilder/formbuilder_base.html" %}
+
+{% block title %}{% if mode == "edit" %}Edit form{% else %}New form{% endif %} · Form Console{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ---- Console theme (matches forms list) ---- */
+  :root{
+    --navy:#0b1f3f; --navy-deep:#081730; --navy-mid:#12285a;
+    --yellow:#f5b400; --yellow-dark:#d99a00;
+    --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0; --card:#ffffff; --bg:#f4f6fb;
+    --green:#16a34a; --green-bg:#dcfce7; --amber:#b45309; --amber-bg:#fef3c7;
+    --red:#dc2626; --red-bg:#fee2e2;
+    --radius:14px; --shadow:0 1px 3px rgba(11,31,63,.08),0 10px 26px rgba(11,31,63,.07);
+  }
+  body{background:var(--bg)}
+
+  .page-head-console{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+    border-radius:16px;padding:22px 26px;color:#fff;margin-bottom:20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    box-shadow:var(--shadow);
+  }
+  .page-head-console h1{margin:0 0 4px;font-size:1.4rem}
+  .page-head-console .sub{color:#cbd5f5;font-size:.88rem;margin:0}
+  .back-link{
+    display:inline-flex;align-items:center;gap:6px;color:#fff;background:rgba(255,255,255,.12);
+    padding:9px 15px;border-radius:9px;font-weight:600;font-size:.85rem;border:1px solid rgba(255,255,255,.2);
+  }
+  .back-link:hover{background:rgba(255,255,255,.2)}
+
+  .section-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .section-card-head{padding:15px 20px;border-bottom:1px solid var(--line);background:#fafbff;
+    display:flex;align-items:center;gap:9px}
+  .section-card-head h2{margin:0;font-size:1rem;color:var(--navy);display:flex;align-items:center;gap:8px}
+  .section-card-body{padding:20px}
+
+  .field-card{border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;
+    background:#fbfcff;position:relative;transition:box-shadow .15s,border-color .15s;scroll-margin-top:100px}
+  .field-card.just-added{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(245,180,0,.25)}
+  .field-card.removed{display:none}
+  .fc-head{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px;
+    padding-bottom:10px;border-bottom:1px dashed var(--line)}
+  .fc-head .grip{color:var(--navy);font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:6px}
+  .fc-head .grip .num{background:var(--navy);color:#fff;width:22px;height:22px;border-radius:6px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.72rem}
+  .fc-tools{display:flex;gap:6px}
+  .opts,.constraints{margin-top:10px}
+  .checkbox-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .checkbox-row input{width:auto}
+  .file-limit-note{display:flex;align-items:center;gap:6px;margin-top:8px;color:var(--muted);
+    font-size:.78rem;background:#f1f4fb;border:1px solid var(--line);padding:7px 10px;border-radius:8px}
+
+  /* icon buttons matching console list page */
+  .icon-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;
+    color:var(--navy);padding:7px 11px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:.15s}
+  .icon-btn:hover{background:#f5f7ff;border-color:var(--navy)}
+  .icon-btn:disabled{opacity:.35;cursor:not-allowed}
+  .icon-btn:disabled:hover{background:#fff;border-color:var(--line)}
+  .icon-btn.danger{color:var(--red)}
+  .icon-btn.danger:hover{background:var(--red-bg);border-color:var(--red)}
+  .icon-btn svg{width:14px;height:14px}
+
+  .btn-console{background:var(--yellow);color:var(--navy-deep);border:none;font-weight:700;
+    padding:10px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;
+    box-shadow:0 4px 12px rgba(245,180,0,.3);transition:.15s;cursor:pointer;font-size:.88rem}
+  .btn-console:hover{background:var(--yellow-dark);transform:translateY(-1px)}
+  .btn-console.ghost{background:transparent;color:var(--navy);border:1px solid var(--line);box-shadow:none}
+  .btn-console.ghost:hover{background:#f5f7ff;transform:none}
+
+  /* Toggle switch for publish */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:#f5f7ff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+  .toggle-row .lbl{font-weight:600;font-size:.86rem;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+  .toggle-row .lbl .hint{font-weight:400;color:var(--muted);font-size:.76rem}
+  .switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#cbd2e1;border-radius:999px;transition:.2s}
+  .slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .switch input:checked + .slider{background:var(--green)}
+  .switch input:checked + .slider::before{transform:translateX(20px)}
+  .switch input:focus-visible + .slider{box-shadow:0 0 0 3px rgba(11,31,63,.25)}
+
+  .inp{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:.9rem;
+    font-family:inherit;background:#fff;color:var(--ink)}
+  .inp:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,31,63,.1)}
+  .inp.field-error{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+  label{font-weight:600;font-size:.83rem;display:block;margin-bottom:5px;color:var(--ink)}
+  .field{margin-bottom:15px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .hint{color:var(--muted);font-size:.78rem;margin-top:4px}
+  .errorlist{list-style:none;padding:0;margin:6px 0 0;color:var(--red);font-size:.8rem}
+  .js-error{color:var(--red);font-size:.78rem;margin-top:6px;display:none;align-items:center;gap:5px}
+  .js-error.show{display:flex}
+
+  /* Floating action bar */
+  .fab-bar{
+    position:fixed;right:24px;bottom:24px;z-index:50;display:flex;flex-direction:column;gap:10px;
+    align-items:flex-end;
+  }
+  .fab-main{
+    display:flex;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:10px;box-shadow:0 8px 28px rgba(11,31,63,.22);
+  }
+  .fab-btn{
+    display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;
+    color:var(--navy);cursor:pointer;padding:8px 12px;border-radius:10px;font-size:.68rem;font-weight:700;
+    transition:.15s;
+  }
+  .fab-btn:hover{background:#f5f7ff}
+  .fab-btn.yellow{color:var(--navy-deep);background:var(--yellow)}
+  .fab-btn.yellow:hover{background:var(--yellow-dark)}
+  .fab-btn svg{width:19px;height:19px}
+  .fab-count{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;font-size:.6rem;
+    width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+  .scrollup-btn{
+    background:var(--navy);color:#fff;border:none;width:42px;height:42px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(11,31,63,.3);
+    opacity:0;pointer-events:none;transition:.2s;
+  }
+  .scrollup-btn.visible{opacity:1;pointer-events:auto}
+  .scrollup-btn:hover{background:var(--navy-mid)}
+
+  .toast{
+    position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:60;
+    background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-size:.85rem;font-weight:600;
+    box-shadow:0 8px 24px rgba(11,31,63,.3);opacity:0;transition:.25s;display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.error{background:var(--red)}
+
+  @media(max-width:720px){
+    .grid-2,.grid-3{grid-template-columns:1fr}
+    .fab-bar{right:14px;bottom:14px}
+    .fab-btn{padding:7px 9px;font-size:.62rem}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head-console">
+  <div>
+    <h1>{% if mode == "edit" %}Edit form{% else %}Create a new form{% endif %}</h1>
+    <p class="sub">Define your fields, constraints and publish status.</p>
+  </div>
+  <a class="back-link" href="{% url 'formbuilder:form_list' %}">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to console
+  </a>
+</div>
+
+<form method="post" id="builder-form" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <!-- Form meta -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg>
+        Form settings
+      </h2>
+    </div>
+    <div class="section-card-body">
+      <div class="field">
+        <label>Form title</label>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </div>
+      <div class="field">
+        <label>Description</label>
+        {{ form.description }}
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Success message</label>
+          {{ form.success_message }}
+          <div class="hint">Shown after a visitor submits.</div>
+        </div>
+        <div class="field">
+          <label style="margin-bottom:8px">Options</label>
+
+          <div class="toggle-row">
+            <span class="lbl">Published
+              <span class="hint">Publicly accessible at its URL</span>
+            </span>
+            <label class="switch">
+              {{ form.is_published }}
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row" style="margin-bottom:0">
+            <span class="lbl">Allow multiple submissions
+              <span class="hint">Same visitor can submit again</span>
+            </span>
+            <label class="switch">
+              {{ form.allow_multiple }}
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fields -->
+  <div class="section-card" id="fields-section">
+    <div class="section-card-head" style="justify-content:space-between">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        Fields <span class="hint" id="field-count-label" style="font-weight:500"></span>
+      </h2>
+      <button type="button" class="btn-console ghost" id="add-field-inline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add field
+      </button>
+    </div>
+
+    <div class="section-card-body">
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}<div class="msg error">{{ formset.non_form_errors }}</div>{% endif %}
+
+      <div id="fields-container">
+        {% for subform in formset %}
+        <div class="field-card" data-form>
+          {{ subform.id }}
+          <div class="fc-head">
+            <span class="grip"><span class="num">{{ forloop.counter }}</span> Field</span>
+            <div class="fc-tools">
+              <button type="button" class="icon-btn move-up" title="Move up">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+              <button type="button" class="icon-btn move-down" title="Move down">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+              </button>
+              <button type="button" class="icon-btn danger remove-field" title="Remove field">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Label</label>
+              {{ subform.label }}
+              {{ subform.label.errors }}
+            </div>
+            <div class="field">
+              <label>Field type</label>
+              {{ subform.field_type }}
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Placeholder</label>
+              {{ subform.placeholder }}
+            </div>
+            <div class="field">
+              <label>Help text</label>
+              {{ subform.help_text }}
+            </div>
+          </div>
+
+          <div class="opts field">
+            <label>Options (one per line)</label>
+            {{ subform.options }}
+            {{ subform.options.errors }}
+          </div>
+
+          <div class="file-limit-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+            Uploads for this field are limited to 1 MB per file.
+          </div>
+
+          <div class="constraints grid-3">
+            <div class="field">
+              <label>Min length</label>
+              {{ subform.min_length }}
+            </div>
+            <div class="field">
+              <label>Max length</label>
+              {{ subform.max_length }}
+            </div>
+            <div class="field">
+              <label>Validation</label>
+              {{ subform.validation_type }}
+            </div>
+          </div>
+
+          <div class="checkbox-row">{{ subform.required }} <span>Required</span></div>
+
+          <span style="display:none">{{ subform.order }}{% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- hidden empty-form template for cloning -->
+  <template id="empty-form-tpl">
+    <div class="field-card" data-form>
+      <div class="fc-head">
+        <span class="grip"><span class="num">#</span> Field</span>
+        <div class="fc-tools">
+          <button type="button" class="icon-btn move-up" title="Move up">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+          <button type="button" class="icon-btn move-down" title="Move down">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          </button>
+          <button type="button" class="icon-btn danger remove-field" title="Remove field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+            Remove
+          </button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Label</label>{{ formset.empty_form.label }}</div>
+        <div class="field"><label>Field type</label>{{ formset.empty_form.field_type }}</div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Placeholder</label>{{ formset.empty_form.placeholder }}</div>
+        <div class="field"><label>Help text</label>{{ formset.empty_form.help_text }}</div>
+      </div>
+      <div class="opts field">
+        <label>Options (one per line)</label>{{ formset.empty_form.options }}
+      </div>
+      <div class="file-limit-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        Uploads for this field are limited to 1 MB per file.
+      </div>
+      <div class="constraints grid-3">
+        <div class="field"><label>Min length</label>{{ formset.empty_form.min_length }}</div>
+        <div class="field"><label>Max length</label>{{ formset.empty_form.max_length }}</div>
+        <div class="field"><label>Validation</label>{{ formset.empty_form.validation_type }}</div>
+      </div>
+      <div class="checkbox-row">{{ formset.empty_form.required }} <span>Required</span></div>
+      <span style="display:none">{{ formset.empty_form.order }}</span>
+    </div>
+  </template>
+
+  <!-- inline submit row (kept for no-JS fallback / natural flow) -->
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+    <a class="btn-console ghost" href="{% url 'formbuilder:form_list' %}">Cancel</a>
+    <button type="submit" class="btn-console" id="save-btn-inline">
+      {% if mode == "edit" %}Save changes{% else %}Create form{% endif %}
+    </button>
+  </div>
+</form>
+
+<!-- Floating action bar: always reachable, no more scrolling up -->
+<div class="fab-bar">
+  <button type="button" class="scrollup-btn" id="scroll-top-btn" title="Back to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  </button>
+  <div class="fab-main">
+    <button type="button" class="fab-btn" id="add-field-fab" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 5v14M5 12h14"/></svg>
+      Add field
+      <span class="fab-count" id="fab-field-count" style="display:none"></span>
+    </button>
+    <button type="button" class="fab-btn" id="scroll-settings-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
+      Settings
+    </button>
+    <button type="button" class="fab-btn yellow" id="save-btn-fab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      Save
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  const prefix = "{{ formset.prefix }}";
+  const totalInput = document.getElementById("id_" + prefix + "-TOTAL_FORMS");
+  const container = document.getElementById("fields-container");
+  const tpl = document.getElementById("empty-form-tpl").innerHTML;
+  const formEl = document.getElementById("builder-form");
+  const fieldCountLabel = document.getElementById("field-count-label");
+  const fabFieldCount = document.getElementById("fab-field-count");
+
+  const CHOICE = ["select", "radio", "checkbox"];
+  const FILE = ["file", "image"];
+  const MAX_FILE_BYTES = 1 * 1024 * 1024; // 1 MB, enforced generically on any file/image field
+
+  let hasBlockingErrors = false;
+
+  // ---------- toast ----------
+  let toastTimer;
+  function showToast(msg, isError){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.toggle("error", !!isError);
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+  }
+
+  // ---------- live count ----------
+  function liveCards(){
+    return Array.from(container.querySelectorAll(".field-card:not(.removed)"));
+  }
+  function refreshCount(){
+    const n = liveCards().length;
+    fieldCountLabel.textContent = "(" + n + " field" + (n === 1 ? "" : "s") + ")";
+    if(n > 0){
+      fabFieldCount.style.display = "flex";
+      fabFieldCount.textContent = n;
+    } else {
+      fabFieldCount.style.display = "none";
+    }
+    // renumber visible badges
+    liveCards().forEach((card, idx)=>{
+      const num = card.querySelector(".num");
+      if(num) num.textContent = idx + 1;
+    });
+    updateMoveButtons();
+  }
+
+  function updateMoveButtons(){
+    const cards = liveCards();
+    cards.forEach((card, idx)=>{
+      const up = card.querySelector(".move-up");
+      const down = card.querySelector(".move-down");
+      if(up) up.disabled = idx === 0;
+      if(down) down.disabled = idx === cards.length - 1;
+    });
+  }
+
+  // ---------- show/hide relevant sub-sections based on field type ----------
+  function typeToggle(card){
+    const sel = card.querySelector("select[name$='-field_type']");
+    if(!sel) return;
+    const t = sel.value;
+    const opts = card.querySelector(".opts");
+    const cons = card.querySelector(".constraints");
+    const fileNote = card.querySelector(".file-limit-note");
+    if(opts) opts.style.display = CHOICE.includes(t) ? "" : "none";
+    const textLike = !CHOICE.includes(t) && !FILE.includes(t) && !["date", "datetime"].includes(t);
+    if(cons) cons.style.display = textLike ? "" : "none";
+    if(fileNote) fileNote.style.display = FILE.includes(t) ? "flex" : "none";
+  }
+
+  // ---------- wire a field card ----------
+  function wire(card){
+    const sel = card.querySelector("select[name$='-field_type']");
+    if(sel){ sel.addEventListener("change", ()=>typeToggle(card)); }
+    typeToggle(card);
+
+    card.querySelector(".remove-field").addEventListener("click", ()=>{
+      const del = card.querySelector("input[name$='-DELETE']");
+      if(del){
+        del.checked = true;
+        card.classList.add("removed");
+      } else {
+        card.querySelectorAll("input, select, textarea").forEach(el=>{
+          if(el.type === "checkbox") el.checked = false; else el.value = "";
+        });
+        card.classList.add("removed");
+      }
+      refreshCount();
+      showToast("Field removed");
+    });
+
+    card.querySelector(".move-up").addEventListener("click", ()=>{
+      const cards = liveCards();
+      const i = cards.indexOf(card);
+      if(i > 0) container.insertBefore(card, cards[i - 1]);
+      refreshCount();
+    });
+    card.querySelector(".move-down").addEventListener("click", ()=>{
+      const cards = liveCards();
+      const i = cards.indexOf(card);
+      if(i < cards.length - 1) container.insertBefore(cards[i + 1], card);
+      refreshCount();
+    });
+  }
+
+  document.querySelectorAll("#fields-container .field-card").forEach(wire);
+  refreshCount();
+
+  // ---------- add field (used by both inline button and FAB) ----------
+  function addField(){
+    const idx = parseInt(totalInput.value, 10);
+    const html = tpl.replace(/__prefix__/g, idx);
+    const div = document.createElement("div");
+    div.innerHTML = html.trim();
+    const card = div.firstElementChild;
+    container.appendChild(card);
+    totalInput.value = idx + 1;
+    wire(card);
+    refreshCount();
+
+    // Smoothly bring the new field into view instead of leaving the user
+    // scrolled down at the bottom with no way back to the "Add field" button.
+    card.classList.add("just-added");
+    card.scrollIntoView({behavior: "smooth", block: "center"});
+    setTimeout(()=>{
+      const labelInput = card.querySelector("input[name$='-label']");
+      if(labelInput) labelInput.focus({preventScroll: true});
+    }, 350);
+    setTimeout(()=>card.classList.remove("just-added"), 1600);
+
+    showToast("New field added");
+  }
+
+  document.getElementById("add-field-inline").addEventListener("click", addField);
+  document.getElementById("add-field-fab").addEventListener("click", addField);
+
+  // ---------- floating nav helpers ----------
+  document.getElementById("scroll-settings-btn").addEventListener("click", ()=>{
+    document.querySelector(".page-head-console").scrollIntoView({behavior: "smooth", block: "start"});
+  });
+  document.getElementById("save-btn-fab").addEventListener("click", ()=>{
+    formEl.requestSubmit ? formEl.requestSubmit() : formEl.submit();
+  });
+
+  // show/hide "back to top" + keep FAB from covering content when at page bottom
+  const scrollTopBtn = document.getElementById("scroll-top-btn");
+  window.addEventListener("scroll", ()=>{
+    scrollTopBtn.classList.toggle("visible", window.scrollY > 400);
+  });
+  scrollTopBtn.addEventListener("click", ()=>{
+    window.scrollTo({top: 0, behavior: "smooth"});
+  });
+
+  // ---------- 1 MB file size validation, generic for any file/image field ----------
+  function humanSize(bytes){
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  }
+
+  function ensureErrorEl(fileInput){
+    let err = fileInput.parentElement.querySelector(".js-error");
+    if(!err){
+      err = document.createElement("div");
+      err.className = "js-error";
+      err.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span></span>';
+      fileInput.insertAdjacentElement("afterend", err);
+    }
+    return err;
+  }
+
+  function validateFileInput(fileInput){
+    const err = ensureErrorEl(fileInput);
+    const msgSpan = err.querySelector("span");
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){
+      err.classList.remove("show");
+      fileInput.classList.remove("field-error");
+      return true;
+    }
+    if(file.size > MAX_FILE_BYTES){
+      msgSpan.textContent = "“" + file.name + "” is " + humanSize(file.size) + " — max allowed size is 1 MB.";
+      err.classList.add("show");
+      fileInput.classList.add("field-error");
+      fileInput.value = ""; // reject the file immediately
+      showToast("File exceeds 1 MB limit", true);
+      return false;
+    }
+    err.classList.remove("show");
+    fileInput.classList.remove("field-error");
+    return true;
+  }
+
+  // Delegate so this also covers file inputs added later via "Add field"
+  // (these live in the public dynamic-form template, not here, but the same
+  // handler pattern is reused there — this block only guards any file
+  // inputs that might exist directly on this builder page, e.g. import/upload UI).
+  document.addEventListener("change", (e)=>{
+    if(e.target && e.target.matches("input[type='file']")){
+      validateFileInput(e.target);
+    }
+  });
+
+  // ---------- submit: compute order + block if a file error is showing ----------
+  formEl.addEventListener("submit", (e)=>{
+    let i = 0;
+    container.querySelectorAll(".field-card").forEach(card=>{
+      const ord = card.querySelector("input[name$='-order']");
+      if(!ord) return;
+      if(card.classList.contains("removed")) return;
+      ord.value = i++;
+    });
+
+    const blockingFileError = formEl.querySelector(".js-error.show");
+    if(blockingFileError){
+      e.preventDefault();
+      blockingFileError.scrollIntoView({behavior: "smooth", block: "center"});
+      showToast("Fix the file size error before saving", true);
+    }
+  });
+})();
+</script>
+{% endblock %}

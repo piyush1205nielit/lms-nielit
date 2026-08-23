@@ -1,0 +1,119 @@
+{% extends 'public/base.html' %}
+
+{% load static %}
+
+{% block title %}Submitted · {{ object.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --navy:#0b1f3f; --navy-deep:#081730; --navy-mid:#12285a;
+    --yellow:#f5b400; --yellow-dark:#d99a00;
+    --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0;
+    --green:#16a34a; --green-bg:#dcfce7;
+    --radius:18px;
+  }
+  .success-page{
+    min-height:70vh;display:flex;align-items:center;justify-content:center;
+    padding:40px 16px;background:linear-gradient(180deg,#eef1f8 0%,#f6f7fb 320px);
+  }
+  .success-card{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:44px 36px;max-width:480px;width:100%;text-align:center;
+    box-shadow:0 16px 40px rgba(11,31,63,.12);position:relative;overflow:hidden;
+  }
+  .success-card::before{
+    content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;
+    background:radial-gradient(circle,rgba(245,180,0,.12),transparent 70%);border-radius:50%;
+  }
+  .success-card::after{
+    content:"";position:absolute;bottom:-50px;left:-50px;width:140px;height:140px;
+    background:radial-gradient(circle,rgba(11,31,63,.06),transparent 70%);border-radius:50%;
+  }
+
+  .tick-wrap{
+    width:76px;height:76px;border-radius:50%;
+    background:linear-gradient(135deg,#22c55e,var(--green));
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 22px;position:relative;z-index:1;
+    box-shadow:0 0 0 0 rgba(22,163,74,.4);
+    animation:pulse-green 2s ease-in-out 3;
+  }
+  .tick-wrap svg{width:34px;height:34px}
+  @keyframes pulse-green{
+    0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}
+    70%{box-shadow:0 0 0 16px rgba(22,163,74,0)}
+    100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}
+  }
+
+  .badge-row{
+    display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;
+    position:relative;z-index:1;
+  }
+  .badge-row .tag{
+    font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    padding:4px 11px;border-radius:999px;background:#eaf0ff;color:var(--navy);
+  }
+
+  .success-card h1{font-size:1.42rem;margin:0 0 10px;color:var(--ink);position:relative;z-index:1}
+  .success-card p{color:var(--muted);margin:0 0 26px;font-size:.94rem;line-height:1.6;position:relative;z-index:1}
+
+  .form-title-chip{
+    display:inline-flex;align-items:center;gap:7px;background:#f4f6fb;border:1px solid var(--line);
+    color:var(--navy);font-size:.8rem;font-weight:600;padding:7px 14px;border-radius:9px;
+    margin-bottom:24px;position:relative;z-index:1;max-width:100%;
+  }
+  .form-title-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .btn-home{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
+    padding:12px 26px;border-radius:11px;font-weight:700;font-size:.92rem;
+    text-decoration:none;transition:.15s;position:relative;z-index:1;
+  }
+  .btn-home:hover{background:linear-gradient(135deg,var(--navy-mid),var(--navy));color:#fff;transform:translateY(-1px)}
+  .btn-home svg{width:16px;height:16px}
+
+  .footer-note{
+    margin-top:22px;font-size:.76rem;color:var(--muted);position:relative;z-index:1;
+  }
+
+  @media(max-width:520px){
+    .success-card{padding:32px 22px}
+    .success-card h1{font-size:1.22rem}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-page">
+  <div class="success-card">
+    <div class="badge-row">
+      <span class="tag">NIELIT Delhi Forum</span>
+    </div>
+
+    <div class="tick-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+
+    <h1>Response recorded</h1>
+    <p>{{ object.success_message }}</p>
+
+    <div class="form-title-chip">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg>
+      <span>{{ object.title }}</span>
+    </div>
+
+    <div>
+      <a class="btn-home" href="{% url 'public:home' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+        Back to home
+      </a>
+    </div>
+
+    <div class="footer-note">Thank you for taking the time to fill this out.</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "formbuilder/formbuilder_base.html" %}
+
+{% block title %}Delete form{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Delete form</h1></div>
+<div class="card card-pad" style="max-width:520px">
+  <p>Are you sure you want to permanently delete <strong>{{ object.title }}</strong>?</p>
+  <p class="sub">This removes the form, its {{ object.fields.count }} field(s) and all
+     {{ object.response_count }} response(s). This cannot be undone.</p>
+  <form method="post" style="display:flex;gap:10px;margin-top:16px">
+    {% csrf_token %}
+    <a class="btn" href="{% url 'formbuilder:form_list' %}">Cancel</a>
+    <button class="btn btn-danger" type="submit">Delete permanently</button>
+  </form>
+</div>
+{% endblock %}

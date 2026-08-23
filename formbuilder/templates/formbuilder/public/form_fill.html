@@ -1,0 +1,640 @@
+{% extends 'public/base.html' %}
+
+{% load static %}
+
+{% block title %}{{ object.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --navy:#0b1f3f; --navy-deep:#081730; --navy-mid:#12285a;
+    --yellow:#f5b400; --yellow-dark:#d99a00;
+    --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0;
+    --green:#16a34a; --green-bg:#dcfce7;
+    --red:#dc2626; --red-bg:#fee2e2;
+    --amber:#b45309; --amber-bg:#fef3c7;
+    --radius:16px;
+  }
+  .form-fill-page{
+    background:linear-gradient(180deg,#eef1f8 0%,#f6f7fb 320px);
+    padding:24px 16px 60px;
+    /* NOTE: if your base.html has a fixed navbar, increase this top padding
+       so the floating island below doesn't sit under it. */
+  }
+
+  /* ================= Wide shell — 75–85% of viewport on desktop ================= */
+  .shell{max-width:1100px;margin:0 auto;width:100%}
+  @media(min-width:1280px){ .shell{width:82%} }
+  @media(min-width:1600px){ .shell{width:76%} }
+
+  /* ================= Floating "Dynamic Island" progress bar (horizontal) ================= */
+  .island{
+    position:sticky;top:12px;z-index:150;margin:0 auto 20px;
+    background:var(--navy);color:#fff;border-radius:18px;
+    padding:12px 18px;display:flex;flex-direction:column;gap:8px;
+    box-shadow:0 10px 30px rgba(11,31,63,.35);
+    max-width:560px;transition:box-shadow .25s;
+  }
+  .island.pulse{box-shadow:0 10px 30px rgba(245,180,0,.4)}
+  .island-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .island-text{display:flex;flex-direction:column;line-height:1.25;overflow:hidden}
+  .island-text .t1{font-size:.8rem;font-weight:700;white-space:nowrap}
+  .island-text .t2{font-size:.68rem;color:#c3cbe6;white-space:nowrap}
+  .island-pct{font-size:.78rem;font-weight:800;color:var(--yellow);flex-shrink:0}
+  .island-check{
+    width:20px;height:20px;border-radius:50%;background:var(--green);display:none;
+    align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .island.complete .island-check{display:flex}
+  .island.complete .island-pct{display:none}
+  .island-track{width:100%;height:7px;border-radius:999px;background:rgba(255,255,255,.16);overflow:hidden}
+  .island-fill{height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#fde68a,var(--yellow));transition:width .35s ease}
+  .island.complete .island-fill{background:linear-gradient(90deg,#86efac,var(--green))}
+
+  /* ================= Form info card ================= */
+  .info-card{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+    border-radius:var(--radius);padding:28px 30px;color:#fff;margin-bottom:20px;
+    position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(11,31,63,.18);
+  }
+  .info-card::after{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;
+    background:radial-gradient(circle,rgba(245,180,0,.16),transparent 70%);border-radius:50%}
+  .info-card-top{display:flex;align-items:flex-start;gap:16px;position:relative;z-index:1}
+  .info-icon{width:48px;height:48px;border-radius:12px;background:var(--yellow);color:var(--navy-deep);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:0 4px 12px rgba(245,180,0,.35)}
+  .info-card h1{margin:0 0 6px;font-size:1.5rem}
+  .info-card p{margin:0;opacity:.88;font-size:.95rem;line-height:1.55}
+  .req-note{margin-top:14px;font-size:.78rem;opacity:.85;display:flex;align-items:center;gap:6px;position:relative;z-index:1}
+
+  /* ================= Fields card ================= */
+  .fields-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:28px 30px;box-shadow:0 6px 22px rgba(11,31,63,.06)}
+
+  .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 26px}
+  @media(max-width:720px){ .fields-grid{grid-template-columns:1fr} }
+
+  .field{margin-bottom:20px;position:relative}
+  .field.full-width{grid-column:1 / -1}
+
+  label{display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:8px;font-size:.9rem;color:var(--ink)}
+  .req{color:var(--red)}
+  .field-status-icon{margin-left:auto;display:none;width:17px;height:17px;flex-shrink:0}
+  .field-status-icon.show{display:inline-flex}
+  .field-status-icon.ok{color:var(--green)}
+  .field-status-icon.bad{color:var(--red)}
+
+  .inp{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:.94rem;
+    font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s, box-shadow .15s, background .15s}
+  textarea.inp{resize:vertical;min-height:88px}
+  .inp:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,31,63,.12)}
+  .inp.valid{border-color:var(--green);background:var(--green-bg)}
+  .inp.invalid{border-color:var(--red);background:var(--red-bg)}
+
+  .char-counter{font-size:.72rem;color:var(--muted);margin-top:5px;text-align:right}
+  .char-counter.warn{color:var(--amber);font-weight:600}
+  .char-counter.over{color:var(--red);font-weight:700}
+
+  ul.opt-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  ul.opt-list li{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;
+    align-items:center;transition:.15s;cursor:pointer}
+  ul.opt-list li:hover{border-color:var(--navy);background:#f4f6fb}
+  ul.opt-list li.picked{border-color:var(--navy);background:#eaf0ff}
+  .radio,.check{margin-right:10px;width:auto;accent-color:var(--navy)}
+
+  .help{color:var(--muted);font-size:.8rem;margin-top:5px}
+  .errorlist{list-style:none;padding:0;margin:6px 0 0;color:var(--red);font-size:.81rem;display:flex;flex-direction:column;gap:2px}
+  .errorlist li::before{content:"⚠ "}
+
+  .file-drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
+    background:#fafbff;transition:.15s;cursor:pointer;position:relative}
+  .file-drop:hover, .file-drop.drag{border-color:var(--navy);background:#f4f6fb}
+  .file-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .file-drop .fd-icon{color:var(--navy);margin-bottom:6px}
+  .file-drop .fd-text{font-size:.85rem;font-weight:600;color:var(--ink)}
+  .file-drop .fd-sub{font-size:.75rem;color:var(--muted);margin-top:2px}
+  .file-drop.has-file{border-color:var(--green);background:var(--green-bg)}
+  .file-drop.has-file .fd-text{color:var(--green)}
+  .file-chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    border-radius:9px;padding:7px 11px;margin-top:10px;font-size:.8rem}
+  .file-chip .sz{color:var(--muted)}
+  .file-chip .rm{color:var(--red);cursor:pointer;font-weight:700;margin-left:4px}
+
+  .submit-row{margin-top:8px}
+  .submit-btn{width:100%;background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
+    border:none;padding:15px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;
+    transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .submit-btn:hover{background:linear-gradient(135deg,var(--navy-mid),var(--navy));transform:translateY(-1px)}
+  .submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .submit-btn svg{width:18px;height:18px}
+
+  .page-footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:18px}
+  .top-error{background:var(--red-bg);color:var(--red);padding:12px 14px;border-radius:10px;
+    margin-bottom:18px;font-size:.87rem;display:flex;align-items:center;gap:8px}
+
+  /* ================= Preview Modal ================= */
+  .modal-overlay{position:fixed;inset:0;background:rgba(8,23,48,.58);z-index:300;display:none;
+    align-items:flex-start;justify-content:center;padding:70px 16px 30px;overflow-y:auto;backdrop-filter:blur(3px)}
+  .modal-overlay.open{display:flex}
+  .modal-box{background:#fff;border-radius:18px;max-width:560px;width:100%;overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,.35);animation:modalIn .2s ease-out}
+  @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .modal-head{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
+    padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .modal-head h2{margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+  .modal-head p{margin:2px 0 0;font-size:.78rem;opacity:.85}
+  .modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;
+    border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .modal-close:hover{background:rgba(255,255,255,.28)}
+  .modal-body{padding:20px 22px;max-height:60vh;overflow-y:auto}
+  .preview-row{padding:12px 0;border-bottom:1px solid var(--line)}
+  .preview-row:last-child{border-bottom:none}
+  .preview-row .pl{font-size:.73rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .preview-row .pv{font-size:.93rem;color:var(--ink);word-break:break-word}
+  .preview-row .pv.empty{color:var(--muted);font-style:italic}
+  .preview-row .pv.file-pv{display:flex;align-items:center;gap:7px;color:var(--navy);font-weight:600}
+  .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;gap:10px;background:#fafbff}
+  .modal-foot button{flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:.88rem;cursor:pointer;border:none}
+  .btn-back{background:#fff;border:1.5px solid var(--line) !important;color:var(--ink)}
+  .btn-back:hover{background:#f5f5f7}
+  .btn-confirm{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
+    display:flex;align-items:center;justify-content:center;gap:7px}
+  .btn-confirm:hover{background:linear-gradient(135deg,var(--navy-mid),var(--navy))}
+  .btn-confirm svg{width:16px;height:16px}
+
+  @media(max-width:560px){
+    .info-card{padding:20px}
+    .fields-card{padding:20px}
+    .info-card h1{font-size:1.28rem}
+    .modal-overlay{padding:60px 10px 20px}
+    .modal-head, .modal-body, .modal-foot{padding-left:16px;padding-right:16px}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-fill-page">
+  <div class="shell">
+
+    <!-- Floating progress island -->
+    <div class="island" id="progress-island">
+      <div class="island-top">
+        <div class="island-text">
+          <span class="t1" id="island-title">Getting started</span>
+          <span class="t2" id="island-sub">0 of {{ dform.fields|length }} fields completed</span>
+        </div>
+        <span class="island-pct" id="island-pct">0%</span>
+        <div class="island-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+      </div>
+      <div class="island-track"><div class="island-fill" id="island-fill"></div></div>
+    </div>
+
+    <!-- Form info card -->
+    <div class="info-card">
+      <div class="info-card-top">
+        <span class="info-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg>
+        </span>
+        <div>
+          <h1>{{ object.title }}</h1>
+          {% if object.description %}<p>{{ object.description }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="req-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        Fields marked <span class="req">*</span> are required
+      </div>
+    </div>
+
+    <!-- Fields card -->
+    <div class="fields-card">
+      {% if dform.non_field_errors %}
+        <div class="top-error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          {{ dform.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" id="public-form" novalidate>
+        {% csrf_token %}
+        <div class="fields-grid" id="fields-grid">
+          {% for field in dform %}
+            <div class="field" data-field-wrap data-required="{{ field.field.required|yesno:'1,0' }}"
+                 data-label="{{ field.label }}" data-name="{{ field.html_name }}">
+              <label for="{{ field.id_for_label }}">
+                {{ field.label }}{% if field.field.required %}<span class="req">*</span>{% endif %}
+                <span class="field-status-icon ok" data-icon-ok>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 13l4 4L19 7"/></svg>
+                </span>
+                <span class="field-status-icon bad" data-icon-bad>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+                </span>
+              </label>
+
+              {% if field.field.widget.input_type == "file" %}
+                <div class="file-drop" data-file-drop>
+                  {{ field }}
+                  <div class="fd-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                  </div>
+                  <div class="fd-text">Tap or drag a file here</div>
+                  <div class="fd-sub">Max size: 1 MB</div>
+                </div>
+                <div data-file-chip></div>
+              {% else %}
+                {{ field }}
+                <div class="char-counter" data-char-counter style="display:none"></div>
+              {% endif %}
+
+              {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+              {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              <div class="errorlist js-errorlist" data-js-errors style="display:none"></div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="submit-row">
+          <button class="submit-btn" type="button" id="preview-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M1 12s3-7 11-7 11 7 11 7-3 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview &amp; submit
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="page-footer">Powered by NIELIT Delhi Forum · Form Builder</div>
+  </div>
+</div>
+
+<!-- ================= Preview Modal ================= -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s3-7 11-7 11 7 11 7-3 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Review your response
+        </h2>
+        <p>Check everything looks right before you submit</p>
+      </div>
+      <button type="button" class="modal-close" id="close-preview-btn" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="preview-body"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn-back" id="back-to-edit-btn">← Edit answers</button>
+      <button type="button" class="btn-confirm" id="confirm-submit-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+        Confirm &amp; submit
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById("public-form");
+  const wraps = Array.from(form.querySelectorAll("[data-field-wrap]"));
+  const MAX_FILE_BYTES = 1 * 1024 * 1024; // 1 MB — enforced generically on every file input
+
+  // Admin-configured per-field constraints, injected from the view (mirrors
+  // the server-side rules in forms.py's DynamicForm._build()).
+  const CONSTRAINTS = JSON.parse('{{ constraints_json|escapejs }}');
+
+  const VALIDATION_PATTERNS = {
+    numeric: { re: /^[0-9]+$/, msg: "Numbers only." },
+    alpha: { re: /^[A-Za-z ]+$/, msg: "Letters only." },
+    alphanumeric: { re: /^[A-Za-z0-9 ]+$/, msg: "Letters and numbers only." },
+  };
+  const FULL_WIDTH_TYPES = ["textarea", "select", "radio", "checkbox", "file", "image"];
+
+  // ---------------- helpers ----------------
+  function getInput(wrap){ return wrap.querySelector("input, select, textarea"); }
+  function getAllInputsForValidation(wrap){ return Array.from(wrap.querySelectorAll("input, select, textarea")); }
+  function humanSize(bytes){ return (bytes / (1024*1024)).toFixed(2) + " MB"; }
+  function constraintsFor(wrap){ return CONSTRAINTS[wrap.dataset.name] || {}; }
+
+  // ---- lay out fields: wide fields (textarea/choice/file) span both columns ----
+  wraps.forEach(wrap=>{
+    const c = constraintsFor(wrap);
+    if(c.field_type && FULL_WIDTH_TYPES.includes(c.field_type)){
+      wrap.classList.add("full-width");
+    }
+  });
+
+  function setStatus(wrap, state){
+    const okIcon = wrap.querySelector("[data-icon-ok]");
+    const badIcon = wrap.querySelector("[data-icon-bad]");
+    const mainInputs = getAllInputsForValidation(wrap).filter(el => el.type !== "hidden");
+    okIcon.classList.toggle("show", state === "ok");
+    badIcon.classList.toggle("show", state === "bad");
+    mainInputs.forEach(el=>{
+      if(el.type === "checkbox" || el.type === "radio" || el.type === "file") return;
+      el.classList.toggle("valid", state === "ok");
+      el.classList.toggle("invalid", state === "bad");
+    });
+  }
+
+  function showJsError(wrap, msg){
+    const box = wrap.querySelector("[data-js-errors]");
+    if(!msg){ box.style.display = "none"; box.innerHTML = ""; return; }
+    box.style.display = "flex";
+    box.innerHTML = "<li>" + msg + "</li>";
+  }
+
+  function updateCharCounter(wrap, val){
+    const counter = wrap.querySelector("[data-char-counter]");
+    if(!counter) return;
+    const c = constraintsFor(wrap);
+    if(!c.max_length){ counter.style.display = "none"; return; }
+    counter.style.display = "block";
+    const len = val.length;
+    counter.textContent = len + " / " + c.max_length;
+    counter.classList.toggle("warn", len > c.max_length * 0.85 && len <= c.max_length);
+    counter.classList.toggle("over", len > c.max_length);
+  }
+
+  // ---------------- per-field validation (constraint-aware) ----------------
+  function validateWrap(wrap, {silent=false} = {}){
+    const required = wrap.dataset.required === "1";
+    const primary = getInput(wrap);
+    if(!primary) return true;
+    const c = constraintsFor(wrap);
+    const type = primary.type;
+
+    if(type === "file"){
+      const file = primary.files && primary.files[0];
+      if(!file){
+        if(required){ if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, "This file is required."); } return false; }
+        setStatus(wrap, "neutral"); showJsError(wrap, "");
+        return true;
+      }
+      if(file.size > MAX_FILE_BYTES){
+        setStatus(wrap, "bad");
+        showJsError(wrap, "“" + file.name + "” is " + humanSize(file.size) + " — max allowed is 1 MB.");
+        primary.value = "";
+        renderFileChip(wrap, null);
+        return false;
+      }
+      setStatus(wrap, "ok"); showJsError(wrap, "");
+      renderFileChip(wrap, file);
+      return true;
+    }
+
+    if(type === "checkbox"){
+      const boxes = getAllInputsForValidation(wrap).filter(el=>el.type==="checkbox");
+      const anyChecked = boxes.some(b=>b.checked);
+      if(required && !anyChecked){
+        if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, "Please select at least one option."); }
+        return false;
+      }
+      setStatus(wrap, anyChecked ? "ok" : "neutral"); showJsError(wrap, "");
+      return true;
+    }
+
+    if(type === "radio"){
+      const radios = getAllInputsForValidation(wrap).filter(el=>el.type==="radio");
+      const picked = radios.some(r=>r.checked);
+      if(required && !picked){
+        if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, "Please choose one option."); }
+        return false;
+      }
+      setStatus(wrap, picked ? "ok" : "neutral"); showJsError(wrap, "");
+      return true;
+    }
+
+    const val = primary.value.trim();
+    updateCharCounter(wrap, val);
+
+    if(required && !val){
+      if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, "This field is required."); }
+      return false;
+    }
+    if(!val){ setStatus(wrap, "neutral"); showJsError(wrap, ""); return !required; }
+
+    if(primary.checkValidity && !primary.checkValidity()){
+      if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, primary.validationMessage || "Please enter a valid value."); }
+      return false;
+    }
+
+    if(type === "tel" && !/^[0-9+\-\s()]{6,20}$/.test(val)){
+      if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, "Enter a valid contact number."); }
+      return false;
+    }
+
+    if(c.min_length && val.length < c.min_length){
+      if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, `Must be at least ${c.min_length} character${c.min_length===1?"":"s"}.`); }
+      return false;
+    }
+    if(c.max_length && val.length > c.max_length){
+      if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, `Must be at most ${c.max_length} character${c.max_length===1?"":"s"}.`); }
+      return false;
+    }
+    if(c.validation_type && c.validation_type !== "none"){
+      const rule = VALIDATION_PATTERNS[c.validation_type];
+      if(rule && !rule.re.test(val)){
+        if(!silent){ setStatus(wrap, "bad"); showJsError(wrap, rule.msg); }
+        return false;
+      }
+    }
+
+    setStatus(wrap, "ok"); showJsError(wrap, "");
+    return true;
+  }
+
+  function renderFileChip(wrap, file){
+    const holder = wrap.querySelector("[data-file-chip]");
+    const drop = wrap.querySelector("[data-file-drop]");
+    if(!holder) return;
+    if(!file){
+      holder.innerHTML = "";
+      if(drop) drop.classList.remove("has-file");
+      return;
+    }
+    if(drop) drop.classList.add("has-file");
+    holder.innerHTML = `
+      <span class="file-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        ${file.name} <span class="sz">(${humanSize(file.size)})</span>
+        <span class="rm" data-remove-file>✕</span>
+      </span>`;
+    holder.querySelector("[data-remove-file]").addEventListener("click", ()=>{
+      const input = wrap.querySelector("input[type=file]");
+      input.value = "";
+      renderFileChip(wrap, null);
+      setStatus(wrap, "neutral");
+      updateProgress();
+    });
+  }
+
+  function attachTypeGuards(wrap, input){
+    const c = constraintsFor(wrap);
+    if(!c.validation_type || c.validation_type === "none") return;
+    if(input.tagName !== "INPUT" && input.tagName !== "TEXTAREA") return;
+    input.addEventListener("beforeinput", (e)=>{
+      if(!e.data) return;
+      let allowed = true;
+      if(c.validation_type === "numeric") allowed = /^[0-9]*$/.test(e.data);
+      if(c.validation_type === "alpha") allowed = /^[A-Za-z ]*$/.test(e.data);
+      if(c.validation_type === "alphanumeric") allowed = /^[A-Za-z0-9 ]*$/.test(e.data);
+      if(!allowed) e.preventDefault();
+    });
+  }
+
+  wraps.forEach(wrap=>{
+    const inputs = getAllInputsForValidation(wrap);
+    inputs.forEach(el=>{
+      attachTypeGuards(wrap, el);
+      const evt = (el.type === "checkbox" || el.type === "radio" || el.type === "file" || el.tagName === "SELECT")
+        ? "change" : "input";
+      el.addEventListener(evt, ()=>{ validateWrap(wrap); updateProgress(); });
+      el.addEventListener("blur", ()=>{ validateWrap(wrap); updateProgress(); });
+    });
+
+    wrap.querySelectorAll("ul li, .checkbox-row").forEach(li=>{
+      const input = li.querySelector("input");
+      if(!input) return;
+      li.addEventListener("click", (e)=>{ if(e.target !== input){ input.click(); } });
+      input.addEventListener("change", ()=>{
+        if(input.type === "radio"){ wrap.querySelectorAll("li").forEach(x=>x.classList.remove("picked")); }
+        li.classList.toggle("picked", input.checked);
+      });
+    });
+
+    const drop = wrap.querySelector("[data-file-drop]");
+    if(drop){
+      ["dragenter","dragover"].forEach(evt=>drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.add("drag"); }));
+      ["dragleave","drop"].forEach(evt=>drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.remove("drag"); }));
+      drop.addEventListener("drop", e=>{
+        const input = drop.querySelector("input[type=file]");
+        if(e.dataTransfer.files.length){
+          input.files = e.dataTransfer.files;
+          input.dispatchEvent(new Event("change", {bubbles:true}));
+        }
+      });
+    }
+
+    const primary = getInput(wrap);
+    if(primary && primary.type !== "file" && primary.type !== "checkbox" && primary.type !== "radio"){
+      updateCharCounter(wrap, primary.value.trim());
+    }
+  });
+
+  // ---------------- floating progress island ----------------
+  const islandFill = document.getElementById("island-fill");
+  const islandPct = document.getElementById("island-pct");
+  const island = document.getElementById("progress-island");
+  const islandTitle = document.getElementById("island-title");
+  const islandSub = document.getElementById("island-sub");
+  const requiredWraps = wraps.filter(w => w.dataset.required === "1");
+
+  function isWrapFilled(wrap){
+    const primary = getInput(wrap);
+    if(!primary) return false;
+    if(primary.type === "file") return !!(primary.files && primary.files[0]);
+    if(primary.type === "checkbox") return getAllInputsForValidation(wrap).some(b=>b.checked);
+    if(primary.type === "radio") return getAllInputsForValidation(wrap).some(r=>r.checked);
+    return primary.value.trim().length > 0;
+  }
+
+  function updateProgress(){
+    const trackWraps = requiredWraps.length ? requiredWraps : wraps;
+    const filled = trackWraps.filter(isWrapFilled).length;
+    const pct = trackWraps.length ? Math.round((filled / trackWraps.length) * 100) : 100;
+    islandFill.style.width = pct + "%";
+    islandPct.textContent = pct + "%";
+    islandSub.textContent = filled + " of " + trackWraps.length + " required field" + (trackWraps.length===1?"":"s") + " done";
+    if(pct === 0){ islandTitle.textContent = "Getting started"; island.classList.remove("pulse","complete"); }
+    else if(pct < 100){ islandTitle.textContent = "Keep going…"; island.classList.add("pulse"); island.classList.remove("complete"); }
+    else { islandTitle.textContent = "All set!"; island.classList.remove("pulse"); island.classList.add("complete"); }
+  }
+  updateProgress();
+
+  function validateAll(){
+    let firstBad = null, ok = true;
+    wraps.forEach(wrap=>{
+      const good = validateWrap(wrap);
+      if(!good){ ok = false; if(!firstBad) firstBad = wrap; }
+    });
+    if(firstBad){
+      firstBad.scrollIntoView({behavior:"smooth", block:"center"});
+      const el = getInput(firstBad);
+      if(el && el.focus) el.focus({preventScroll:true});
+    }
+    return ok;
+  }
+
+  function buildPreviewHtml(){
+    return wraps.map(wrap=>{
+      const label = wrap.dataset.label;
+      const primary = getInput(wrap);
+      let valueHtml = '<span class="pv empty">— not answered —</span>';
+      if(primary){
+        if(primary.type === "file"){
+          const f = primary.files && primary.files[0];
+          if(f){
+            valueHtml = `<span class="pv file-pv">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+              ${f.name}
+            </span>`;
+          }
+        } else if(primary.type === "checkbox"){
+          const checked = getAllInputsForValidation(wrap).filter(b=>b.type==="checkbox" && b.checked).map(b=>{
+            const li = b.closest("li");
+            return li ? li.textContent.trim() : b.value;
+          });
+          if(checked.length) valueHtml = '<span class="pv">' + checked.join(", ") + '</span>';
+        } else if(primary.type === "radio"){
+          const picked = getAllInputsForValidation(wrap).find(r=>r.type==="radio" && r.checked);
+          if(picked){
+            const li = picked.closest("li");
+            valueHtml = '<span class="pv">' + (li ? li.textContent.trim() : picked.value) + '</span>';
+          }
+        } else {
+          const v = primary.value.trim();
+          if(v) valueHtml = '<span class="pv">' + v.replace(/</g,"&lt;") + '</span>';
+        }
+      }
+      return `<div class="preview-row"><div class="pl">${label}</div>${valueHtml}</div>`;
+    }).join("");
+  }
+
+  const previewBtn = document.getElementById("preview-btn");
+  const modal = document.getElementById("preview-modal");
+  const previewBody = document.getElementById("preview-body");
+  const closeBtn = document.getElementById("close-preview-btn");
+  const backBtn = document.getElementById("back-to-edit-btn");
+  const confirmBtn = document.getElementById("confirm-submit-btn");
+
+  previewBtn.addEventListener("click", ()=>{
+    if(!validateAll()) return;
+    previewBody.innerHTML = buildPreviewHtml();
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+  });
+
+  function closeModal(){ modal.classList.remove("open"); document.body.style.overflow = ""; }
+  closeBtn.addEventListener("click", closeModal);
+  backBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
+  confirmBtn.addEventListener("click", ()=>{
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = "Submitting…";
+    form.submit();
+  });
+
+  form.addEventListener("submit", (e)=>{
+    if(!modal.classList.contains("open") && !confirmBtn.disabled){
+      e.preventDefault();
+      previewBtn.click();
+    }
+  });
+})();
+</script>
+{% endblock %}

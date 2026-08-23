@@ -1,0 +1,411 @@
+{% extends "formbuilder/formbuilder_base.html" %}
+
+{% block title %}{{ object.title }} · Responses{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  /* ---- Console theme (consistent with list/edit pages) ---- */
+  :root{
+    --navy:#0b1f3f; --navy-deep:#081730; --navy-mid:#12285a;
+    --yellow:#f5b400; --yellow-dark:#d99a00;
+    --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0; --card:#ffffff; --bg:#f4f6fb;
+    --green:#16a34a; --green-bg:#dcfce7; --amber:#b45309; --amber-bg:#fef3c7;
+    --red:#dc2626; --red-bg:#fee2e2;
+    --radius:14px; --shadow:0 1px 3px rgba(11,31,63,.08),0 10px 26px rgba(11,31,63,.07);
+  }
+  body{background:var(--bg)}
+
+  /* Go full-width on this page only */
+  .wrap{max-width:100% !important;padding:0 26px 40px !important;margin:20px auto 0 !important}
+
+  .page-head-console{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+    border-radius:16px;padding:22px 26px;color:#fff;margin-bottom:20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    box-shadow:var(--shadow);
+  }
+  .page-head-console h1{margin:0 0 4px;font-size:1.4rem}
+  .page-head-console .sub{color:#cbd5f5;font-size:.88rem;margin:0}
+  .head-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-c{
+    display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.1);color:#fff;padding:9px 15px;border-radius:9px;
+    font-weight:600;font-size:.84rem;cursor:pointer;transition:.15s;
+  }
+  .btn-c:hover{background:rgba(255,255,255,.2)}
+  .btn-c.yellow{background:var(--yellow);color:var(--navy-deep);border-color:var(--yellow)}
+  .btn-c.yellow:hover{background:var(--yellow-dark)}
+  .btn-c svg{width:15px;height:15px}
+
+  /* Stats */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
+  .stat-card .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .stat-card .ic.navy{background:#eaf0ff;color:var(--navy)}
+  .stat-card .ic.green{background:var(--green-bg);color:var(--green)}
+  .stat-card .ic.amber{background:var(--amber-bg);color:var(--amber)}
+  .stat-card .ic.yellow{background:#fff6df;color:var(--yellow-dark)}
+  .stat-card .n{font-size:1.5rem;font-weight:800;color:var(--navy);line-height:1.1}
+  .stat-card .l{color:var(--muted);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+
+  /* Table section */
+  .console-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  .console-card-head{padding:15px 20px;border-bottom:1px solid var(--line);background:#fafbff;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .console-card-head h2{margin:0;font-size:1rem;color:var(--navy);display:flex;align-items:center;gap:8px}
+  .result-count{font-size:.8rem;color:var(--muted);font-weight:600}
+
+  /* Scroll container: both axes, sticky header + first two cols */
+  .table-scroll{overflow:auto;max-width:100%;max-height:70vh;position:relative}
+  table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.87rem}
+  thead th{
+    position:sticky;top:0;z-index:3;text-align:left;padding:12px 16px;font-size:.7rem;
+    text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--navy);
+    white-space:nowrap;border-bottom:2px solid var(--navy-deep);
+  }
+  tbody td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle;
+    white-space:nowrap;background:#fff}
+  tbody tr:nth-child(even) td{background:#fafbff}
+  tbody tr:hover td{background:#f0f4ff}
+
+  /* Freeze first two columns (# and Submitted) for readability while scrolling wide tables */
+  thead th:nth-child(1), tbody td:nth-child(1){position:sticky;left:0;z-index:2;min-width:46px}
+  thead th:nth-child(2), tbody td:nth-child(2){position:sticky;left:46px;z-index:2;min-width:150px;
+    box-shadow:2px 0 4px rgba(11,31,63,.06)}
+  thead th:nth-child(1){z-index:4}
+  thead th:nth-child(2){z-index:4;box-shadow:2px 0 4px rgba(11,31,63,.06)}
+  tbody td:nth-child(1){background:#fff}
+  tbody tr:nth-child(even) td:nth-child(1),
+  tbody tr:nth-child(even) td:nth-child(2){background:#f3f6fd}
+  tbody td:nth-child(2){background:#fff}
+
+  .file-link{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;color:var(--navy);
+    font-weight:600;background:#eaf0ff;padding:4px 10px;border-radius:7px}
+  .file-link:hover{background:#dde6ff}
+  .del-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--red);cursor:pointer}
+  .del-btn:hover{background:var(--red-bg);border-color:var(--red)}
+
+  .empty{text-align:center;padding:56px 20px;color:var(--muted)}
+  .empty .ic{width:60px;height:60px;border-radius:16px;background:#eaf0ff;color:var(--navy);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .empty p.title{font-size:1.05rem;font-weight:700;color:var(--navy);margin:0 0 6px}
+
+  .url-pill{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:#f1f4fb;
+    border:1px solid var(--line);padding:5px 10px;border-radius:8px;display:inline-block;
+    margin-top:8px;color:var(--navy)}
+
+  /* ---------- Analytics Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(8,23,48,.55);z-index:100;display:none;
+    align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;
+    backdrop-filter:blur(2px);
+  }
+  .modal-overlay.open{display:flex}
+  .modal-box{
+    background:var(--bg);border-radius:16px;max-width:1000px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;animation:modalIn .18s ease-out;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .modal-head{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);color:#fff;
+    padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  }
+  .modal-head h2{margin:0;font-size:1.15rem;display:flex;align-items:center;gap:9px}
+  .modal-head .sub{color:#cbd5f5;font-size:.8rem;margin:2px 0 0}
+  .modal-close{
+    background:rgba(255,255,255,.12);border:none;color:#fff;width:34px;height:34px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  }
+  .modal-close:hover{background:rgba(255,255,255,.24)}
+  .modal-body{padding:22px 24px;max-height:75vh;overflow-y:auto}
+
+  .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+  .an-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .an-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+  .an-card-head strong{color:var(--navy);font-size:.94rem}
+  .chart-toggle{display:flex;gap:4px;background:#f1f4fb;border-radius:8px;padding:3px}
+  .chart-toggle button{
+    border:none;background:transparent;padding:5px 9px;border-radius:6px;cursor:pointer;
+    color:var(--muted);display:flex;align-items:center;font-size:.72rem;
+  }
+  .chart-toggle button.active{background:var(--navy);color:#fff}
+  .chart-toggle svg{width:14px;height:14px}
+  .chart-wrap{position:relative;height:220px}
+  .an-legend{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+  .an-legend-row{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;color:var(--muted)}
+  .an-legend-row .sw{display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
+  .an-legend-row .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+  .no-analytics{text-align:center;padding:40px 20px;color:var(--muted)}
+
+  @media(max-width:720px){
+    .page-head-console{padding:20px}
+    .modal-body{padding:16px}
+    .an-grid{grid-template-columns:1fr}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head-console">
+  <div>
+    <h1>{{ object.title }}</h1>
+    <p class="sub">Responses &amp; analytics</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn-c" href="{% url 'formbuilder:form_list' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back
+    </a>
+    <a class="btn-c" href="{% url 'formbuilder:form_edit' object.pk %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      Edit form
+    </a>
+    {% if analytics %}
+    <button type="button" class="btn-c" id="open-analytics-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>
+      View analytics
+    </button>
+    {% endif %}
+    <a class="btn-c yellow" href="{% url 'formbuilder:form_export' object.pk 'xlsx' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      Excel
+    </a>
+    <a class="btn-c" href="{% url 'formbuilder:form_export' object.pk 'pdf' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      PDF
+    </a>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <span class="ic navy"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></span>
+    <div><div class="n">{{ count }}</div><div class="l">Total responses</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="ic yellow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/></svg></span>
+    <div><div class="n">{{ fields|length }}</div><div class="l">Fields</div></div>
+  </div>
+  <div class="stat-card">
+    <span class="ic {% if object.is_published %}green{% else %}amber{% endif %}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    </span>
+    <div>
+      <div class="n">{% if object.is_published %}<span style="color:var(--green)">Live</span>{% else %}<span style="color:var(--amber)">Draft</span>{% endif %}</div>
+      <div class="l">Status</div>
+    </div>
+  </div>
+</div>
+
+<div class="console-card">
+  <div class="console-card-head">
+    <h2>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      Response data
+    </h2>
+    <span class="result-count">{{ count }} row{{ count|pluralize }} · scroll horizontally for all fields</span>
+  </div>
+
+  {% if rows %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Submitted</th>
+          {% for f in fields %}<th>{{ f.label }}</th>{% endfor %}
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="sub">{{ r.resp.submitted_at|date:"d M Y, H:i" }}</td>
+          {% for cell in r.cells %}
+            <td>
+              {% if cell.is_file and cell.value %}
+                <a class="file-link" href="{{ cell.value }}" target="_blank">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+                  View file
+                </a>
+              {% else %}
+                {{ cell.value|default:"—" }}
+              {% endif %}
+            </td>
+          {% endfor %}
+          <td>
+            <form method="post" action="{% url 'formbuilder:response_delete' object.pk r.resp.pk %}"
+                  onsubmit="return confirm('Delete this response?')">
+              {% csrf_token %}
+              <button class="del-btn" title="Delete response">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></div>
+    <p class="title">No responses yet</p>
+    {% if object.is_published %}
+      <p>Share the form link to start collecting responses.</p>
+      <a class="url-pill" href="{{ object.get_public_url }}" target="_blank">{{ request.get_host }}{{ object.get_public_url }}</a>
+    {% else %}
+      <p>Publish the form to make it accessible.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ================= Analytics Modal ================= -->
+{% if analytics %}
+<div class="modal-overlay" id="analytics-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>
+          Response analytics
+        </h2>
+        <p class="sub">{{ object.title }} · based on {{ count }} response{{ count|pluralize }}</p>
+      </div>
+      <button type="button" class="modal-close" id="close-analytics-btn" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="an-grid">
+        {% for a in analytics %}
+        <div class="an-card">
+          <div class="an-card-head">
+            <strong>{{ a.label }}</strong>
+            <div class="chart-toggle" data-chart-idx="{{ forloop.counter0 }}">
+              <button type="button" class="chart-btn active" data-type="bar" title="Bar chart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 3v18h18M7 16v-4m5 4V8m5 8v-6"/></svg>
+              </button>
+              <button type="button" class="chart-btn" data-type="pie" title="Pie chart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-{{ forloop.counter0 }}"
+                    data-labels='{{ a.items|join:"~~" }}'></canvas>
+          </div>
+          <div class="an-legend" id="legend-{{ forloop.counter0 }}"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if analytics %}
+<script>
+(function(){
+  // ---- Analytics data passed cleanly from Django as JSON (no manual string parsing) ----
+  const analyticsData = JSON.parse('{{ analytics_json|escapejs }}');
+
+  const PALETTE = ["#0b1f3f","#f5b400","#3b6bd6","#16a34a","#b45309","#9333ea","#dc2626","#0891b2","#65a30d","#db2777"];
+
+  const overlay = document.getElementById("analytics-modal");
+  const openBtn = document.getElementById("open-analytics-btn");
+  const closeBtn = document.getElementById("close-analytics-btn");
+  const charts = {}; // idx -> Chart.js instance
+
+  function openModal(){
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    // Render charts lazily on first open so Chart.js sizes canvases correctly
+    if(Object.keys(charts).length === 0){
+      analyticsData.forEach((field, idx)=>renderChart(idx, field, "bar"));
+    }
+  }
+  function closeModal(){
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+  if(openBtn) openBtn.addEventListener("click", openModal);
+  if(closeBtn) closeBtn.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
+
+  function renderChart(idx, field, type){
+    const ctx = document.getElementById("chart-" + idx).getContext("2d");
+    const labels = field.items.map(it => it.name);
+    const counts = field.items.map(it => it.count);
+    const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+
+    if(charts[idx]) charts[idx].destroy();
+
+    charts[idx] = new Chart(ctx, {
+      type: type === "pie" ? "pie" : "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: colors,
+          borderRadius: type === "pie" ? 0 : 6,
+          borderWidth: type === "pie" ? 2 : 0,
+          borderColor: "#fff",
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = field.items[ctx.dataIndex];
+                return ` ${item.name}: ${item.count} (${item.pct}%)`;
+              }
+            }
+          }
+        },
+        scales: type === "pie" ? {} : {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // custom legend with colored dots + percentages (Google-Forms style)
+    const legendEl = document.getElementById("legend-" + idx);
+    legendEl.innerHTML = field.items.map((it, i) => `
+      <div class="an-legend-row">
+        <span class="sw"><span class="dot" style="background:${colors[i]}"></span>${it.name}</span>
+        <span>${it.count} · ${it.pct}%</span>
+      </div>
+    `).join("");
+  }
+
+  // Wire up per-card bar/pie toggle buttons
+  document.querySelectorAll(".chart-toggle").forEach(toggle=>{
+    const idx = parseInt(toggle.dataset.chartIdx, 10);
+    toggle.querySelectorAll(".chart-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        toggle.querySelectorAll(".chart-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        renderChart(idx, analyticsData[idx], btn.dataset.type);
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

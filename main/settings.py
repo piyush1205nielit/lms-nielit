@@ -128,6 +128,7 @@ INSTALLED_APPS = [
     'course',
     'public',
     'stream',
+    'formbuilder',
 
     # Third-party
     'storages',
