@@ -169,7 +169,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
       Active (Published)
     </div>
-    {% for f in fb2_pinned_active %}
+    {% for f in fb_pinned_active %}
       <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
         <span class="dot on"></span>
         <span class="pname">{{ f.title }}</span>
@@ -184,7 +184,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Inactive (Unpublished)
     </div>
-    {% for f in fb2_pinned_inactive %}
+    {% for f in fb_pinned_inactive %}
       <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
         <span class="dot off"></span>
         <span class="pname">{{ f.title }}</span>
