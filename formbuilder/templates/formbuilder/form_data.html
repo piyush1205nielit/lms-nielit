@@ -1,6 +1,7 @@
 {% extends "formbuilder/formbuilder_base.html" %}
 
 {% block title %}{{ object.title }} · Responses{% endblock %}
+{% block body_class %}wide{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
@@ -11,13 +12,20 @@
     --yellow:#f5b400; --yellow-dark:#d99a00;
     --ink:#0b1f3f; --muted:#5b6785; --line:#e2e6f0; --card:#ffffff; --bg:#f4f6fb;
     --green:#16a34a; --green-bg:#dcfce7; --amber:#b45309; --amber-bg:#fef3c7;
-    --red:#dc2626; --red-bg:#fee2e2;
+    --red:#dc2626; --red-bg:#fee2e2; --blue:#2563eb; --blue-bg:#dbeafe;
     --radius:14px; --shadow:0 1px 3px rgba(11,31,63,.08),0 10px 26px rgba(11,31,63,.07);
   }
   body{background:var(--bg)}
 
-  /* Go full-width on this page only */
-  .wrap{max-width:100% !important;padding:0 26px 40px !important;margin:20px auto 0 !important}
+  /* Go full-width on this page only — overrides any container max-width from the base template */
+  html body .wrap,
+  .wrap{
+    max-width:100% !important;
+    width:100% !important;
+    padding:0 clamp(16px,2.5vw,32px) 40px !important;
+    margin:20px auto 0 !important;
+    box-sizing:border-box;
+  }
 
   .page-head-console{
     background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
@@ -29,18 +37,18 @@
   .page-head-console .sub{color:#cbd5f5;font-size:.88rem;margin:0}
   .head-actions{display:flex;gap:10px;flex-wrap:wrap}
   .btn-c{
-    display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.25);
+    display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.3);
     background:rgba(255,255,255,.1);color:#fff;padding:9px 15px;border-radius:9px;
     font-weight:600;font-size:.84rem;cursor:pointer;transition:.15s;
   }
-  .btn-c:hover{background:rgba(255,255,255,.2)}
+  .btn-c:hover{background:rgba(255,255,255,.22)}
   .btn-c.yellow{background:var(--yellow);color:var(--navy-deep);border-color:var(--yellow)}
   .btn-c.yellow:hover{background:var(--yellow-dark)}
   .btn-c svg{width:15px;height:15px}
 
   /* Stats */
   .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
-  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  .stat-card{background:var(--card);border:1px solid rgba(15,23,42,.14);border-radius:var(--radius);
     padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
   .stat-card .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .stat-card .ic.navy{background:#eaf0ff;color:var(--navy)}
@@ -51,43 +59,67 @@
   .stat-card .l{color:var(--muted);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
 
   /* Table section */
-  .console-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  .console-card{background:var(--card);border:1px solid rgba(15,23,42,.16);border-radius:var(--radius);
     box-shadow:var(--shadow);overflow:hidden}
-  .console-card-head{padding:15px 20px;border-bottom:1px solid var(--line);background:#fafbff;
+  .console-card-head{padding:15px 20px;border-bottom:1px solid rgba(15,23,42,.16);background:#f6f7fc;
     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
   .console-card-head h2{margin:0;font-size:1rem;color:var(--navy);display:flex;align-items:center;gap:8px}
   .result-count{font-size:.8rem;color:var(--muted);font-weight:600}
 
-  /* Scroll container: both axes, sticky header + first two cols */
-  .table-scroll{overflow:auto;max-width:100%;max-height:70vh;position:relative}
+  /* Scroll container: both axes, sticky header + first two cols + sticky action col */
+  .table-scroll{
+    overflow:auto;max-width:100%;max-height:70vh;position:relative;
+    scrollbar-width:thin;scrollbar-color:rgba(11,31,63,.35) transparent;
+  }
+  .table-scroll::-webkit-scrollbar{height:8px;width:8px}
+  .table-scroll::-webkit-scrollbar-track{background:#eef1f8}
+  .table-scroll::-webkit-scrollbar-thumb{background:rgba(11,31,63,.35);border-radius:8px}
+  .table-scroll::-webkit-scrollbar-thumb:hover{background:rgba(11,31,63,.55)}
+
   table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.87rem}
   thead th{
     position:sticky;top:0;z-index:3;text-align:left;padding:12px 16px;font-size:.7rem;
     text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--navy);
     white-space:nowrap;border-bottom:2px solid var(--navy-deep);
   }
-  tbody td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle;
+  tbody td{padding:12px 16px;border-bottom:1px solid rgba(15,23,42,.12);vertical-align:middle;
     white-space:nowrap;background:#fff}
-  tbody tr:nth-child(even) td{background:#fafbff}
-  tbody tr:hover td{background:#f0f4ff}
+  tbody tr:nth-child(even) td{background:#fbfbfe}
+  tbody tr:hover td{background:#eef2ff}
+  tbody tr:last-child td{border-bottom:none}
 
   /* Freeze first two columns (# and Submitted) for readability while scrolling wide tables */
   thead th:nth-child(1), tbody td:nth-child(1){position:sticky;left:0;z-index:2;min-width:46px}
   thead th:nth-child(2), tbody td:nth-child(2){position:sticky;left:46px;z-index:2;min-width:150px;
-    box-shadow:2px 0 4px rgba(11,31,63,.06)}
+    box-shadow:2px 0 4px rgba(11,31,63,.1)}
   thead th:nth-child(1){z-index:4}
-  thead th:nth-child(2){z-index:4;box-shadow:2px 0 4px rgba(11,31,63,.06)}
+  thead th:nth-child(2){z-index:4;box-shadow:2px 0 4px rgba(11,31,63,.1)}
   tbody td:nth-child(1){background:#fff}
   tbody tr:nth-child(even) td:nth-child(1),
   tbody tr:nth-child(even) td:nth-child(2){background:#f3f6fd}
   tbody td:nth-child(2){background:#fff}
+  tbody tr:hover td:nth-child(1),
+  tbody tr:hover td:nth-child(2){background:#eef2ff}
 
-  .file-link{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;color:var(--navy);
-    font-weight:600;background:#eaf0ff;padding:4px 10px;border-radius:7px}
-  .file-link:hover{background:#dde6ff}
+  /* Sticky Action column on the right */
+  thead th:last-child, tbody td:last-child{
+    position:sticky;right:0;z-index:2;text-align:right;
+    box-shadow:-4px 0 8px -4px rgba(15,23,42,.18);
+  }
+  thead th:last-child{z-index:4;background:var(--navy)}
+  tbody td:last-child{background:#fff}
+  tbody tr:nth-child(even) td:last-child{background:#fbfbfe}
+  tbody tr:hover td:last-child{background:#eef2ff}
+
+  .file-link{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;color:var(--blue);
+    font-weight:700;background:var(--blue-bg);border:1px solid rgba(37,99,235,.25);
+    padding:4px 10px;border-radius:7px;transition:.15s}
+  .file-link:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+
   .del-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
-    border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--red);cursor:pointer}
-  .del-btn:hover{background:var(--red-bg);border-color:var(--red)}
+    border-radius:8px;border:1px solid rgba(220,38,38,.3);background:var(--red-bg);color:var(--red);
+    cursor:pointer;transition:.15s}
+  .del-btn:hover{background:var(--red);color:#fff;border-color:var(--red)}
 
   .empty{text-align:center;padding:56px 20px;color:var(--muted)}
   .empty .ic{width:60px;height:60px;border-radius:16px;background:#eaf0ff;color:var(--navy);
@@ -95,19 +127,21 @@
   .empty p.title{font-size:1.05rem;font-weight:700;color:var(--navy);margin:0 0 6px}
 
   .url-pill{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:#f1f4fb;
-    border:1px solid var(--line);padding:5px 10px;border-radius:8px;display:inline-block;
+    border:1px solid rgba(15,23,42,.18);padding:5px 10px;border-radius:8px;display:inline-block;
     margin-top:8px;color:var(--navy)}
+  .url-pill:hover{border-color:var(--navy)}
 
   /* ---------- Analytics Modal ---------- */
   .modal-overlay{
-    position:fixed;inset:0;background:rgba(8,23,48,.55);z-index:100;display:none;
+    position:fixed;inset:0;background:rgba(8,23,48,.6);z-index:100;display:none;
     align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;
     backdrop-filter:blur(2px);
   }
   .modal-overlay.open{display:flex}
   .modal-box{
     background:var(--bg);border-radius:16px;max-width:1000px;width:100%;
-    box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;animation:modalIn .18s ease-out;
+    border:1px solid rgba(15,23,42,.14);
+    box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden;animation:modalIn .18s ease-out;
   }
   @keyframes modalIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   .modal-head{
@@ -117,17 +151,17 @@
   .modal-head h2{margin:0;font-size:1.15rem;display:flex;align-items:center;gap:9px}
   .modal-head .sub{color:#cbd5f5;font-size:.8rem;margin:2px 0 0}
   .modal-close{
-    background:rgba(255,255,255,.12);border:none;color:#fff;width:34px;height:34px;border-radius:9px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);color:#fff;width:34px;height:34px;border-radius:9px;
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
   }
-  .modal-close:hover{background:rgba(255,255,255,.24)}
+  .modal-close:hover{background:rgba(255,255,255,.26)}
   .modal-body{padding:22px 24px;max-height:75vh;overflow-y:auto}
 
   .an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
-  .an-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .an-card{background:#fff;border:1px solid rgba(15,23,42,.16);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
   .an-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
   .an-card-head strong{color:var(--navy);font-size:.94rem}
-  .chart-toggle{display:flex;gap:4px;background:#f1f4fb;border-radius:8px;padding:3px}
+  .chart-toggle{display:flex;gap:4px;background:#eef1f8;border:1px solid rgba(15,23,42,.1);border-radius:8px;padding:3px}
   .chart-toggle button{
     border:none;background:transparent;padding:5px 9px;border-radius:6px;cursor:pointer;
     color:var(--muted);display:flex;align-items:center;font-size:.72rem;
@@ -136,8 +170,10 @@
   .chart-toggle svg{width:14px;height:14px}
   .chart-wrap{position:relative;height:220px}
   .an-legend{margin-top:10px;display:flex;flex-direction:column;gap:5px}
-  .an-legend-row{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;color:var(--muted)}
-  .an-legend-row .sw{display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
+  .an-legend-row{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;color:var(--muted);
+    border-bottom:1px solid rgba(15,23,42,.08);padding-bottom:4px}
+  .an-legend-row:last-child{border-bottom:none;padding-bottom:0}
+  .an-legend-row .sw{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font-weight:600}
   .an-legend-row .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
   .no-analytics{text-align:center;padding:40px 20px;color:var(--muted)}
@@ -241,7 +277,7 @@
           {% endfor %}
           <td>
             <form method="post" action="{% url 'formbuilder:response_delete' object.pk r.resp.pk %}"
-                  onsubmit="return confirm('Delete this response?')">
+                  onsubmit="return confirm('Delete this response?')" style="display:inline">
               {% csrf_token %}
               <button class="del-btn" title="Delete response">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -299,8 +335,7 @@
             </div>
           </div>
           <div class="chart-wrap">
-            <canvas id="chart-{{ forloop.counter0 }}"
-                    data-labels='{{ a.items|join:"~~" }}'></canvas>
+            <canvas id="chart-{{ forloop.counter0 }}"></canvas>
           </div>
           <div class="an-legend" id="legend-{{ forloop.counter0 }}"></div>
         </div>
@@ -309,6 +344,7 @@
     </div>
   </div>
 </div>
+{{ analytics|json_script:"analytics-data" }}
 {% endif %}
 {% endblock %}
 
@@ -316,8 +352,15 @@
 {% if analytics %}
 <script>
 (function(){
-  // ---- Analytics data passed cleanly from Django as JSON (no manual string parsing) ----
-  const analyticsData = JSON.parse('{{ analytics_json|escapejs }}');
+  // ---- Analytics data read from the json_script tag: immune to quoting bugs ----
+  const dataEl = document.getElementById("analytics-data");
+  let analyticsData = [];
+  try {
+    analyticsData = dataEl ? JSON.parse(dataEl.textContent) : [];
+  } catch (err) {
+    console.error("Failed to parse analytics data:", err);
+    analyticsData = [];
+  }
 
   const PALETTE = ["#0b1f3f","#f5b400","#3b6bd6","#16a34a","#b45309","#9333ea","#dc2626","#0891b2","#65a30d","#db2777"];
 
@@ -327,24 +370,33 @@
   const charts = {}; // idx -> Chart.js instance
 
   function openModal(){
+    if(!overlay) return;
     overlay.classList.add("open");
     document.body.style.overflow = "hidden";
-    // Render charts lazily on first open so Chart.js sizes canvases correctly
-    if(Object.keys(charts).length === 0){
-      analyticsData.forEach((field, idx)=>renderChart(idx, field, "bar"));
-    }
+    // Render on next frame so the modal has finished laying out
+    // (canvases have zero size while display:none, which breaks Chart.js sizing)
+    requestAnimationFrame(()=>{
+      if(Object.keys(charts).length === 0){
+        analyticsData.forEach((field, idx)=>renderChart(idx, field, "bar"));
+      } else {
+        Object.values(charts).forEach(c => c.resize());
+      }
+    });
   }
   function closeModal(){
+    if(!overlay) return;
     overlay.classList.remove("open");
     document.body.style.overflow = "";
   }
   if(openBtn) openBtn.addEventListener("click", openModal);
   if(closeBtn) closeBtn.addEventListener("click", closeModal);
-  overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeModal(); });
+  if(overlay) overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeModal(); });
   document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
 
   function renderChart(idx, field, type){
-    const ctx = document.getElementById("chart-" + idx).getContext("2d");
+    const canvas = document.getElementById("chart-" + idx);
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
     const labels = field.items.map(it => it.name);
     const counts = field.items.map(it => it.count);
     const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
@@ -386,12 +438,14 @@
 
     // custom legend with colored dots + percentages (Google-Forms style)
     const legendEl = document.getElementById("legend-" + idx);
-    legendEl.innerHTML = field.items.map((it, i) => `
-      <div class="an-legend-row">
-        <span class="sw"><span class="dot" style="background:${colors[i]}"></span>${it.name}</span>
-        <span>${it.count} · ${it.pct}%</span>
-      </div>
-    `).join("");
+    if(legendEl){
+      legendEl.innerHTML = field.items.map((it, i) => `
+        <div class="an-legend-row">
+          <span class="sw"><span class="dot" style="background:${colors[i]}"></span>${it.name}</span>
+          <span>${it.count} · ${it.pct}%</span>
+        </div>
+      `).join("");
+    }
   }
 
   // Wire up per-card bar/pie toggle buttons

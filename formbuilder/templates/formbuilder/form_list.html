@@ -25,7 +25,7 @@
   .btn-console:hover{background:var(--yellow-dark);transform:translateY(-1px)}
 
   .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
-  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  .stat-card{background:var(--card);border:1px solid rgba(15,23,42,.14);border-radius:var(--radius);
     padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
   .stat-card .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .stat-card .ic.navy{background:#eaf0ff;color:var(--navy)}
@@ -36,65 +36,113 @@
   .stat-card .l{color:var(--muted);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
 
   .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--card);border:1px solid rgba(15,23,42,.14);border-radius:var(--radius);
     padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
   .search-box{position:relative;flex:1;min-width:220px;max-width:380px}
   .search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
-  .search-box input{width:100%;padding:10px 12px 10px 38px;border:1px solid var(--line);border-radius:10px;
+  .search-box input{width:100%;padding:10px 12px 10px 38px;border:1px solid rgba(15,23,42,.18);border-radius:10px;
     font-size:.9rem;background:#fbfcff;color:var(--ink)}
-  .search-box input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,31,63,.1)}
+  .search-box input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,31,63,.12)}
   .filter-group{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{border:1px solid var(--line);background:#fff;color:var(--muted);padding:7px 14px;
+  .chip{border:1px solid rgba(15,23,42,.18);background:#fff;color:var(--muted);padding:7px 14px;
     border-radius:999px;font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;
     display:inline-flex;align-items:center;gap:6px}
   .chip:hover{border-color:var(--navy)}
   .chip.active{background:var(--navy);border-color:var(--navy);color:#fff}
   .chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
 
-  .console-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-  .console-card-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:#fafbff}
+  /* ---------- Console card / table wrapper ---------- */
+  .console-card{background:var(--card);border:1px solid rgba(15,23,42,.16);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  .console-card-head{padding:16px 18px;border-bottom:1px solid rgba(15,23,42,.16);
+    display:flex;align-items:center;justify-content:space-between;background:#f6f7fc}
   .console-card-head h2{margin:0;font-size:1rem;color:var(--navy);display:flex;align-items:center;gap:8px}
   .result-count{font-size:.8rem;color:var(--muted);font-weight:600}
 
-  .table-scroll{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  /* ---------- Table: proper horizontal overflow ---------- */
+  .table-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(11,31,63,.35) transparent;
+  }
+  .table-scroll::-webkit-scrollbar{height:8px}
+  .table-scroll::-webkit-scrollbar-track{background:#eef1f8}
+  .table-scroll::-webkit-scrollbar-thumb{background:rgba(11,31,63,.35);border-radius:8px}
+  .table-scroll::-webkit-scrollbar-thumb:hover{background:rgba(11,31,63,.55)}
+
+  table{width:100%;min-width:920px;border-collapse:collapse;font-size:.9rem}
   thead th{text-align:left;padding:12px 16px;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
-    color:var(--muted);background:#fafbff;border-bottom:1px solid var(--line);white-space:nowrap}
+    color:var(--navy);font-weight:800;background:#eef1f8;border-bottom:2px solid rgba(15,23,42,.18);white-space:nowrap}
   thead th.col-pin{width:44px;padding-left:14px;padding-right:0}
-  tbody td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+  thead th.col-actions{text-align:right}
+  tbody td{padding:13px 16px;border-bottom:1px solid rgba(15,23,42,.12);vertical-align:middle;white-space:nowrap}
   tbody td.col-pin{padding-left:14px;padding-right:0}
   tbody tr{transition:.12s}
-  tbody tr:hover{background:#f5f7ff}
+  tbody tr:nth-child(even){background:#fbfbfe}
+  tbody tr:hover{background:#eef2ff}
   tbody tr:last-child td{border-bottom:none}
+
+  /* Sticky actions column so buttons are always reachable, even when scrolled */
+  thead th.col-actions,
+  tbody td.col-actions{
+    position:sticky;right:0;
+    background:#fafbff;
+    box-shadow:-6px 0 10px -6px rgba(15,23,42,.18);
+  }
+  thead th.col-actions{background:#eef1f8}
+  tbody tr:nth-child(even) td.col-actions{background:#f7f8fd}
+  tbody tr:hover td.col-actions{background:#eef2ff}
 
   .title-cell strong{color:var(--navy);font-size:.95rem}
   .title-cell .sub{color:var(--muted);font-size:.78rem;margin-top:2px}
 
-  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:.75rem;font-weight:700}
-  .badge-on{background:var(--green-bg);color:var(--green)}
-  .badge-off{background:var(--amber-bg);color:var(--amber)}
-  .badge-mut{background:#eaf0ff;color:var(--navy);font-weight:800}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:.75rem;font-weight:700;border:1px solid transparent}
+  .badge-on{background:var(--green-bg);color:var(--green);border-color:rgba(22,163,74,.25)}
+  .badge-off{background:var(--amber-bg);color:var(--amber);border-color:rgba(217,119,6,.25)}
+  .badge-mut{background:#eaf0ff;color:var(--navy);font-weight:800;border-color:rgba(11,31,63,.15)}
 
-  .url-pill{font-family:ui-monospace,Menlo,monospace;font-size:.76rem;background:#f1f4fb;border:1px solid var(--line);
-    padding:5px 10px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;max-width:240px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--navy)}
+  .url-pill{font-family:ui-monospace,Menlo,monospace;font-size:.76rem;background:#f1f4fb;
+    border:1px solid rgba(15,23,42,.18);padding:5px 10px;border-radius:8px;display:inline-flex;
+    align-items:center;gap:6px;max-width:220px;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;color:var(--navy)}
   .url-pill:hover{border-color:var(--navy)}
   .no-url{color:var(--muted);font-size:.82rem;font-style:italic}
 
-  .row-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  .icon-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;
-    color:var(--navy);padding:7px 11px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:.15s}
-  .icon-btn:hover{background:#f5f7ff;border-color:var(--navy)}
-  .icon-btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
-  .icon-btn.primary:hover{background:var(--navy-mid)}
-  .icon-btn.danger{color:#dc2626}
-  .icon-btn.danger:hover{background:#fef2f2;border-color:#dc2626}
-  .icon-btn svg{width:14px;height:14px}
+  /* ---------- Action buttons: color-coded per action ---------- */
+  .row-actions{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;justify-content:flex-end}
+  .icon-btn{
+    display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(15,23,42,.2);
+    background:#fff;color:var(--navy);padding:7px 11px;border-radius:8px;font-size:.78rem;
+    font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .icon-btn svg{width:14px;height:14px;flex-shrink:0}
+
+  /* Publish = green */
+  .icon-btn.action-publish{color:var(--green);border-color:rgba(22,163,74,.35);background:var(--green-bg)}
+  .icon-btn.action-publish:hover{background:var(--green);color:#fff;border-color:var(--green)}
+
+  /* Unpublish = amber */
+  .icon-btn.action-unpublish{color:var(--amber);border-color:rgba(217,119,6,.35);background:var(--amber-bg)}
+  .icon-btn.action-unpublish:hover{background:var(--amber);color:#fff;border-color:var(--amber)}
+
+  /* Data = navy/blue */
+  .icon-btn.action-data{color:var(--navy);border-color:rgba(11,31,63,.3);background:#eaf0ff}
+  .icon-btn.action-data:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  /* Edit = yellow accent */
+  .icon-btn.action-edit{color:var(--yellow-dark);border-color:rgba(245,180,0,.4);background:#fff8e6}
+  .icon-btn.action-edit:hover{background:var(--yellow);color:var(--navy-deep);border-color:var(--yellow)}
+
+  /* Delete = red */
+  .icon-btn.action-delete{color:#dc2626;border-color:rgba(220,38,38,.35);background:#fef2f2}
+  .icon-btn.action-delete:hover{background:#dc2626;color:#fff;border-color:#dc2626}
 
   .url-cell{display:flex;align-items:center;gap:6px}
   .copy-url-btn{
     display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
-    border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--muted);
+    border-radius:7px;border:1px solid rgba(15,23,42,.2);background:#fff;color:var(--muted);
     cursor:pointer;flex-shrink:0;transition:.15s;
   }
   .copy-url-btn:hover{border-color:var(--navy);color:var(--navy)}
@@ -103,7 +151,7 @@
 
   .pin-toggle-btn{
     display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
-    border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;transition:.15s;
+    border-radius:8px;border:1px solid rgba(15,23,42,.2);background:#fff;color:var(--muted);cursor:pointer;transition:.15s;
   }
   .pin-toggle-btn:hover{border-color:var(--yellow-dark);color:var(--yellow-dark)}
   .pin-toggle-btn.pinned{background:var(--yellow);border-color:var(--yellow);color:var(--navy-deep)}
@@ -190,16 +238,16 @@
   <div class="table-scroll">
     <table id="forms-table">
       <thead>
-        <tr>
-          <th class="col-pin"></th>
-          <th>Title</th>
-          <th>Status</th>
-          <th>Responses</th>
-          <th>Public URL</th>
-          <th>Updated</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
+      <tr>
+        <th class="col-pin"></th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Responses</th>
+        <th>Public URL</th>
+        <th>Updated</th>
+        <th class="col-actions">Actions</th>
+      </tr>
+    </thead>
       <tbody>
         {% for f in forms %}
         <tr class="form-row" data-title="{{ f.title|lower }}" data-status="{% if f.is_published %}published{% else %}draft{% endif %}">
@@ -245,36 +293,36 @@
             {% endif %}
           </td>
           <td class="sub">{{ f.updated_at|date:"d M Y, H:i" }}</td>
-          <td>
-            <div class="row-actions">
-              <form method="post" action="{% url 'formbuilder:form_toggle_publish' f.pk %}" style="display:inline">
-                {% csrf_token %}
-                {% if f.is_published %}
-                  <button class="icon-btn" title="Unpublish">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-10-7-10-7a18.06 18.06 0 0 1 4.22-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a17.9 17.9 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
-                    Unpublish
-                  </button>
-                {% else %}
-                  <button class="icon-btn primary" title="Publish">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s3-7 11-7 11 7 11 7-3 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Publish
-                  </button>
-                {% endif %}
-              </form>
-              <a class="icon-btn" href="{% url 'formbuilder:form_data' f.pk %}" title="View data">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>
-                Data
-              </a>
-              <a class="icon-btn" href="{% url 'formbuilder:form_edit' f.pk %}" title="Edit form">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                Edit
-              </a>
-              <a class="icon-btn danger" href="{% url 'formbuilder:form_delete' f.pk %}" title="Delete form">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
-                Delete
-              </a>
-            </div>
-          </td>
+    <td class="col-actions">
+  <div class="row-actions">
+    <form method="post" action="{% url 'formbuilder:form_toggle_publish' f.pk %}" style="display:inline">
+      {% csrf_token %}
+      {% if f.is_published %}
+        <button class="icon-btn action-unpublish" title="Unpublish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-10-7-10-7a18.06 18.06 0 0 1 4.22-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a17.9 17.9 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+          Unpublish
+        </button>
+      {% else %}
+        <button class="icon-btn action-publish" title="Publish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s3-7 11-7 11 7 11 7-3 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Publish
+        </button>
+      {% endif %}
+    </form>
+    <a class="icon-btn action-data" href="{% url 'formbuilder:form_data' f.pk %}" title="View data">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>
+      Data
+    </a>
+    <a class="icon-btn action-edit" href="{% url 'formbuilder:form_edit' f.pk %}" title="Edit form">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      Edit
+    </a>
+    <a class="icon-btn action-delete" href="{% url 'formbuilder:form_delete' f.pk %}" title="Delete form">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+      Delete
+    </a>
+  </div>
+</td>
         </tr>
         {% endfor %}
       </tbody>

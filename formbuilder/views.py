@@ -169,9 +169,10 @@ def form_data(request, pk):
             "rows": rows,
             "count": responses.count(),
             "analytics": analytics,
-            "analytics_json": analytics_json, 
+            # "analytics_json": analytics_json, 
         },
     )
+    
 
 
 @login_required
