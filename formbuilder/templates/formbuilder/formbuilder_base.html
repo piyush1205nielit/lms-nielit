@@ -14,6 +14,7 @@
     --green:#16a34a; --green-bg:#dcfce7;
     --amber:#b45309; --amber-bg:#fef3c7;
     --red:#dc2626; --red-bg:#fee2e2;
+    --blue:#2563eb; --blue-bg:#dbeafe;
     --radius:14px;
     --shadow:0 1px 3px rgba(11,31,63,.08),0 10px 26px rgba(11,31,63,.07);
     --header-h:66px; --sidebar-w:270px;
@@ -23,42 +24,57 @@
     background:var(--bg);color:var(--ink);line-height:1.5}
   a{color:var(--navy);text-decoration:none}
 
+  /* Custom scrollbar, applied globally for consistency */
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:#eef1f8}
+  ::-webkit-scrollbar-thumb{background:rgba(11,31,63,.32);border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(11,31,63,.5)}
+  *{scrollbar-width:thin;scrollbar-color:rgba(11,31,63,.32) transparent}
+
   /* ================= Top header ================= */
   .site-header{
     position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:100;
     background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
     display:flex;align-items:center;gap:16px;padding:0 20px;
-    box-shadow:0 2px 10px rgba(11,31,63,.25);
+    box-shadow:0 2px 14px rgba(11,31,63,.32);
+    border-bottom:1px solid rgba(255,255,255,.08);
   }
   .header-toggle{
-    display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+    display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
     color:#fff;width:38px;height:38px;border-radius:9px;align-items:center;justify-content:center;
-    cursor:pointer;flex-shrink:0;
+    cursor:pointer;flex-shrink:0;transition:.15s;
   }
+  .header-toggle:hover{background:rgba(255,255,255,.2)}
   .header-logos{display:flex;align-items:center;gap:10px;flex-shrink:0}
-  .header-logos img{height:38px;width:auto;border-radius:6px;background:#fff;padding:3px;display:block}
-  .header-divider{width:1px;height:32px;background:rgba(255,255,255,.25);flex-shrink:0}
+  .header-logos img{height:38px;width:auto;border-radius:6px;background:#fff;padding:3px;display:block;
+    box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .header-divider{width:1px;height:32px;background:rgba(255,255,255,.28);flex-shrink:0}
   .header-titles{overflow:hidden}
   .header-titles h1{margin:0;font-size:1.02rem;color:#fff;font-weight:800;line-height:1.2;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .header-titles p{margin:1px 0 0;font-size:.71rem;color:#c3cbe6;font-weight:500;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+  .header-titles p{margin:1px 0 0;font-size:.71rem;color:#c3cbe6;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.04em}
   .header-spacer{flex:1}
   .header-user{
     display:flex;align-items:center;gap:9px;color:#fff;font-size:.82rem;font-weight:600;
-    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-    padding:7px 13px;border-radius:10px;flex-shrink:0;
+    background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.22);
+    padding:7px 14px 7px 7px;border-radius:11px;flex-shrink:0;transition:.15s;
   }
+  .header-user:hover{background:rgba(255,255,255,.15)}
   .header-user .avatar{
-    width:26px;height:26px;border-radius:50%;background:var(--yellow);color:var(--navy-deep);
-    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;flex-shrink:0;
+    width:28px;height:28px;border-radius:50%;
+    background:linear-gradient(135deg,var(--yellow) 0%,var(--yellow-dark) 100%);
+    color:var(--navy-deep);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.74rem;flex-shrink:0;
+    box-shadow:0 2px 5px rgba(0,0,0,.2);
   }
 
   /* ================= Sidebar ================= */
   .sidebar{
     position:fixed;top:var(--header-h);left:0;bottom:0;width:var(--sidebar-w);z-index:90;
-    background:#fff;border-right:1px solid var(--line);overflow-y:auto;
+    background:#fff;border-right:1px solid rgba(15,23,42,.14);overflow-y:auto;
     padding:18px 14px 30px;transition:transform .2s ease;
+    box-shadow:2px 0 10px rgba(11,31,63,.03);
   }
   .sidebar-section{margin-bottom:20px}
   .sidebar-label{
@@ -66,27 +82,35 @@
     color:var(--muted);padding:0 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;
   }
   .sidebar-label svg{width:12px;height:12px;flex-shrink:0}
+  .sidebar-label .count{
+    margin-left:auto;background:#eef1f8;color:var(--navy);font-weight:800;font-size:.66rem;
+    padding:1px 7px;border-radius:999px;border:1px solid rgba(15,23,42,.1);
+  }
 
   .side-link{
     display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
     color:var(--ink);font-size:.87rem;font-weight:600;margin-bottom:3px;transition:.15s;
+    border:1px solid transparent;
   }
-  .side-link:hover{background:#f1f4fb;color:var(--navy)}
-  .side-link.active{background:var(--navy);color:#fff}
+  .side-link:hover{background:#f1f4fb;color:var(--navy);border-color:rgba(15,23,42,.08)}
+  .side-link.active{background:var(--navy);color:#fff;box-shadow:0 3px 10px rgba(11,31,63,.25)}
+  .side-link.active svg{color:var(--yellow)}
   .side-link svg{width:17px;height:17px;flex-shrink:0}
 
   .pin-item{
-    display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;
-    font-size:.81rem;color:var(--ink);margin-bottom:2px;transition:.15s;
+    display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;
+    font-size:.81rem;color:var(--ink);margin-bottom:3px;transition:.15s;
+    border:1px solid transparent;
   }
-  .pin-item:hover{background:#f7f8fc}
-  .pin-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-  .pin-item .dot.on{background:var(--green)}
-  .pin-item .dot.off{background:var(--amber)}
-  .pin-item .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  .pin-empty{padding:6px 10px;font-size:.76rem;color:var(--muted);font-style:italic}
+  .pin-item:hover{background:#f7f8fc;border-color:rgba(15,23,42,.1);transform:translateX(2px)}
+  .pin-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px currentColor;opacity:.85}
+  .pin-item .dot.on{background:var(--green);color:var(--green-bg)}
+  .pin-item .dot.off{background:var(--amber);color:var(--amber-bg)}
+  .pin-item .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-weight:600}
+  .pin-empty{padding:8px 10px;font-size:.76rem;color:var(--muted);font-style:italic;
+    background:#fafbff;border:1px dashed rgba(15,23,42,.16);border-radius:9px}
 
-  .sidebar-divider{height:1px;background:var(--line);margin:14px 4px}
+  .sidebar-divider{height:1px;background:rgba(15,23,42,.12);margin:14px 4px}
 
   /* ================= Main layout ================= */
   .main-wrap{
@@ -96,13 +120,22 @@
   .main-wrap:not(.wide){max-width:1180px}
 
   .sidebar-backdrop{
-    display:none;position:fixed;inset:0;top:var(--header-h);background:rgba(8,23,48,.45);z-index:85;
+    display:none;position:fixed;inset:0;top:var(--header-h);background:rgba(8,23,48,.5);z-index:85;
+    backdrop-filter:blur(1px);
   }
 
-  .msg{padding:12px 16px;border-radius:10px;margin-bottom:14px;font-weight:600;font-size:.88rem}
-  .msg.success{background:var(--green-bg);color:var(--green)}
-  .msg.error{background:var(--red-bg);color:var(--red)}
-  .msg.info{background:#eef2ff;color:var(--navy)}
+  /* ================= Flash messages ================= */
+  .msg{
+    display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:14px;
+    font-weight:600;font-size:.88rem;border:1px solid transparent;
+  }
+  .msg::before{
+    content:"";width:8px;height:8px;border-radius:50%;flex-shrink:0;background:currentColor;
+  }
+  .msg.success{background:var(--green-bg);color:var(--green);border-color:rgba(22,163,74,.25)}
+  .msg.error{background:var(--red-bg);color:var(--red);border-color:rgba(220,38,38,.25)}
+  .msg.info{background:#eef2ff;color:var(--navy);border-color:rgba(11,31,63,.18)}
+  .msg.warning{background:var(--amber-bg);color:var(--amber);border-color:rgba(180,83,9,.25)}
 
   /* ================= Responsive ================= */
   @media(max-width:960px){
@@ -116,6 +149,8 @@
   @media(max-width:480px){
     .header-logos img{height:30px}
     .header-titles h1{font-size:.86rem}
+    .header-user span:not(.avatar){display:none}
+    .header-user{padding:5px}
   }
 </style>
 {% block extra_head %}{% endblock %}
@@ -168,6 +203,7 @@
     <div class="sidebar-label">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
       Active (Published)
+      {% if fb_pinned_active %}<span class="count">{{ fb_pinned_active|length }}</span>{% endif %}
     </div>
     {% for f in fb_pinned_active %}
       <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
@@ -183,6 +219,7 @@
     <div class="sidebar-label">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Inactive (Unpublished)
+      {% if fb_pinned_inactive %}<span class="count">{{ fb_pinned_inactive|length }}</span>{% endif %}
     </div>
     {% for f in fb_pinned_inactive %}
       <a class="pin-item" href="{% url 'formbuilder:form_data' f.pk %}">
@@ -197,7 +234,7 @@
   <div class="sidebar-divider"></div>
 
   <div class="sidebar-section">
-    <a class="side-link" href="{% url 'admin_dashboard:home' %}" >
+    <a class="side-link" href="{% url 'admin_dashboard:home' %}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       Portal Management
     </a>

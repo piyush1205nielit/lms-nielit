@@ -65,6 +65,13 @@
   }
   .form-title-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+      .logo-img {
+        height: 44px;
+        width: auto;
+        object-fit: contain;
+        transition: height 0.3s ease;
+      }
+
   .btn-home{
     display:inline-flex;align-items:center;gap:8px;
     background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
@@ -89,7 +96,7 @@
 <div class="success-page">
   <div class="success-card">
     <div class="badge-row">
-      <span class="tag">NIELIT Delhi Forum</span>
+      <img src="{% static 'assets/nielit_logo.jpg' %}" alt="NIELIT Logo" class="logo-img" onerror="this.src='https://via.placeholder.com/70?text=NIELIT'" />
     </div>
 
     <div class="tick-wrap">
