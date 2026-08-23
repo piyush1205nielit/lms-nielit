@@ -169,6 +169,7 @@ TEMPLATES = [
                 "user_dashboard.context_processors.notifications_context",
                 "admin_dashboard.context_processors.admin_notifications_context",
                 "public.context_processors.domain_nav_context",
+                "formbuilder.context_processors.sidebar_forms",
             ],
         },
     },
